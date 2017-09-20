@@ -12,6 +12,7 @@ NOTE: This is an `OASIS Open Repository <https://www.oasis-open.org/resources/op
 - Pagination
 - Content-Types other than the default
 - Pending Add Objects responses (all Add Objects request process all objects before sending back a response)
+- *medallion* uses http only
 
 Although *medallion* conforms to most of the `interoperability specification <https://docs.google.com/document/d/11MocPK3s8im8O5-7rgZhtVHoxO72aQicJj2v-HDx-Q8/>`_,
 **it should not be used in a production environment**.
