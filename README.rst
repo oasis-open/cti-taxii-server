@@ -1,6 +1,8 @@
-===========
-`medallion`
-===========
+|Build_Status| |Coverage| |Version|
+
+=========
+medallion
+=========
 
 NOTE: This is an `OASIS Open Repository <https://www.oasis-open.org/resources/open-repositories/>`_. See the `Governance`_ section for more information.
 
@@ -34,8 +36,8 @@ and makes use of a MongoDB server, installed independently.  The MongoDB back-en
 message will
 result if it is used without that package.
 
-`Installation`
-==============
+Installation
+============
 
 The easiest way to install *medallion* is with pip:
 
@@ -44,8 +46,8 @@ The easiest way to install *medallion* is with pip:
   $ pip install medallion
 
 
-`Usage`
-=======
+Usage
+=====
 
 
 
@@ -190,5 +192,9 @@ above <#currentMaintainers>`__. Please send general questions about Open
 Repository participation to OASIS Staff at repository-admin@oasis-open.org and
 any specific CLA-related questions to repository-cla@oasis-open.org.
 
-
-
+.. |Build_Status| image:: https://travis-ci.org/oasis-open/cti-taxii-server.svg?branch=master
+   :target: https://travis-ci.org/oasis-open/cti-taxii-server
+.. |Coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-server/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/oasis-open/cti-taxii-server
+.. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
+   :target: https://pypi.python.org/pypi/medallion/
