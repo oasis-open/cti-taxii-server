@@ -59,7 +59,9 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        return collection_info.find_one({"id": id_})
+        info = collection_info.find_one({"id": id_})
+        del info["_id"]
+        return info
 
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
         # TODO: Handle if mongodb is not available
