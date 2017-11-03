@@ -44,11 +44,10 @@ class MemoryBackend(Backend):
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 for entry in collection["manifest"]:
-                    if new_obj["id"] == entry["id"] :
+                    if new_obj["id"] == entry["id"]:
                         if "modified" in new_obj:
                             entry["versions"].append(new_obj["modified"])
-                        else:
-                            pass
+                        # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
                         break
                 else:
                     if "modified" in new_obj:

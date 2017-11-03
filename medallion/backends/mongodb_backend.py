@@ -37,12 +37,11 @@ class MongoBackend(Backend):
             else:
                 version = new_obj["created"]
             manifest_info.insert_one({"id": new_obj["id"],
-                                  "collection_id": collection_id,
-                                  "date_added": format_datetime(get_timestamp()),
-                                  "versions": [version],
-                                  # hardcoded for now
-                                  "media_types": ["application/vnd.oasis.stix+json; version=2.0"]
-                                  })
+                                      "collection_id": collection_id,
+                                      "date_added": format_datetime(get_timestamp()),
+                                      "versions": [version],
+                                      # hardcoded for now
+                                      "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
 
     def server_discovery(self):
         # TODO: Handle if mongodb is not available
