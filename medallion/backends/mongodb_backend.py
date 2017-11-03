@@ -27,13 +27,19 @@ class MongoBackend(Backend):
         manifest_info = api_root_db["manifests"]
         entry = manifest_info.find_one({"collection_id": collection_id, "id": new_obj["id"]})
         if entry:
-            entry["versions"].append(new_obj["modified"])
-            manifest_info.update_one({"collection_id": collection_id, "id": new_obj["id"]}, {"$set": {"versions": entry["versions"]}})
-            return
-        manifest_info.insert_one({"id": new_obj["id"],
+            if "modified" in new_obj:
+                entry["versions"].append(new_obj["modified"])
+                manifest_info.update_one({"collection_id": collection_id, "id": new_obj["id"]}, {"$set": {"versions": entry["versions"]}})
+            # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
+        else:
+            if "modified" in new_obj:
+                version = new_obj["modified"]
+            else:
+                version = new_obj["created"]
+            manifest_info.insert_one({"id": new_obj["id"],
                                   "collection_id": collection_id,
                                   "date_added": format_datetime(get_timestamp()),
-                                  "versions": [new_obj["modified"]],
+                                  "versions": [version],
                                   # hardcoded for now
                                   "media_types": ["application/vnd.oasis.stix+json; version=2.0"]
                                   })
@@ -112,9 +118,14 @@ class MongoBackend(Backend):
         failed = 0
         succeeded = 0
         for new_obj in objs["objects"]:
-            existing_entry = objects.find_one({"collection_id": id_,
-                                               "id": new_obj["id"],
-                                               "modified": new_obj["modified"]})
+            if "modified" in new_obj:
+                existing_entry = objects.find_one({"collection_id": id_,
+                                                   "id": new_obj["id"],
+                                                   "modified": new_obj["modified"]})
+            else:
+                # There is no modified field, so this object is immutable - see if it already exists
+                existing_entry = objects.find_one({"collection_id": id_,
+                                                   "id": new_obj["id"]})
             if existing_entry:
                 failed += 1
             else:
