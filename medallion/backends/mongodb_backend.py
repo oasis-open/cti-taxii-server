@@ -32,10 +32,7 @@ class MongoBackend(Backend):
                 manifest_info.update_one({"collection_id": collection_id, "id": new_obj["id"]}, {"$set": {"versions": entry["versions"]}})
             # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
         else:
-            if "modified" in new_obj:
-                version = new_obj["modified"]
-            else:
-                version = new_obj["created"]
+            version = new_obj.get('modified', new_obj['created'])
             manifest_info.insert_one({"id": new_obj["id"],
                                       "collection_id": collection_id,
                                       "date_added": format_datetime(get_timestamp()),
@@ -110,21 +107,17 @@ class MongoBackend(Backend):
             del obj["collection_id"]
         return create_bundle(objects_found)
 
-    def add_objects(self, api_root, id_, objs, request_time):
+    def add_objects(self, api_root, collection_id, objs, request_time):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         failed = 0
         succeeded = 0
         for new_obj in objs["objects"]:
+            mongo_query = {"collection_id": collection_id, "id": new_obj["id"]}
             if "modified" in new_obj:
-                existing_entry = objects.find_one({"collection_id": id_,
-                                                   "id": new_obj["id"],
-                                                   "modified": new_obj["modified"]})
-            else:
-                # There is no modified field, so this object is immutable - see if it already exists
-                existing_entry = objects.find_one({"collection_id": id_,
-                                                   "id": new_obj["id"]})
+                mongo_query["modified"] = new_obj["modified"]
+            existing_entry = objects.find_one(mongo_query)
             if existing_entry:
                 failed += 1
             else:
