@@ -121,9 +121,9 @@ class MongoBackend(Backend):
             if existing_entry:
                 failed += 1
             else:
-                new_obj.update({"collection_id": id_})
+                new_obj.update({"collection_id": collection_id})
                 objects.insert_one(new_obj)
-                self._update_manifest(new_obj, api_root, id_)
+                self._update_manifest(new_obj, api_root, collection_id)
                 succeeded += 1
 
         status = generate_status(request_time, succeeded, failed, 0)
