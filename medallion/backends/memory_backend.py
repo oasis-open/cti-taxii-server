@@ -44,15 +44,23 @@ class MemoryBackend(Backend):
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 for entry in collection["manifest"]:
-                    if entry["id"] == new_obj["id"]:
-                        # only called when modified is different
-                        entry["versions"].append(new_obj["modified"])
-                        return
-                collection["manifest"].append({"id": new_obj["id"],
-                                               "date_added": format_datetime(get_timestamp()),
-                                               "versions": [new_obj["modified"]],
-                                               # hardcoded for nowmed
-                                               "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
+                    if new_obj["id"] == entry["id"]:
+                        if "modified" in new_obj:
+                            entry["versions"].append(new_obj["modified"])
+                        # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
+                        break
+                else:
+                    if "modified" in new_obj:
+                        version = new_obj["modified"]
+                    else:
+                        version = new_obj["created"]
+                    collection["manifest"].append({"id": new_obj["id"],
+                                                   "date_added": format_datetime(get_timestamp()),
+                                                   "versions": [version],
+                                                   # hardcoded for now
+                                                   "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
+                # quit once you have found the collection that needed updating
+                break
 
     def get_collections(self, api_root):
 
@@ -155,12 +163,16 @@ class MemoryBackend(Backend):
                     failed = 0
                     succeeded = 0
                     for new_obj in objs["objects"]:
-                        found = False
-                        for current_obj in collection["objects"]:
-                            if new_obj['id'] == current_obj['id'] and new_obj['modified'] == current_obj['modified']:
-                                found = True
-                                break
-                        if not found:
+                        id_and_version_already_present = False
+                        if new_obj['id'] in collection["objects"]:
+                            current_obj = collection["objects"][new_obj['id']]
+                            if "modified" in new_obj:
+                                if new_obj['modified'] == current_obj['modified']:
+                                    id_and_version_already_present = True
+                            else:
+                                # There is no modified field, so this object is immutable
+                                id_and_version_already_present = True
+                        if not id_and_version_already_present:
                             collection["objects"].append(new_obj)
                             self._update_manifest(new_obj, api_root, collection["id"])
                             succeeded += 1
