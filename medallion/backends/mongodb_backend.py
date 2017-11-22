@@ -21,17 +21,17 @@ class MongoBackend(Backend):
         except ConnectionFailure:
             print("Mongo DB not available")
 
-    def _update_manifest(self, new_obj, api_root, collection_id):
+    def _update_manifest(self, new_obj, api_root, _collection_id):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        entry = manifest_info.find_one({"collection_id": collection_id, "id": new_obj["id"]})
+        entry = manifest_info.find_one({"_collection_id": _collection_id, "id": new_obj["id"]})
         if entry:
             entry["versions"].append(new_obj["modified"])
-            manifest_info.update_one({"collection_id": collection_id, "id": new_obj["id"]}, {"$set": {"versions": entry["versions"]}})
+            manifest_info.update_one({"_collection_id": _collection_id, "id": new_obj["id"]}, {"$set": {"versions": entry["versions"]}})
             return
         manifest_info.insert_one({"id": new_obj["id"],
-                                  "collection_id": collection_id,
+                                  "_collection_id": _collection_id,
                                   "date_added": format_datetime(get_timestamp()),
                                   "versions": [new_obj["modified"]],
                                   # hardcoded for now
@@ -65,21 +65,23 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        full_filter = MongoDBFilter(filter_args, {"collection_id": id_}, allowed_filters)
+        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_}, allowed_filters)
         objects_found = full_filter.process_filter(manifest_info, allowed_filters, None)
         if objects_found:
             for obj in objects_found:
                 del obj["_id"]
-                del obj["collection_id"]
+                del obj["_collection_id"]
         return objects_found
 
-    def get_api_root_information(self, api_root):
+    def get_api_root_information(self, api_root_name):
         # TODO: Handle if mongodb is not available
-        api_root_db = self.client[api_root]
-        api_root_info = api_root_db["api_root_info"]
-        info = api_root_info.find_one()
+        db = self.client["discovery_database"]
+        api_root_info = db["api_root_info"]
+        info = api_root_info.find_one({"_name": api_root_name})
         if info:
             del info["_id"]
+            del info["_url"]
+            del info["_name"]
         return info
 
     def get_status(self, api_root, id_):
@@ -95,14 +97,14 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args, {"collection_id": id_}, allowed_filters)
+        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_}, allowed_filters)
         objects_found = full_filter.process_filter(objects,
                                                    allowed_filters,
                                                    {"mongodb_collection": api_root_db["manifests"],
-                                                    "collection_id": id_})
+                                                    "_collection_id": id_})
         for obj in objects_found:
             del obj["_id"]
-            del obj["collection_id"]
+            del obj["_collection_id"]
         return create_bundle(objects_found)
 
     def add_objects(self, api_root, id_, objs, request_time):
@@ -112,13 +114,13 @@ class MongoBackend(Backend):
         failed = 0
         succeeded = 0
         for new_obj in objs["objects"]:
-            existing_entry = objects.find_one({"collection_id": id_,
+            existing_entry = objects.find_one({"_collection_id": id_,
                                                "id": new_obj["id"],
                                                "modified": new_obj["modified"]})
             if existing_entry:
                 failed += 1
             else:
-                new_obj.update({"collection_id": id_})
+                new_obj.update({"_collection_id": id_})
                 objects.insert_one(new_obj)
                 self._update_manifest(new_obj, api_root, id_)
                 succeeded += 1
@@ -132,12 +134,12 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args, {"collection_id": id_, "id": object_id}, allowed_filters)
+        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_, "id": object_id}, allowed_filters)
         objects_found = full_filter.process_filter(objects,
                                                    allowed_filters,
-                                                   {"mongodb_collection": api_root_db["manifests"], "collection_id": id_})
+                                                   {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_})
         if objects_found:
             for obj in objects_found:
                 del obj["_id"]
-                del obj["collection_id"]
+                del obj["_collection_id"]
         return create_bundle(objects_found)

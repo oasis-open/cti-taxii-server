@@ -38,7 +38,7 @@ def backend():
 
 def test_server_discovery(backend):
     server_info = backend.server_discovery()
-    assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+    assert server_info["title"] == "Some TAXII Server"
 
 
 def test_get_api_root_information(backend):
