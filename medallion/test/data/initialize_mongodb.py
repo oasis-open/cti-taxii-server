@@ -1,6 +1,5 @@
-
-from pymongo import MongoClient
-from medallion.test.generic_initialize_mongodb import (build_new_mongo_databases_and_collection, add_api_root,
+from medallion.test.generic_initialize_mongodb import (add_api_root,
+                                                       build_new_mongo_databases_and_collection,
                                                        connect_to_client)
 
 
@@ -175,4 +174,3 @@ def reset_db():
                                title="STIX 2.0 Indicator Collections",
                                description="A repo for general STIX data.",
                                max_content_length=9765625)
-
