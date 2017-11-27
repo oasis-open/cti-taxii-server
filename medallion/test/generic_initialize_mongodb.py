@@ -1,13 +1,16 @@
 from pymongo import MongoClient
 
+
 def connect_to_client(url="mongodb://localhost:27017/"):
     return MongoClient(url)
+
 
 def build_new_mongo_databases_and_collection(client):
     db = client["discovery_database"]
     discovery_info = db["discovery_information"]
     api_root_info = db["api_root_info"]
     return db
+
 
 def add_api_root(client, url=None, title=None, description=None, versions=["taxii-2.0"], max_content_length=0, default=False):
     db = client["discovery_database"]
@@ -31,7 +34,3 @@ def add_api_root(client, url=None, title=None, description=None, versions=["taxi
     manifests = api_root_db["manifests"]
     collections = api_root_db["collections"]
     return api_root_db
-
-
-
-
