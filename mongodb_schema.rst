@@ -6,9 +6,9 @@ As *medallion* is a prototype TAXII server implementation, the schema design for
 
 Each Mongo database contains one or more collections.  The term "collection" in Mongo DBs is similar to the concept of a table in a relational database.  Collections contain "documents", similar to records.
 
-It is unfortunate that the term "collection" is also used to signify something unrelated in the TAXII specification.  We will use the phrase "taxii collection" to distinguish them. 
+It is unfortunate that the term "collection" is also used to signify something unrelated in the TAXII specification.  We will use the phrase "taxii collection" to distinguish them.
 
-An instance of this schema can be populated via the file test/data/initialize_mongodb.py.  This instance will be used for examples below. 
+An instance of this schema can be populated via the file test/data/initialize_mongodb.py.  This instance will be used for examples below.
 
 Utilities to initialize your own Mongo DB can be found in test/generic_initialize_mongodb.py.
 
@@ -51,10 +51,10 @@ Here is a document from the example database:
             "_url": "http://localhost:5000/trustgroup1/",
             "_name": "trustgroup1"
         }
-        
+
 The api root databases
 ----------------------
-        
+
 Each api root is contained in a separate Mongo DB database.  It has four collections:  **status**, **objects**, **manifests**, and **collections**.  To support multiple taxii collections, any document in the **objects** and **manifests** contains an extra property, "collection_id", to link it to the taxii collection that it is contained in.  Because "_collection_id" property is not part of the TAXII specification, it will be stripped by *medallion* before any document is returned to the client.
 
 A document from the **collections** collection:
@@ -71,11 +71,11 @@ A document from the **collections** collection:
                    "application/vnd.oasis.stix+json; version=2.0"
              ]
         }
-            
+
 A document from the **objects** collection:
- 
+
 .. code:: json
- 
+
        {
              "created": "2014-05-08T09:00:00.000Z",
              "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
@@ -89,7 +89,7 @@ A document from the **objects** collection:
              "valid_from": "2014-05-08T09:00:00.000000Z",
              "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         }
-        
+
 A document from the **status** collection:
 
 .. code:: json
@@ -116,11 +116,11 @@ A document from the **status** collection:
                   "relationship--045585ad-a22f-4333-af33-bfd503a683b5"
               ]
           }
- 
+
 A document from the **manifest** collection:
- 
+
 .. code:: json
- 
+
        {
             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
             "date_added": "2016-11-01T10:29:05Z",
