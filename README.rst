@@ -82,6 +82,8 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
 
 *Note: A Mongo DB should be available at some URL when using the Mongo DB back-end*
 
+A description of the Mongo DB structure expected by the mongo db backend code is described in `mongodb_schema.rst <https://github.com/oasis-open/cti-taxii-server/blob/mongo_db_design/mongodb_schema.rst>`_
+
 As required by the TAXII specification, *medallion* supports BasicHTTP authorization.  However, the user names and passwords are currently
 stored in the <config_file> in plain text.
 

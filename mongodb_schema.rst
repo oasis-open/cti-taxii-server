@@ -55,7 +55,7 @@ Here is a document from the example database:
 The api root databases
 ----------------------
         
-Each api root is contained in a separate Mongo DB database.  It has four collections:  **status**, **objects**, **manifests**, and **collections**.  To support multiple taxii collections, any document in the **status**, **objects**, and **manifests** contains an extra property, "collection_id", to link it to the taxii collection that it is contained in.  Because "_collection_id" property is not part of the TAXII specification, it will be stripped by *medallion* before any document is returned to the client.
+Each api root is contained in a separate Mongo DB database.  It has four collections:  **status**, **objects**, **manifests**, and **collections**.  To support multiple taxii collections, any document in the **objects** and **manifests** contains an extra property, "collection_id", to link it to the taxii collection that it is contained in.  Because "_collection_id" property is not part of the TAXII specification, it will be stripped by *medallion* before any document is returned to the client.
 
 A document from the **collections** collection:
 
