@@ -34,7 +34,7 @@ class MongoBackend(Backend):
         else:
             version = new_obj.get('modified', new_obj['created'])
             manifest_info.insert_one({"id": new_obj["id"],
-                                      "collection_id": _collection_id,
+                                      "_collection_id": _collection_id,
                                       "date_added": format_datetime(get_timestamp()),
                                       "versions": [version],
                                       # hardcoded for now
