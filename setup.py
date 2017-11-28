@@ -61,7 +61,6 @@ setup(
             'coverage',
             'pytest',
             'pytest-cov',
-            'time',
             'tox',
         ],
     }
