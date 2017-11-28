@@ -164,6 +164,3 @@ texinfo_documents = [
      author, 'medallion', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
