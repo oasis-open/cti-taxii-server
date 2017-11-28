@@ -6,42 +6,36 @@ medallion
 
 NOTE: This is an `OASIS Open Repository <https://www.oasis-open.org/resources/open-repositories/>`_. See the `Governance`_ section for more information.
 
-*medallion* is a minimal implementation of a TAXII 2.0 Server in python.
+*Medallion* is a minimal implementation of a TAXII 2.0 Server in Python.
 
-*medallion* does NOT support the following features of the `TAXII 2.0 specification <http://docs.oasis-open.org/cti/taxii/v2.0/csprd01/taxii-v2.0-csprd01.html>`_:
+For more information, see `the
+documentation <https://medallion.readthedocs.io/>`__ on
+ReadTheDocs.
 
-- Sorting
-- Pagination
-- Content-Types other than the default
-- Pending Add Objects responses (all Add Objects request process all objects before sending back a response)
-- *medallion* uses http only
+**WARNING:** *medallion* was designed as a prototype and reference
+implementation of TAXII 2.0, and is not intended for production use.
 
-Although *medallion* conforms to most of the `interoperability specification <https://docs.google.com/document/d/11MocPK3s8im8O5-7rgZhtVHoxO72aQicJj2v-HDx-Q8/>`_,
-**it should not be used in a production environment**.
-Its main purpose is for use in testing scenarios of STIX-based applications that use the `python-stix2 API <https://github.com/oasis-open/cti-python-stix2>`_.  It has been developed in conjunction
-with `cti-taxii-client <https://github.com/oasis-open/cti-taxii-client>`_ but should be compatible with any TAXII client which makes HTTP requests
-as defined in TAXII 2.0 specification.
+*medallion* has been designed to be a simple front-end REST server providing
+access to the endpoints defined in that specification.
+It uses the python framework - `Flask <http://flask.pocoo.org/>`_.  *medallion*
+depends on back-end "plugins" which handle the persistence of the TAXII data and
+metadata. The TAXII specification is agnostic to what type of data a TAXII
+server stores, but this will usually be STIX 2 content.
 
-*medallion* has been designed to be a simple front-end REST server providing access to the endpoints defined in that specification.
-It uses the python framework - `Flask <http://flask.pocoo.org/>`_.  *medallion* depends on back-end "plugins" which handle the
-persistance of the TAXII data and metadata.
-The TAXII specification is agnostic to what type of data a TAXII server stores, but this will usually be STIX 2 content.
+Two back-end plugins are provided with *medallion*: the Memory back-end and the
+MongoDB back-end.  The Memory back-end persists data "in memory".  It is
+initialized using a json file that contains TAXII data and metadata.
+It is possible to save the current state of the in memory store, but this
+back-end is really intended only for testing purposes.  The MongoDB backend is
+somewhat more robust and makes use of a MongoDB server, installed independently.
+The MongoDB back-end can only be used if the pymongo python package is
+installed. An error message will result if it is used without that package.
 
-Two back-end plugins are provided with *medallion*:
-the Memory back-end and the MongoDB back-end.  The Memory back-end persists data "in memory".  It is initalized using a json file that contains TAXII data
-and metadata.
-It is possible to save the current state of the in memory store, but this back-end is really intended only for testing purposes.  The MongoDB backend is
-somewhat more robust
-and makes use of a MongoDB server, installed independently.  The MongoDB back-end can only be used if the pymongo python package is installed.  An error
-message will
-result if it is used without that package.
 
 Installation
 ============
 
-The easiest way to install *medallion* is with pip:
-
-::
+The easiest way to install *medallion* is with pip::
 
   $ pip install medallion
 
@@ -49,11 +43,7 @@ The easiest way to install *medallion* is with pip:
 Usage
 =====
 
-
-
-To run *medallion*:
-
-::
+To run *medallion*::
 
     $ python medallion/scripts/run.py <config-file>
 
@@ -82,10 +72,13 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
 
 *Note: A Mongo DB should be available at some URL when using the Mongo DB back-end*
 
-A description of the Mongo DB structure expected by the mongo db backend code is described in `mongodb_schema.rst <https://github.com/oasis-open/cti-taxii-server/blob/mongo_db_design/mongodb_schema.rst>`_
+A description of the Mongo DB structure expected by the mongo db backend code is
+described in `the documentation
+<https://medallion.readthedocs.io/en/latest/mongodb_schema.html>`_.
 
-As required by the TAXII specification, *medallion* supports BasicHTTP authorization.  However, the user names and passwords are currently
-stored in the <config_file> in plain text.
+As required by the TAXII specification, *medallion* supports HTTP Basic
+authorization.  However, the user names and passwords are currently stored in
+the <config_file> in plain text.
 
 Here is an example:
 
@@ -97,7 +90,8 @@ Here is an example:
         "user2": "Password2"
     }
 
-The authorization is enabled using the python package `flask_httpauth <https://flask-httpauth.readthedocs.io>`_.
+The authorization is enabled using the python package
+`flask_httpauth <https://flask-httpauth.readthedocs.io>`_.
 Authorization could be enhanced by changing the method "decorated" using
 @auth.get_password in medallion/__init__.py
 

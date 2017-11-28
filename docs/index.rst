@@ -6,10 +6,13 @@
 Welcome to medallion's documentation!
 =====================================
 
+*Medallion* is a minimal implementation of a TAXII 2.0 Server in Python.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   compatibility
    mongodb_schema
 
 
