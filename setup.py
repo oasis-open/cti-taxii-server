@@ -63,5 +63,8 @@ setup(
             'pytest-cov',
             'tox',
         ],
+        'docs': [
+            'sphinx',
+        ],
     }
 )
