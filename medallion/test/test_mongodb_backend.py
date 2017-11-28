@@ -38,7 +38,7 @@ def backend():
 
 def test_server_discovery(backend):
     server_info = backend.server_discovery()
-    assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+    assert server_info["title"] == "Some TAXII Server"
 
 
 def test_get_api_root_information(backend):
@@ -145,7 +145,7 @@ def test_client_object_versioning(backend):
                                        {"match[id]": new_id},
                                        ("id", "type", "version"))
     assert mani[0]["id"] == new_id
-    assert mani[0]["versions"][0] == new_bundle["objects"][0]["modified"]
+    assert filter(lambda obj: obj["id"] == new_bundle["objects"][0]["modified"], mani[0]["versions"]) is not None
 
 
 def test_added_after_filtering(backend):

@@ -49,8 +49,8 @@ class MongoDBFilter(BasicFilter):
                 new_results = []
                 for obj in results:
                     info = manifest_info["mongodb_collection"].find_one({"id": obj["id"],
-                                                                         "collection_id":
-                                                                             manifest_info["collection_id"]})
+                                                                         "_collection_id":
+                                                                             manifest_info["_collection_id"]})
                     if info:
                         added_date_timestamp = common.convert_to_stix_datetime(info["date_added"])
                         if added_date_timestamp > added_after_timestamp:

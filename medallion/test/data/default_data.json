@@ -56,7 +56,7 @@
                 "total_count": 4,
                 "success_count": 1,
                 "successes": [
-                    "indicator--c410e480-e42b-47d1-9476-85307c12bcbf"
+                    "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade"
                 ],
                 "failure_count": 1,
                 "failures": [
@@ -152,20 +152,6 @@
                             "application/vnd.oasis.stix+json; version=2.0"
                         ]
                     }
-                ],
-                "responses": [
-                    {
-                        "id": "2d086da7-4bdc-4f91-900e-d77486753710",
-                        "status": "pending",
-                        "request_timestamp": "2016-11-02T12:34:34.12345Z",
-                        "total_count": 4,
-                        "success_count": 1,
-                        "successes": [
-                            "indicator--c410e480-e42b-47d1-9476-85307c12b8bf"
-                        ],
-                        "failure_count": 1,
-                        "pending_count": 2
-                    }
                 ]
             },
             {
@@ -216,8 +202,6 @@
                             "application/vnd.oasis.stix+json; version=2.0"
                         ]
                     }
-                ],
-                "responses": [
                 ]
             }
         ]

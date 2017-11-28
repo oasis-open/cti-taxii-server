@@ -1,51 +1,27 @@
-
-from pymongo import MongoClient
+from medallion.test.generic_initialize_mongodb import (add_api_root,
+                                                       build_new_mongo_databases_and_collection,
+                                                       connect_to_client)
 
 
 def reset_db():
-    client = MongoClient('mongodb://localhost:27017/')
+    client = connect_to_client()
     client.drop_database("discovery_database")
-    db = client["discovery_database"]
-    collection = db["discovery_information"]
-    collection.insert_one({
+    db = build_new_mongo_databases_and_collection(client)
+
+    db["discovery_information"].insert_one({
              "title": "Some TAXII Server",
              "description": "This TAXII Server contains a listing of",
              "contact": "string containing contact information",
-             "default": "http://localhost:5000/api2/",
-             "api_roots": [
-                 "http://localhost:5000/api1/",
-                 "http://localhost:5000/api2/",
-                 "http://localhost:5000/trustgroup1/"
-             ]
+             "api_roots": []
          })
-    api_root_info = db["api_root_info"]
-    api_root_info.insert_one({
-                 "title": "General STIX 2.0 Collections",
-                 "description": "A repo for general STIX data.",
-                 "versions": [
-                     "taxii-2.0"
-                 ],
-                 "max_content_length": 9765625
-             })
-    # db["status"]
-    # db["manifests"]
-    # db["collections"]
     client.drop_database("trustgroup1")
-    db = client["trustgroup1"]
-    api_root_info = db["api_root_info"]
-    api_root_info.insert_one({"title": "Malware Research Group",
-                              "description": "A trust group setup for malware researchers",
-                              "versions": [
-                                    "taxii-2.0"
-                              ],
-                              "max_content_length": 9765625})
-
-    status = db["status"]
-    objects = db["objects"]
-    manifests = db["manifests"]
-    collections = db["collections"]
-
-    status.insert_many([
+    api_root_db = add_api_root(client,
+                               url="http://localhost:5000/trustgroup1/",
+                               title="Malware Research Group",
+                               description="A trust group setup for malware researchers",
+                               max_content_length=9765625,
+                               default=True)
+    api_root_db["status"].insert_many([
                  {
                      "id": "2d086da7-4bdc-4f91-900e-d77486753710",
                      "status": "pending",
@@ -53,7 +29,7 @@ def reset_db():
                      "total_count": 4,
                      "success_count": 1,
                      "successes": [
-                         "indicator--c410e480-e42b-47d1-9476-85307c12bcbf"
+                         "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade"
                      ],
                      "failure_count": 1,
                      "failures": [
@@ -82,7 +58,7 @@ def reset_db():
                  }
              ])
 
-    manifests.insert_many([
+    api_root_db["manifests"].insert_many([
                         {
                             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
                             "date_added": "2016-11-01T03:04:05Z",
@@ -92,7 +68,7 @@ def reset_db():
                             "media_types": [
                                 "application/vnd.oasis.stix+json; version=2.0"
                             ],
-                            'collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116'
+                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116'
                         },
                         {
                             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
@@ -103,11 +79,11 @@ def reset_db():
                             "media_types": [
                                 "application/vnd.oasis.stix+json; version=2.0"
                             ],
-                            'collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116'
+                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116'
                         }
                     ])
 
-    collections.insert_one({
+    api_root_db["collections"].insert_one({
                      "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
                      "title": "High Value Indicator Collection",
                      "description": "This data collection is for collecting high value IOCs",
@@ -117,7 +93,7 @@ def reset_db():
                          "application/vnd.oasis.stix+json; version=2.0"
                      ]})
 
-    collections.insert_one({
+    api_root_db["collections"].insert_one({
                                 "id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
                                 "title": "Indicators from the past 24-hours",
                                 "description": "This data collection is for collecting current IOCs",
@@ -128,7 +104,7 @@ def reset_db():
                                 ]
                            })
 
-    objects.insert_many([{
+    api_root_db["objects"].insert_many([{
                              "created": "2016-11-03T12:30:59.000Z",
                              "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
                              "labels": [
@@ -139,7 +115,7 @@ def reset_db():
                              "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
                              "type": "indicator",
                              "valid_from": "2016-11-03T12:30:59.000Z",
-                             "collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
+                             "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
                          },
                          {
                              "created": "2016-11-03T12:30:59.000Z",
@@ -153,7 +129,7 @@ def reset_db():
                              "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
                              "type": "indicator",
                              "valid_from": "2017-01-27T13:49:53.935382Z",
-                             "collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
+                             "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
                          },
                          {
                             "created": "2017-01-27T13:49:53.997Z",
@@ -165,7 +141,7 @@ def reset_db():
                             "modified": "2017-01-27T13:49:53.997Z",
                             "name": "Poison Ivy",
                             "type": "malware",
-                            "collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+                            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
                          },
                          {
                             "created": "2014-05-08T09:00:00.000Z",
@@ -178,7 +154,7 @@ def reset_db():
                             "pattern": "[file:hashes.'SHA-256' = 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c']",
                             "type": "indicator",
                             "valid_from": "2014-05-08T09:00:00.000000Z",
-                            "collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+                            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
                          },
                          {
                             "created": "2014-05-08T09:00:00.000Z",
@@ -188,19 +164,13 @@ def reset_db():
                             "source_ref": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
                             "target_ref": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
                             "type": "relationship",
-                            "collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+                            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
                          }
                          ])
 
-    objects.find_one({"id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f"})
     client.drop_database("api2")
-    db = client["api2"]
-    api_root_info = db["api_root_info"]
-    api_root_info.insert_one({
-                 "title": "STIX 2.0 Indicator Collections",
-                 "description": "A repo for general STIX data.",
-                 "versions": [
-                     "taxii-2.0"
-                 ],
-                 "max_content_length": 9765625
-             })
+    api_root_db = add_api_root(client,
+                               url="http://localhost:5000/api2/",
+                               title="STIX 2.0 Indicator Collections",
+                               description="A repo for general STIX data.",
+                               max_content_length=9765625)
