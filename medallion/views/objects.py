@@ -1,6 +1,7 @@
+import json
+
 import flask
 from flask import Blueprint, Response, abort, request
-import json
 
 from medallion import auth, get_backend
 from medallion.utils import common
