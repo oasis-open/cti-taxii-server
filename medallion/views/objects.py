@@ -1,3 +1,5 @@
+import json
+
 import flask
 from flask import Blueprint, Response, abort, request
 
@@ -38,7 +40,14 @@ def get_or_add_objects(api_root, id_):
         if permission_to_write(api_root, id_):
             # can't I get this from the request itself?
             request_time = common.format_datetime(common.get_timestamp())
-            status = get_backend().add_objects(api_root, id_, request.get_json(force=True), request_time)
+            # for some strange reason, request.get_json() is returning
+            # a string, hence the call to json.loads() as a workaround
+            # hack...according to preliminary research, Flash only
+            # loads json when the post mime type is json, not
+            # json+stix...Cf.
+            # https://stackoverflow.com/questions/14112336/flask-request-and-application-json-content-type
+            #
+            status = get_backend().add_objects(api_root, id_, json.loads(request.get_json(force=True)), request_time)
             return Response(response=flask.json.dumps(status),
                             status=202,
                             mimetype=MEDIA_TYPE_TAXII_V20)
