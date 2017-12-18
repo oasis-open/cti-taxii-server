@@ -33,7 +33,7 @@ API_OBJECTS_2 = {
 
 @pytest.fixture(scope="module")
 def backend(data_file=DATA_FILE):
-    init({"backend":{"type": "memory", "data_file": data_file}, "users":[]})
+    init({"backend": {"type": "memory", "data_file": data_file}, "users": []})
     return get_backend()
 
 
@@ -171,7 +171,7 @@ def test_saving_data_file(backend):
         backend.save_data_to_file(f.name)
         assert os.path.isfile(f.name)
 
-        init({"backend":{"type": "memory", "data_file": f.name},"users":[]})
+        init({"backend": {"type": "memory", "data_file": f.name}, "users": []})
         backend2 = get_backend()
         obj = backend2.get_object("trustgroup1", "91a7b528-80eb-42ed-a74d-c6fbd5a26116", new_id, None, ("version",))
         assert obj["objects"][0]["id"] == new_id

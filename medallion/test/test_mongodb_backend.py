@@ -32,7 +32,7 @@ API_OBJECTS_2 = {
 @pytest.fixture(scope="module")
 def backend():
     reset_db()
-    init({"backend":{"type": "mongodb", "url": "mongodb://localhost:27017/"},"users":[]})
+    init({"backend": {"type": "mongodb", "url": "mongodb://localhost:27017/"}, "users": []})
     return get_backend()
 
 
