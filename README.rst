@@ -56,18 +56,22 @@ To use the Memory back-end plug, include the following in the <config-file>:
 
 .. code:: python
 
-    "backend": {
-        "type": "memory",
-        "data_file": <path to json file with initial data>
+    {
+        "backend": {
+            "type": "memory",
+            "data_file": <path to json file with initial data>
+        }
     }
 
 To use the Mongo DB back-end plug, include the following in the <config-file>:
 
 .. code:: python
 
-    "backend": {
-        "type": "mongodb",
-        "url": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+    {
+        "backend": {
+            "type": "mongodb",
+            "url": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+        }
     }
 
 *Note: A Mongo DB should be available at some URL when using the Mongo DB back-end*
