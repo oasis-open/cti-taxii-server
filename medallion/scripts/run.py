@@ -1,9 +1,8 @@
 import json
-import sys
 import os.path
 import sys
 
-from flask import Flask, url_for, render_template
+from flask import Flask
 from medallion import (init, register_blueprints)
 
 
