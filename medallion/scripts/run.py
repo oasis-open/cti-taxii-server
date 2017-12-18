@@ -4,8 +4,9 @@ import os.path
 import sys
 
 from flask import Flask, url_for, render_template
+from medallion import (init, register_blueprints)
 
-from medallion import (init,register_blueprints)
+
 def main():
 
     if len(sys.argv) < 2:
@@ -27,7 +28,7 @@ def main():
     application_instance = Flask(__name__)
 
     register_blueprints(application_instance)
-    
+
     application_instance.run(debug=True)
 
 

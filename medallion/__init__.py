@@ -4,8 +4,10 @@ import logging
 auth = None
 _CONFIG = None
 
+
 def get_config():
     return _CONFIG
+
 
 def init(config):
     logging.basicConfig(level=10)
@@ -24,23 +26,26 @@ def init(config):
     global auth
     if "auth" in config:
         try:
-            auth = importlib.import_module( config["auth"] )
-        except:
+            auth = importlib.import_module(config["auth"])
+
+        except Exception:
             raise ValueError("Unknown authentication type {0} for TAXII server ".format(config["auth"]))
+
     else:
         from flask_httpauth import HTTPBasicAuth
         auth = HTTPBasicAuth()
 
-	if "users" in config:
+    if "users" in config:
 
-            @auth.get_password
-            def get_pwd(username):
-                users = config["users"]
-                if username in users:
-                    return users.get(username)
-                return None
-        else:
-            raise ValueError("No \"users\" entry found in configuration file")
+        @auth.get_password
+        def get_pwd(username):
+            users = config["users"]
+            if username in users:
+                return users.get(username)
+            return None
+
+    else:
+        raise ValueError("No \"users\" entry found in configuration file")
 
     global _BACKEND
 
@@ -73,10 +78,13 @@ def init(config):
     else:
         raise ValueError("Unknown backend {0} for TAXII server ".format(backend_config["type"]))
 
+
 _BACKEND = None
+
 
 def get_backend():
     return _BACKEND
+
 
 def register_blueprints(application_instance):
     logging.debug("Registering blueprints")
