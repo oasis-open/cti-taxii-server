@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from medallion import get_backend, init_backend
+from medallion import get_backend, init
 from medallion.test.data.initialize_mongodb import reset_db
 from medallion.utils import common
 

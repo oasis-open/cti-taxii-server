@@ -6,7 +6,7 @@ import uuid
 
 import pytest
 
-from medallion import get_backend, init_backend
+from medallion import get_backend, init
 from medallion.utils import common
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "default_data.json")

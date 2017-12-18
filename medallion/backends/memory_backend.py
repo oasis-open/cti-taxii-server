@@ -19,7 +19,12 @@ class MemoryBackend(Backend):
         self.data = {}
 
     def load_data_from_file(self, filename):
-        self.data = json.load(StringIO(open(filename, "r").read()))
+        import os.path
+        if os.path.isfile(filename) and os.path.getsize(filename) > 0:
+            try:
+                self.data = json.load(StringIO(open(filename, "r").read()))
+            except Exception:
+                raise ValueError("File " + filename + " contains invalid data")
 
     def save_data_to_file(self, filename):
         with open(filename, 'w') as outfile:
