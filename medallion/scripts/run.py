@@ -3,7 +3,8 @@ import os.path
 import sys
 
 from flask import Flask
-from medallion import (init, register_blueprints)
+
+from medallion import init, register_blueprints
 
 
 def main():
