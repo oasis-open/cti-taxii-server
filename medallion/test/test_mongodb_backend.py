@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from medallion import get_backend, init_backend
+from medallion import get_backend, init
 from medallion.test.data.initialize_mongodb import reset_db
 from medallion.utils import common
 
@@ -32,7 +32,7 @@ API_OBJECTS_2 = {
 @pytest.fixture(scope="module")
 def backend():
     reset_db()
-    init_backend({"type": "mongodb", "url": "mongodb://localhost:27017/"})
+    init({"backend": {"type": "mongodb", "url": "mongodb://localhost:27017/"}, "users": []})
     return get_backend()
 
 
