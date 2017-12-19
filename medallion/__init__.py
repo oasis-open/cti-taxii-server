@@ -1,8 +1,25 @@
 import importlib
 import logging
+from functools import wraps
 
-auth = None
 _CONFIG = None
+
+
+# This is a dummy implementation of Flask Auth that always returns false
+class DummyAuth:
+
+    def login_required(self, f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            return f(*args, **kwargs)
+        return decorated_function
+
+    def get_password():
+        return None
+
+
+# Set the default implementation to the dummy auth
+auth = DummyAuth()
 
 
 def get_config():
@@ -23,29 +40,21 @@ def init(config):
     global _CONFIG
     _CONFIG = config
 
+    # If auth is not present, or it is set to true, then require it (default is required)
     global auth
-    if "auth" in config:
-        try:
-            auth = importlib.import_module(config["auth"])
-
-        except Exception:
-            raise ValueError("Unknown authentication type {0} for TAXII server ".format(config["auth"]))
-
-    else:
+    if "auth" not in config or config["auth"]:
         from flask_httpauth import HTTPBasicAuth
         auth = HTTPBasicAuth()
 
-    if "users" in config:
-
-        @auth.get_password
-        def get_pwd(username):
-            users = config["users"]
-            if username in users:
-                return users.get(username)
-            return None
-
-    else:
-        raise ValueError("No \"users\" entry found in configuration file")
+        if "users" in config:
+            @auth.get_password
+            def get_pwd(username):
+                users = config["users"]
+                if username in users:
+                    return users.get(username)
+                return None
+        else:
+            raise ValueError("No \"users\" entry found in configuration file")
 
     global _BACKEND
 
@@ -70,7 +79,6 @@ def init(config):
         if "module_class" not in backend_config:
             raise ValueError("No module_class parameter found in backend_config")
 
-        import importlib
         mod = importlib.import_module(backend_config["module"])
         class_ = getattr(mod, backend_config["module_class"])
         _BACKEND = class_(backend_config)
