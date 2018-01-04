@@ -42,7 +42,7 @@ def init(config):
 
     # If auth is not present, or it is set to true, then require it (default is required)
     global auth
-    if "auth" not in config or config["auth"]:
+    if (not("auth" in config)) or config["auth"]:
         from flask_httpauth import HTTPBasicAuth
         auth = HTTPBasicAuth()
 
@@ -63,21 +63,24 @@ def init(config):
         raise ValueError("No backend type for the TAXII server was provided")
 
     if backend_config["type"] == "memory":
+        logging.debug("Instantiating memory backend")
         from medallion.backends.memory_backend import MemoryBackend
         _BACKEND = MemoryBackend()
         _BACKEND.load_data_from_file(backend_config["data_file"])
     elif backend_config["type"] == "mongodb":
+        logging.debug("Instantiating mongo backend")
         try:
             from medallion.backends.mongodb_backend import MongoBackend
         except ImportError:
             raise ImportError("The pymongo package is not available")
         _BACKEND = MongoBackend(backend_config["url"])
     elif backend_config["type"] == "module":
+        logging.debug("Instantiating memory backend")
         if "module" not in backend_config:
-            raise ValueError("No module parameter found in backend_config")
+            raise ValueError("No module parameter found in backend")
 
         if "module_class" not in backend_config:
-            raise ValueError("No module_class parameter found in backend_config")
+            raise ValueError("No module_class parameter found in backend")
 
         mod = importlib.import_module(backend_config["module"])
         class_ = getattr(mod, backend_config["module_class"])
