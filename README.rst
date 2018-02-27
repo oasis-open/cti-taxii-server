@@ -97,6 +97,24 @@ Authorization could be enhanced by changing the method "decorated" using
 
 We welcome contributions for other back-end plugins.
 
+Docker
+======
+
+We also provide a Docker image to make it easier to run *medallion*::
+
+    $ docker build . -t medallion
+
+If operating behind a proxy, add the following option (replacing `<proxy>` with
+your proxy location and port):
+`--build-arg https_proxy=<proxy>`.
+
+Then run the image::
+
+    $ docker run --rm -p 5000:5000 -v <directory>:/var/taxii medallion
+
+Replace `<directory` with the full path to the directory containing your
+medallion configuration.
+
 Governance
 ==========
 
