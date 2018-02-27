@@ -15,7 +15,7 @@ def main():
 
     init_backend(get_config()['backend'])
 
-    application_instance.run(debug=True)
+    application_instance.run(host="0.0.0.0", debug=True)
 
 
 if __name__ == '__main__':
