@@ -1,6 +1,8 @@
 FROM python:alpine3.6
 
-RUN pip install medallion
+COPY . /taxii
+WORKDIR /taxii
+RUN pip install .
 
 WORKDIR /var/taxii
 EXPOSE 5000
