@@ -181,6 +181,10 @@ Current Maintainers of this Open Repository
 -  `Rich Piazza <mailto:rpiazza@mitre.org>`__; GitHub ID:
    https://github.com/rpiazza/; WWW: `MITRE
    Corporation <https://www.mitre.org/>`__
+-  `Emmanuelle Vargas-Gonzalez <mailto:emmanuelle@mitre.org>`__; GitHub ID:
+   https://github.com/emmanvg/; WWW: `MITRE
+   Corporation <https://www.mitre.org/>`__
+
 
 About OASIS Open Repositories
 -----------------------------
