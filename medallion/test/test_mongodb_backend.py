@@ -72,7 +72,7 @@ def test_get_objects(backend):
                                "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
                                {"match[type]": "relationship"},
                                ("id", "type", "version"))
-    assert filter(lambda obj: obj["id"] == "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463", objs["objects"]) is not None
+    assert any(obj["id"] == "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463" for obj in objs["objects"])
 
 
 def test_add_objects(backend):
@@ -145,7 +145,7 @@ def test_client_object_versioning(backend):
                                        {"match[id]": new_id},
                                        ("id", "type", "version"))
     assert mani[0]["id"] == new_id
-    assert filter(lambda obj: obj["id"] == new_bundle["objects"][0]["modified"], mani[0]["versions"]) is not None
+    assert any(version == new_bundle["objects"][0]["modified"] for version in mani[0]["versions"])
 
 
 def test_added_after_filtering(backend):
@@ -153,4 +153,4 @@ def test_added_after_filtering(backend):
                                  "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
                                  {"added_after": "2016-11-01T03:04:05Z"},
                                  ("id", "type", "version"))
-    assert filter(lambda obj: obj["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111", bundle["objects"]) is not None
+    assert any(obj["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111" for obj in bundle["objects"])
