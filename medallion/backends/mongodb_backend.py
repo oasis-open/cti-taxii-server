@@ -29,7 +29,7 @@ class MongoBackend(Backend):
         if entry:
             if "modified" in new_obj:
                 entry["versions"].append(new_obj["modified"])
-                manifest_info.update_one({"collection_id": _collection_id, "id": new_obj["id"]}, {"$set": {"versions": entry["versions"]}})
+                manifest_info.update_one({"_collection_id": _collection_id, "id": new_obj["id"]}, {"$set": {"versions": sorted(entry["versions"], reverse=True)}})
             # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
         else:
             version = new_obj.get('modified', new_obj['created'])
