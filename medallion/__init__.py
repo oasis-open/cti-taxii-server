@@ -2,6 +2,7 @@ from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 
 from medallion.backends.memory_backend import MemoryBackend
+from medallion.version import __version__  # noqa
 
 application_instance = Flask(__name__)
 auth = HTTPBasicAuth()
