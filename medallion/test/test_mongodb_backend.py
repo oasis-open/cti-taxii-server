@@ -2,11 +2,13 @@ import base64
 import copy
 import json
 import time
-import six
 import unittest
 import uuid
 
-from medallion import application_instance, init_backend, set_config, register_blueprints
+import six
+
+from medallion import (application_instance, init_backend, register_blueprints,
+                       set_config)
 from medallion.test.data.initialize_mongodb import reset_db
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20

@@ -2,14 +2,15 @@ import base64
 import copy
 import json
 import os.path
-import six
 import tempfile
 import time
 import unittest
 import uuid
 
+import six
 
-from medallion import application_instance, get_backend, init_backend, register_blueprints, set_config
+from medallion import (application_instance, get_backend, init_backend,
+                       register_blueprints, set_config)
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 

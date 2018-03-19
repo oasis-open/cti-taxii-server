@@ -1,5 +1,3 @@
-import logging
-
 from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 
