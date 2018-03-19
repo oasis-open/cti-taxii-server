@@ -37,12 +37,10 @@ def build_new_mongo_databases_and_collection(client):
 
     """
     db = client["discovery_database"]
-    db["discovery_information"]
-    db["api_root_info"]
     return db
 
 
-def add_api_root(client, url=None, title=None, description=None, versions=["taxii-2.0"], max_content_length=0, default=False):
+def add_api_root(client, url=None, title=None, description=None, versions=None, max_content_length=0, default=False):
     """
             Fill:
 
@@ -71,6 +69,8 @@ def add_api_root(client, url=None, title=None, description=None, versions=["taxi
 
 
     """
+    if not versions:
+        versions = ["taxii-2.0"]
     db = client["discovery_database"]
     url_parts = url.split("/")
     name = url_parts[-2]
@@ -87,8 +87,4 @@ def add_api_root(client, url=None, title=None, description=None, versions=["taxi
         "versions": versions,
         "max_content_length": max_content_length})
     api_root_db = client[name]
-    api_root_db["status"]
-    api_root_db["objects"]
-    api_root_db["manifests"]
-    api_root_db["collections"]
     return api_root_db
