@@ -49,7 +49,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
 
     @staticmethod
     def load_json_response(response):
-        return json.load(six.BytesIO(response))
+        if isinstance(response, bytes):
+            response = response.decode()
+        io = six.StringIO(response)
+        return json.load(io)
 
     def test_server_discovery(self):
         r = self.app.get("/taxii/", headers=self.auth)
