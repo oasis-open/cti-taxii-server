@@ -173,7 +173,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         manifests = self.load_json_response(r_get.data)
         assert manifests["objects"][0]["id"] == new_id
-        # ------------- BEGIN: end manifest section ------------- #
+        # ------------- END: end manifest section ------------- #
 
     def test_client_object_versioning(self):
         new_id = "indicator--%s" % uuid.uuid4()
