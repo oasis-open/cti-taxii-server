@@ -103,12 +103,23 @@ def convert_to_stix_datetime(timestamp_string):
         return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
 
 
-def generate_status(request_time, succeeded, failed, pending, successes_ids=None):
-    # assume requests are always complete
-    return {"id": "%s" % uuid.uuid4(),
-            "status": "complete",
-            "request_timestamp": request_time,
-            "total_count": succeeded + failed + pending,
-            "success_count": succeeded,
-            "failure_count": failed,
-            "pending_count": pending}
+def generate_status(request_time, status, succeeded, failed, pending,
+                    successes_ids=None, failures=None, pendings=None):
+    status = {
+        "id": "%s" % uuid.uuid4(),
+        "status": status,
+        "request_timestamp": request_time,
+        "total_count": succeeded + failed + pending,
+        "success_count": succeeded,
+        "failure_count": failed,
+        "pending_count": pending
+    }
+
+    if successes_ids:
+        status["successes"] = successes_ids
+    if failures:
+        status["failures"] = failures
+    if pendings:
+        status["pendings"] = pendings
+
+    return status
