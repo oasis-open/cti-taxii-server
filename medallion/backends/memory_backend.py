@@ -15,8 +15,11 @@ class MemoryBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self):
-        self.data = {}
+    def __init__(self, filename=None):
+        if filename:
+            self.load_data_from_file(filename)
+        else:
+            self.data = {}
 
     def load_data_from_file(self, filename):
         self.data = json.load(StringIO(open(filename, "r").read()))
@@ -47,7 +50,9 @@ class MemoryBackend(Backend):
                     if new_obj["id"] == entry["id"]:
                         if "modified" in new_obj:
                             entry["versions"].append(new_obj["modified"])
-                        # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
+                        # If the new_obj is there, and it has no modified
+                        # property, then it is immutable, and there is nothing
+                        # to do.
                         break
                 else:
                     if "modified" in new_obj:
