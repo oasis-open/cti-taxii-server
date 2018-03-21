@@ -1,3 +1,5 @@
+import logging
+
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
@@ -8,18 +10,21 @@ from medallion.utils.common import (format_datetime, generate_status,
 
 from .base import Backend
 
+# Module-level logger
+log = logging.getLogger(__name__)
+
 
 class MongoBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, uri):
+    def __init__(self, uri=None):
         try:
             self.client = MongoClient(uri)
             # The ismaster command is cheap and does not require auth.
             self.client.admin.command('ismaster')
         except ConnectionFailure:
-            print("Mongo DB not available")
+            log.warning("Unable to establish a connection to MongoDB service")
 
     def _update_manifest(self, new_obj, api_root, _collection_id):
         # TODO: Handle if mongodb is not available
