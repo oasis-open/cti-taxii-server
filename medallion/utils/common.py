@@ -11,18 +11,17 @@ def generate_stix20_id(sdo_type):
                                        uuid=six.text_type(uuid.uuid4()))
 
 
-def id_lookup(data, id_):
-    pass
+def create_bundle(o):
+    return dict(id=generate_stix20_id("bundle"),
+                objects=o,
+                spec_version="2.0",
+                type="bundle")
 
 
 def get(data, key):
     for ancestors, item in iterpath(data):
         if key in ancestors:
             return item
-
-
-def search_depth(data, key):
-    pass
 
 
 def iterpath(obj, path=None):
@@ -109,7 +108,7 @@ def generate_status(request_time, succeeded, failed, pending, successes_ids=None
     return {"id": "%s" % uuid.uuid4(),
             "status": "complete",
             "request_timestamp": request_time,
-            "total_count": succeeded + failed,
+            "total_count": succeeded + failed + pending,
             "success_count": succeeded,
             "failure_count": failed,
             "pending_count": pending}
