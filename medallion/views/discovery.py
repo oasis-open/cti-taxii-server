@@ -28,7 +28,7 @@ def get_api_root_information(api_root):
     abort(404)
 
 
-@mod.route("/<string:api_root>/status/<string:id_>", methods=["GET"])
+@mod.route("/<string:api_root>/status/<string:id_>/", methods=["GET"])
 @auth.login_required
 def get_status(api_root, id_):
     # TODO: Check if user has access to objects in collection.

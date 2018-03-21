@@ -2,7 +2,7 @@ import json
 import sys
 
 from medallion import (application_instance, get_config, init_backend,
-                       set_config)
+                       register_blueprints, set_config)
 
 
 def main():
@@ -14,6 +14,7 @@ def main():
         set_config(json.load(f))
 
     init_backend(get_config()['backend'])
+    register_blueprints(application_instance)
 
     application_instance.run(host="0.0.0.0", debug=True)
 

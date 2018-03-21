@@ -2,6 +2,7 @@ from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 
 from medallion.backends.memory_backend import MemoryBackend
+from medallion.version import __version__  # noqa
 
 application_instance = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -56,16 +57,13 @@ def get_pwd(username):
     return None
 
 
-def register_blueprints():
+def register_blueprints(flask_application_instance):
     from medallion.views import collections
     from medallion.views import discovery
     from medallion.views import manifest
     from medallion.views import objects
 
-    application_instance.register_blueprint(collections.mod)
-    application_instance.register_blueprint(discovery.mod)
-    application_instance.register_blueprint(manifest.mod)
-    application_instance.register_blueprint(objects.mod)
-
-
-register_blueprints()
+    flask_application_instance.register_blueprint(collections.mod)
+    flask_application_instance.register_blueprint(discovery.mod)
+    flask_application_instance.register_blueprint(manifest.mod)
+    flask_application_instance.register_blueprint(objects.mod)
