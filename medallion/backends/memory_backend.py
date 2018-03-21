@@ -4,9 +4,8 @@ import json
 from six import StringIO
 
 from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.builder import create_bundle
-from medallion.utils.common import (format_datetime, generate_status,
-                                    get_timestamp, iterpath)
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, get_timestamp, iterpath)
 
 from .base import Backend
 
@@ -25,11 +24,11 @@ class MemoryBackend(Backend):
         self.data = json.load(StringIO(open(filename, "r").read()))
 
     def save_data_to_file(self, filename):
-        with open(filename, 'w') as outfile:
+        with open(filename, "w") as outfile:
             json.dump(self.data,
                       outfile,
                       indent=4,
-                      separators=(',', ': '),
+                      separators=(",", ": "),
                       sort_keys=True)
 
     def _get(self, key):
@@ -111,7 +110,11 @@ class MemoryBackend(Backend):
                     manifest = collection.get("manifest", [])
                     if filter_args:
                         full_filter = BasicFilter(filter_args)
-                        manifest = full_filter.process_filter(manifest, allowed_filters, None)
+                        manifest = full_filter.process_filter(
+                            manifest,
+                            allowed_filters,
+                            None
+                        )
                     return manifest
         return None
 
@@ -147,9 +150,13 @@ class MemoryBackend(Backend):
 
                     if filter_args:
                         full_filter = BasicFilter(filter_args)
-                        objs.extend(full_filter.process_filter(collection.get("objects", []),
-                                                               allowed_filters,
-                                                               collection.get("manifest", [])))
+                        objs.extend(
+                            full_filter.process_filter(
+                                collection.get("objects", []),
+                                allowed_filters,
+                                collection.get("manifest", [])
+                            )
+                        )
                     else:
                         objs.extend(collection.get("objects", []))
             return create_bundle(objs)
@@ -160,19 +167,22 @@ class MemoryBackend(Backend):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
+            failed = 0
+            succeeded = 0
+            pending = 0
+            successes = []
+            failures = []
 
             for collection in collections:
                 if "id" in collection and id_ == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
-                    failed = 0
-                    succeeded = 0
                     for new_obj in objs["objects"]:
                         id_and_version_already_present = False
-                        if new_obj['id'] in collection["objects"]:
-                            current_obj = collection["objects"][new_obj['id']]
+                        if new_obj["id"] in collection["objects"]:
+                            current_obj = collection["objects"][new_obj["id"]]
                             if "modified" in new_obj:
-                                if new_obj['modified'] == current_obj['modified']:
+                                if new_obj["modified"] == current_obj["modified"]:
                                     id_and_version_already_present = True
                             else:
                                 # There is no modified field, so this object is immutable
@@ -180,11 +190,15 @@ class MemoryBackend(Backend):
                         if not id_and_version_already_present:
                             collection["objects"].append(new_obj)
                             self._update_manifest(new_obj, api_root, collection["id"])
+                            successes.append(new_obj["id"])
                             succeeded += 1
                         else:
+                            failures.append({"id": new_obj["id"],
+                                             "message": "Unable to process object"})
                             failed += 1
 
-            status = generate_status(request_time, succeeded, failed, 0)
+            status = generate_status(request_time, "complete", succeeded,
+                                     failed, pending, successes_ids=successes, failures=failures)
             api_info["status"].append(status)
             return status
 
@@ -202,9 +216,11 @@ class MemoryBackend(Backend):
                             objs.append(obj)
                 if filter_args:
                     full_filter = BasicFilter(filter_args)
-                    objs = full_filter.process_filter(objs,
-                                                      allowed_filters,
-                                                      collection.get("manifest", []))
+                    objs = full_filter.process_filter(
+                        objs,
+                        allowed_filters,
+                        collection.get("manifest", [])
+                    )
             return create_bundle(objs)
 
         return None

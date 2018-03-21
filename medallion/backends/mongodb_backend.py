@@ -4,9 +4,8 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 from medallion.filters.mongodb_filter import MongoDBFilter
-from medallion.utils.builder import create_bundle
-from medallion.utils.common import (format_datetime, generate_status,
-                                    get_timestamp)
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, get_timestamp)
 
 from .base import Backend
 
@@ -126,20 +125,28 @@ class MongoBackend(Backend):
         objects = api_root_db["objects"]
         failed = 0
         succeeded = 0
+        pending = 0
+        successes = []
+        failures = []
+
         for new_obj in objs["objects"]:
             mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
             if "modified" in new_obj:
                 mongo_query["modified"] = new_obj["modified"]
             existing_entry = objects.find_one(mongo_query)
             if existing_entry:
+                failures.append({"id": new_obj["id"],
+                                 "message": "Unable to process object"})
                 failed += 1
             else:
                 new_obj.update({"_collection_id": collection_id})
                 objects.insert_one(new_obj)
                 self._update_manifest(new_obj, api_root, collection_id)
+                successes.append(new_obj["id"])
                 succeeded += 1
 
-        status = generate_status(request_time, succeeded, failed, 0)
+        status = generate_status(request_time, "complete", succeeded, failed,
+                                 pending, successes_ids=successes, failures=failures)
         api_root_db["status"].insert_one(status)
         del status["_id"]
         return status
@@ -149,9 +156,11 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(filter_args, {"_collection_id": id_, "id": object_id}, allowed_filters)
-        objects_found = full_filter.process_filter(objects,
-                                                   allowed_filters,
-                                                   {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_})
+        objects_found = full_filter.process_filter(
+            objects,
+            allowed_filters,
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
+        )
         if objects_found:
             for obj in objects_found:
                 del obj["_id"]
