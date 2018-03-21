@@ -1,8 +1,17 @@
+import logging
+
 from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 
-from medallion.backends.memory_backend import MemoryBackend
 from medallion.version import __version__  # noqa
+
+# Console Handler for medallion messages
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter("[%(name)s] [%(levelname)-7s] [%(asctime)s] %(message)s"))
+
+# Module-level logger
+log = logging.getLogger(__name__)
+log.addHandler(ch)
 
 application_instance = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -20,13 +29,16 @@ def get_config():
 
 
 def connect_to_backend(config_info):
+    log.debug("Initializing backend configuration using: {}".format(config_info))
+
     if "type" not in config_info:
         raise ValueError("No backend for the TAXII server was provided")
     if config_info["type"] == "memory":
-        be = MemoryBackend()
-        be.load_data_from_file(config_info["data_file"])
-        return be
+        log.debug("Initializing medallion with MemoryBackend")
+        from medallion.backends.memory_backend import MemoryBackend
+        return MemoryBackend(config_info["data_file"])
     elif config_info["type"] == "mongodb":
+        log.debug("Initializing medallion with MongoBackend")
         try:
             from medallion.backends.mongodb_backend import MongoBackend
         except ImportError:
@@ -58,6 +70,7 @@ def get_pwd(username):
 
 
 def register_blueprints(flask_application_instance):
+    log.debug("Registering medallion blueprints")
     from medallion.views import collections
     from medallion.views import discovery
     from medallion.views import manifest
