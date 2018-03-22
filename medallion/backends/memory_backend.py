@@ -58,11 +58,12 @@ class MemoryBackend(Backend):
                         version = new_obj["modified"]
                     else:
                         version = new_obj["created"]
-                    collection["manifest"].append({"id": new_obj["id"],
-                                                   "date_added": format_datetime(get_timestamp()),
-                                                   "versions": [version],
-                                                   # hardcoded for now
-                                                   "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
+                    collection["manifest"].append(
+                        {"id": new_obj["id"],
+                         "date_added": format_datetime(get_timestamp()),
+                         "versions": [version],
+                         "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
+                    )  # media_types hardcoded for now...
                 # quit once you have found the collection that needed updating
                 break
 
@@ -198,7 +199,8 @@ class MemoryBackend(Backend):
                             failed += 1
 
             status = generate_status(request_time, "complete", succeeded,
-                                     failed, pending, successes_ids=successes, failures=failures)
+                                     failed, pending, successes_ids=successes,
+                                     failures=failures)
             api_info["status"].append(status)
             return status
 

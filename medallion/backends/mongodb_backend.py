@@ -21,7 +21,7 @@ class MongoBackend(Backend):
         try:
             self.client = MongoClient(uri)
             # The ismaster command is cheap and does not require auth.
-            self.client.admin.command('ismaster')
+            self.client.admin.command("ismaster")
         except ConnectionFailure:
             log.warning("Unable to establish a connection to MongoDB service")
 
@@ -29,7 +29,9 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        entry = manifest_info.find_one({"_collection_id": _collection_id, "id": new_obj["id"]})
+        entry = manifest_info.find_one(
+            {"_collection_id": _collection_id, "id": new_obj["id"]}
+        )
         if entry:
             if "modified" in new_obj:
                 entry["versions"].append(new_obj["modified"])
@@ -40,13 +42,14 @@ class MongoBackend(Backend):
             # If the new_obj is there, and it has no modified property,
             # then it is immutable, and there is nothing to do.
         else:
-            version = new_obj.get('modified', new_obj['created'])
-            manifest_info.insert_one({"id": new_obj["id"],
-                                      "_collection_id": _collection_id,
-                                      "date_added": format_datetime(get_timestamp()),
-                                      "versions": [version],
-                                      # hardcoded for now
-                                      "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
+            version = new_obj.get("modified", new_obj["created"])
+            manifest_info.insert_one(
+                {"id": new_obj["id"],
+                 "_collection_id": _collection_id,
+                 "date_added": format_datetime(get_timestamp()),
+                 "versions": [version],
+                 "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
+            )  # media_types hardcoded for now...
 
     def server_discovery(self):
         # TODO: Handle if mongodb is not available
@@ -63,7 +66,7 @@ class MongoBackend(Backend):
         collections = list(collection_info.find({}))
         for c in collections:
             del c["_id"]
-        return {'collections': collections}
+        return {"collections": collections}
 
     def get_collection(self, api_root, id_):
         # TODO: Handle if mongodb is not available
@@ -77,8 +80,12 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_}, allowed_filters)
-        objects_found = full_filter.process_filter(manifest_info, allowed_filters, None)
+        full_filter = MongoDBFilter(
+            filter_args,
+            {"_collection_id": id_}, allowed_filters
+        )
+        objects_found = full_filter.process_filter(manifest_info,
+                                                   allowed_filters, None)
         if objects_found:
             for obj in objects_found:
                 del obj["_id"]
@@ -109,11 +116,13 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_}, allowed_filters)
-        objects_found = full_filter.process_filter(objects,
-                                                   allowed_filters,
-                                                   {"mongodb_collection": api_root_db["manifests"],
-                                                    "_collection_id": id_})
+        full_filter = MongoDBFilter(filter_args,
+                                    {"_collection_id": id_}, allowed_filters)
+        objects_found = full_filter.process_filter(
+            objects,
+            allowed_filters,
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
+        )
         for obj in objects_found:
             del obj["_id"]
             del obj["_collection_id"]
@@ -155,7 +164,11 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_, "id": object_id}, allowed_filters)
+        full_filter = MongoDBFilter(
+            filter_args,
+            {"_collection_id": id_, "id": object_id},
+            allowed_filters
+        )
         objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
