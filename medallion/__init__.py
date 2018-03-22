@@ -7,7 +7,7 @@ from medallion.version import __version__  # noqa
 
 # Console Handler for medallion messages
 ch = logging.StreamHandler()
-ch.setFormatter(logging.Formatter("[%(name)s] [%(levelname)-7s] [%(asctime)s] %(message)s"))
+ch.setFormatter(logging.Formatter("[%(name)s] [%(levelname)-8s] [%(asctime)s] %(message)s"))
 
 # Module-level logger
 log = logging.getLogger(__name__)

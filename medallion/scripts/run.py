@@ -1,9 +1,12 @@
 import argparse
 import json
+import logging
 import textwrap
 
 from medallion import (application_instance, get_config, init_backend,
                        register_blueprints, set_config, __version__)
+
+log = logging.getLogger("medallion")
 
 
 class NewlinesHelpFormatter(argparse.RawDescriptionHelpFormatter):
@@ -46,6 +49,14 @@ def _get_argparser():
     )
 
     parser.add_argument(
+        "--log-level",
+        default="WARN",
+        type=str,
+        help="The logging output level.",
+        choices=["NOTSET", "DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"]
+    )
+
+    parser.add_argument(
         "CONFIG_PATH",
         metavar="CONFIG_PATH",
         type=str,
@@ -58,6 +69,7 @@ def _get_argparser():
 def main():
     medallion_parser = _get_argparser()
     medallion_args = medallion_parser.parse_args()
+    log.setLevel(medallion_args.log_level)
 
     with open(medallion_args.CONFIG_PATH, "r") as f:
         set_config(json.load(f))
