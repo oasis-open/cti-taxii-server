@@ -56,7 +56,8 @@ class MongoBackend(Backend):
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
         info = collection.find_one()
-        info.pop("_id", None)
+        if info:
+            info.pop("_id", None)
         return info
 
     def get_collections(self, api_root):
@@ -65,7 +66,8 @@ class MongoBackend(Backend):
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}))
         for c in collections:
-            c.pop("_id", None)
+            if c:
+                c.pop("_id", None)
         return {"collections": collections}
 
     def get_collection(self, api_root, id_):
@@ -73,7 +75,8 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         info = collection_info.find_one({"id": id_})
-        info.pop("_id", None)
+        if info:
+            info.pop("_id", None)
         return info
 
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
@@ -88,8 +91,9 @@ class MongoBackend(Backend):
                                                    allowed_filters, None)
         if objects_found:
             for obj in objects_found:
-                obj.pop("_id", None)
-                obj.pop("_collection_id", None)
+                if obj:
+                    obj.pop("_id", None)
+                    obj.pop("_collection_id", None)
         return objects_found
 
     def get_api_root_information(self, api_root_name):
@@ -124,8 +128,9 @@ class MongoBackend(Backend):
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
         )
         for obj in objects_found:
-            obj.pop("_id", None)
-            obj.pop("_collection_id", None)
+            if obj:
+                obj.pop("_id", None)
+                obj.pop("_collection_id", None)
         return create_bundle(objects_found)
 
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -176,6 +181,7 @@ class MongoBackend(Backend):
         )
         if objects_found:
             for obj in objects_found:
-                obj.pop("_id", None)
-                obj.pop("_collection_id", None)
+                if obj:
+                    obj.pop("_id", None)
+                    obj.pop("_collection_id", None)
         return create_bundle(objects_found)
