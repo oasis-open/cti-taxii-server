@@ -1,7 +1,7 @@
 import flask
-from flask import Blueprint, Response, abort, request
+from flask import Blueprint, Response, abort, current_app, request
 
-from medallion import auth, get_backend
+from medallion import auth
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
@@ -9,12 +9,12 @@ mod = Blueprint("objects", __name__)
 
 
 def permission_to_read(api_root, collection_id):
-    collection_info = get_backend().get_collection(api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
     return collection_info["can_read"]
 
 
 def permission_to_write(api_root, collection_id):
-    collection_info = get_backend().get_collection(api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
     return collection_info["can_write"]
 
 
@@ -25,7 +25,7 @@ def get_or_add_objects(api_root, id_):
 
     if request.method == "GET":
         if permission_to_read(api_root, id_):
-            objects = get_backend().get_objects(api_root, id_, request.args, ("id", "type", "version"))
+            objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"))
             if objects:
                 return Response(response=flask.json.dumps(objects),
                                 status=200,
@@ -36,9 +36,9 @@ def get_or_add_objects(api_root, id_):
             abort(403)
     elif request.method == "POST":
         if permission_to_write(api_root, id_):
-            # can't I get this from the request itself?
+            # Can't I get this from the request itself?
             request_time = common.format_datetime(common.get_timestamp())
-            status = get_backend().add_objects(api_root, id_, request.get_json(force=True), request_time)
+            status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(force=True), request_time)
             return Response(response=flask.json.dumps(status),
                             status=202,
                             mimetype=MEDIA_TYPE_TAXII_V20)
@@ -52,7 +52,7 @@ def get_object(api_root, id_, object_id):
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
 
     if permission_to_read(api_root, id_):
-        objects = get_backend().get_object(api_root, id_, object_id, request.args, ("version",))
+        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("version",))
         if objects:
             return Response(response=flask.json.dumps(objects),
                             status=200,
