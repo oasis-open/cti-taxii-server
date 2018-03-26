@@ -85,6 +85,10 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         api_root_metadata = self.load_json_response(r.data)
         assert api_root_metadata["title"] == "Malware Research Group"
 
+    def test_get_api_root_information_not_existent(self):
+        r = self.client.get("/trustgroup2/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
     def test_get_collections(self):
         r = self.client.get("/trustgroup1/collections/", headers=self.auth)
 
@@ -105,6 +109,13 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         collections_metadata = self.load_json_response(r.data)
         assert collections_metadata["media_types"][0] == "application/vnd.oasis.stix+json; version=2.0"
+
+    def test_get_collection_not_existent(self):
+        r = self.client.get(
+            "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 404)
 
     def test_get_object(self):
         r = self.client.get(
