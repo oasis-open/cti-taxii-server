@@ -1,2 +1,0 @@
-[run]
-omit = medallion/test/test_mongodb_backend.py, medallion/backends/mongodb_backend.py, medallion/filters/mongodb_filter.py
