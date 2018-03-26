@@ -37,7 +37,7 @@ def connect_to_backend(config_info):
         module_class = getattr(module, config_info["module_class"])
         log.debug("Instantiating medallion backend with {}".format(module_class))
         return module_class(**config_info)
-    except (ImportError, ModuleNotFoundError) as e:
+    except Exception as e:
         log.error("Unknown backend for TAXII server. {} ".format(str(e)))
         raise e
 

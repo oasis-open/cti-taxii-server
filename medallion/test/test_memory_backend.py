@@ -9,8 +9,8 @@ import uuid
 
 import six
 
-from medallion import (application_instance, init_backend,
-                       register_blueprints, set_config)
+from medallion import (application_instance, init_backend, register_blueprints,
+                       set_config)
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 

@@ -3,8 +3,8 @@ import json
 import logging
 import textwrap
 
-from medallion import (application_instance, init_backend, register_blueprints,
-                       set_config, __version__)
+from medallion import (__version__, application_instance, init_backend,
+                       register_blueprints, set_config)
 
 log = logging.getLogger("medallion")
 
