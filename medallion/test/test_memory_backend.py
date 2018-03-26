@@ -350,7 +350,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
             self.app.medallion_backend.save_data_to_file(f.name)
             assert os.path.isfile(f.name)
 
-            init_backend(self.app, self.configuration["backend"])
+            test_config = self.configuration["backend"]
+            test_config["filename"] = f.name
+
+            init_backend(self.app, test_config)
 
             r_get = self.client.get(
                 "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s" % new_id,
