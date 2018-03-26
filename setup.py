@@ -4,11 +4,12 @@ import os.path
 
 from setuptools import find_packages, setup
 
-here = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VERSION_FILE = os.path.join(BASE_DIR, 'medallion', 'version.py')
 
 
 def get_version():
-    with open('medallion/version.py', encoding="utf-8") as f:
+    with open(VERSION_FILE) as f:
         for line in f.readlines():
             if line.startswith("__version__"):
                 version = line.split()[-1].strip('"')
@@ -16,14 +17,14 @@ def get_version():
         raise AttributeError("Package does not have a __version__")
 
 
-with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+with open('README.rst') as f:
+    readme = f.read()
 
 setup(
     name="medallion",
     version=get_version(),
     description="A TAXII 2.0 Server.",
-    long_description=long_description,
+    long_description=readme,
     url='https://github.com/oasis-open/cti-taxii-server',
     author='OASIS Cyber Threat Intelligence Technical Committee',
     author_email='cti-users@lists.oasis-open.org',
@@ -43,7 +44,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     keywords="taxii taxii2 server json cti cyber threat intelligence",
-    packages=find_packages(),
+    packages=find_packages(exclude=["*.test", "*.test.data"]),
     install_requires=[
         'flask>=0.12.1',
         'Flask-HTTPAuth',
