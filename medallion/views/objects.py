@@ -1,5 +1,3 @@
-import json
-
 import flask
 from flask import Blueprint, Response, abort, current_app, request
 
