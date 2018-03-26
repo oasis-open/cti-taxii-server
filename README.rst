@@ -86,7 +86,7 @@ To use the Memory back-end plug, include the following in the <config-file>:
         "backend": {
             "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
-            "data_file": <path to json file with initial data>
+            "filename": <path to json file with initial data>
         }
     }
 
