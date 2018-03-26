@@ -17,7 +17,7 @@ class MongoBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, uri=None):
+    def __init__(self, uri=None, **kwargs):
         try:
             self.client = MongoClient(uri)
             # The ismaster command is cheap and does not require auth.

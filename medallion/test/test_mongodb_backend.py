@@ -43,8 +43,10 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.app.testing = True
         register_blueprints(self.app)
         reset_db()
-        init_backend(self.app, {"type": "mongodb", "url": "mongodb://localhost:27017/"})
-        set_config({"users": {"admin": "Password0"}})
+        init_backend(self.app, {"module": "medallion.backends.mongodb_backend",
+                                "module_class": "MongoBackend",
+                                "url": "mongodb://localhost:27017/"})
+        set_config(self.app, {"users": {"admin": "Password0"}})
         self.client = application_instance.test_client()
         encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {'Authorization': encoded_auth}

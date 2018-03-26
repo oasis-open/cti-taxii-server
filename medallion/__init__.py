@@ -17,36 +17,29 @@ log.addHandler(ch)
 application_instance = Flask(__name__)
 auth = HTTPBasicAuth()
 
-_CONFIG = None
 
-
-def set_config(config):
-    global _CONFIG
-    _CONFIG = config
-
-
-def get_config():
-    return _CONFIG
+def set_config(flask_application_instance, config):
+    with flask_application_instance.app_context():
+        log.debug("Registering medallion users configuration into {}".format(current_app))
+        flask_application_instance.users_backend = config
 
 
 def connect_to_backend(config_info):
     log.debug("Initializing backend configuration using: {}".format(config_info))
 
-    if "type" not in config_info:
-        raise ValueError("No backend for the TAXII server was provided")
-    if config_info["type"] == "memory":
-        log.debug("Initializing medallion with MemoryBackend")
-        from medallion.backends.memory_backend import MemoryBackend
-        return MemoryBackend(config_info["data_file"])
-    elif config_info["type"] == "mongodb":
-        log.debug("Initializing medallion with MongoBackend")
-        try:
-            from medallion.backends.mongodb_backend import MongoBackend
-        except ImportError:
-            raise ImportError("The pymongo package is not available")
-        return MongoBackend(config_info["url"])
-    else:
-        raise ValueError("Unknown backend {} for TAXII server".format(config_info["backend"]))
+    if "module" not in config_info:
+        raise ValueError("No module parameter provided for the TAXII server.")
+    if "module_class" not in config_info:
+        raise ValueError("No module_class parameter provided for the TAXII server.")
+
+    try:
+        module = importlib.import_module(config_info["module"])
+        module_class = getattr(module, config_info["module_class"])
+        log.debug("Instantiating medallion backend with {}".format(module_class))
+        return module_class(**config_info)
+    except (ImportError, ModuleNotFoundError) as e:
+        log.error("Unknown backend for TAXII server. {} ".format(str(e)))
+        raise e
 
 
 def init_backend(flask_application_instance, config_info):
@@ -57,7 +50,7 @@ def init_backend(flask_application_instance, config_info):
 
 @auth.get_password
 def get_pwd(username):
-    users = get_config()["users"]
+    users = current_app.users_backend.get("users", [])
     if username in users:
         return users.get(username)
     return None

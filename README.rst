@@ -56,23 +56,25 @@ To use the Memory back-end plug, include the following in the <config-file>:
 
 .. code:: python
 
-{
-    "backend": {
-       "type": "memory",
-       "data_file": <path to json file with initial data>
+    {
+        "backend": {
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "data_file": <path to json file with initial data>
+        }
     }
-}
 
 To use the Mongo DB back-end plug, include the following in the <config-file>:
 
 .. code:: python
 
-{
-    "backend": {
-       "type": "mongodb",
-       "url": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+    {
+         "backend": {
+            "module": "medallion.backends.mongodb_backend",
+            "module_class": "MongoBackend",
+            "url": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+         }
     }
-}
 
 *Note: A Mongo DB should be available at some URL when using the Mongo DB back-end*
 
@@ -88,13 +90,13 @@ Here is an example:
 
 .. code:: python
 
-{
-    "users": {
-       "admin": "Password0",
-       "user1": "Password1",
-       "user2": "Password2"
+    {
+        "users": {
+           "admin": "Password0",
+           "user1": "Password1",
+           "user2": "Password2"
+        }
     }
-}
 
 The authorization is enabled using the python package
 `flask_httpauth <https://flask-httpauth.readthedocs.io>`_.

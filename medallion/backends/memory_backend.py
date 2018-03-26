@@ -12,7 +12,7 @@ class MemoryBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, **kwargs):
         if filename:
             self.load_data_from_file(filename)
         else:

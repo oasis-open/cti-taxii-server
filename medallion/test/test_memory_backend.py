@@ -44,8 +44,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.app_context.push()
         self.app.testing = True
         register_blueprints(self.app)
-        init_backend(self.app, {"type": "memory", "data_file": DATA_FILE})
-        set_config({"users": {"admin": "Password0"}})
+        init_backend(self.app, {"module": "medallion.backends.memory_backend",
+                                "module_class": "MemoryBackend",
+                                "data_file": DATA_FILE})
+        set_config(self.app, {"users": {"admin": "Password0"}})
         self.client = application_instance.test_client()
         encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {'Authorization': encoded_auth}
