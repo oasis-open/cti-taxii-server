@@ -44,10 +44,18 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.app_context.push()
         self.app.testing = True
         register_blueprints(self.app)
-        init_backend(self.app, {"module": "medallion.backends.memory_backend",
-                                "module_class": "MemoryBackend",
-                                "data_file": DATA_FILE})
-        set_config(self.app, {"users": {"admin": "Password0"}})
+        self.configuration = {
+            "backend": {
+                "module": "medallion.backends.memory_backend",
+                "module_class": "MemoryBackend",
+                "filename": DATA_FILE
+            },
+            "users": {
+                "admin": "Password0"
+            }
+        }
+        init_backend(self.app, self.configuration["backend"])
+        set_config(self.app, self.configuration["users"])
         self.client = application_instance.test_client()
         encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {'Authorization': encoded_auth}
@@ -342,7 +350,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
             self.app.medallion_backend.save_data_to_file(f.name)
             assert os.path.isfile(f.name)
 
-            init_backend({"type": "memory", "data_file": f.name})
+            init_backend(self.app, self.configuration["backend"])
 
             r_get = self.client.get(
                 "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s" % new_id,
