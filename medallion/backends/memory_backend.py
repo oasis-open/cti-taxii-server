@@ -1,8 +1,6 @@
 import copy
 import json
 
-from six import StringIO
-
 from medallion.filters.basic_filter import BasicFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp, iterpath)
@@ -21,15 +19,13 @@ class MemoryBackend(Backend):
             self.data = {}
 
     def load_data_from_file(self, filename):
-        self.data = json.load(StringIO(open(filename, "r").read()))
+        with open(filename, "r") as infile:
+            self.data = json.load(infile)
 
-    def save_data_to_file(self, filename):
+    def save_data_to_file(self, filename, **kwargs):
+        """The kwargs are passed to ``json.dump()`` if provided."""
         with open(filename, "w") as outfile:
-            json.dump(self.data,
-                      outfile,
-                      indent=4,
-                      separators=(",", ": "),
-                      sort_keys=True)
+            json.dump(self.data, outfile, **kwargs)
 
     def _get(self, key):
         for ancestors, item in iterpath(self.data):

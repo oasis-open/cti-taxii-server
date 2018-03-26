@@ -52,8 +52,8 @@ def _get_argparser():
         "--log-level",
         default="WARN",
         type=str,
-        help="The logging output level.",
-        choices=["NOTSET", "DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"]
+        help="The logging output level for medallion.",
+        choices=["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"]
     )
 
     parser.add_argument(
@@ -74,7 +74,7 @@ def main():
     with open(medallion_args.CONFIG_PATH, "r") as f:
         set_config(json.load(f))
 
-    init_backend(get_config()["backend"])
+    init_backend(application_instance, get_config()["backend"])
     register_blueprints(application_instance)
 
     application_instance.run(

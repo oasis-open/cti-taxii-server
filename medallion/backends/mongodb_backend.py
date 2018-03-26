@@ -23,7 +23,7 @@ class MongoBackend(Backend):
             # The ismaster command is cheap and does not require auth.
             self.client.admin.command("ismaster")
         except ConnectionFailure:
-            log.warning("Unable to establish a connection to MongoDB service")
+            log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 
     def _update_manifest(self, new_obj, api_root, _collection_id):
         # TODO: Handle if mongodb is not available
