@@ -56,7 +56,7 @@ class MongoBackend(Backend):
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
         info = collection.find_one()
-        del info["_id"]
+        info.pop("_id", None)
         return info
 
     def get_collections(self, api_root):
@@ -65,7 +65,7 @@ class MongoBackend(Backend):
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}))
         for c in collections:
-            del c["_id"]
+            c.pop("_id", None)
         return {"collections": collections}
 
     def get_collection(self, api_root, id_):
@@ -73,7 +73,7 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         info = collection_info.find_one({"id": id_})
-        del info["_id"]
+        info.pop("_id", None)
         return info
 
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
@@ -88,8 +88,8 @@ class MongoBackend(Backend):
                                                    allowed_filters, None)
         if objects_found:
             for obj in objects_found:
-                del obj["_id"]
-                del obj["_collection_id"]
+                obj.pop("_id", None)
+                obj.pop("_collection_id", None)
         return objects_found
 
     def get_api_root_information(self, api_root_name):
@@ -98,9 +98,9 @@ class MongoBackend(Backend):
         api_root_info = db["api_root_info"]
         info = api_root_info.find_one({"_name": api_root_name})
         if info:
-            del info["_id"]
-            del info["_url"]
-            del info["_name"]
+            info.pop("_id", None)
+            info.pop("_url", None)
+            info.pop("_name", None)
         return info
 
     def get_status(self, api_root, id_):
@@ -109,7 +109,7 @@ class MongoBackend(Backend):
         status_info = api_root_db["status"]
         result = status_info.find_one({"id": id_})
         if result:
-            del result["_id"]
+            result.pop("_id", None)
         return result
 
     def get_objects(self, api_root, id_, filter_args, allowed_filters):
@@ -124,8 +124,8 @@ class MongoBackend(Backend):
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
         )
         for obj in objects_found:
-            del obj["_id"]
-            del obj["_collection_id"]
+            obj.pop("_id", None)
+            obj.pop("_collection_id", None)
         return create_bundle(objects_found)
 
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -157,7 +157,7 @@ class MongoBackend(Backend):
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)
         api_root_db["status"].insert_one(status)
-        del status["_id"]
+        status.pop("_id", None)
         return status
 
     def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
@@ -176,6 +176,6 @@ class MongoBackend(Backend):
         )
         if objects_found:
             for obj in objects_found:
-                del obj["_id"]
-                del obj["_collection_id"]
+                obj.pop("_id", None)
+                obj.pop("_collection_id", None)
         return create_bundle(objects_found)

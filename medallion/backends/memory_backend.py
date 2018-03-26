@@ -64,38 +64,28 @@ class MemoryBackend(Backend):
                 break
 
     def get_collections(self, api_root):
-
         if api_root in self.data:
             api_info = self._get(api_root)
             result = dict(collections=copy.deepcopy(api_info.get("collections", [])))
 
             # Remove data that is not part of the response.
             for collection in result["collections"]:
-                if "manifest" in collection:
-                    del collection["manifest"]
-                if "responses" in collection:
-                    del collection["responses"]
-                if "objects" in collection:
-                    del collection["objects"]
+                collection.pop("manifest", None)
+                collection.pop("responses", None)
+                collection.pop("objects", None)
             return result
-        return None
 
     def get_collection(self, api_root, id_):
-
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = copy.deepcopy(api_info.get("collections", []))
 
             for collection in collections:
                 if "id" in collection and id_ == collection["id"]:
-                    if "manifest" in collection:
-                        del collection["manifest"]
-                    if "responses" in collection:
-                        del collection["responses"]
-                    if "objects" in collection:
-                        del collection["objects"]
+                    collection.pop("manifest", None)
+                    collection.pop("responses", None)
+                    collection.pop("objects", None)
                     return collection
-        return None
 
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
         if api_root in self.data:
@@ -113,28 +103,21 @@ class MemoryBackend(Backend):
                             None
                         )
                     return manifest
-        return None
 
     def get_api_root_information(self, api_root):
-
         if api_root in self.data:
             api_info = self._get(api_root)
 
             if "information" in api_info:
                 return api_info["information"]
 
-        return None
-
     def get_status(self, api_root, id_):
-
         if api_root in self.data:
             api_info = self._get(api_root)
 
             for status in api_info.get("status", []):
                 if id_ == status["id"]:
                     return status
-
-        return None
 
     def get_objects(self, api_root, id_, filter_args, allowed_filters):
         if api_root in self.data:
@@ -157,8 +140,6 @@ class MemoryBackend(Backend):
                     else:
                         objs.extend(collection.get("objects", []))
             return create_bundle(objs)
-
-        return None
 
     def add_objects(self, api_root, id_, objs, request_time):
         if api_root in self.data:
@@ -201,7 +182,6 @@ class MemoryBackend(Backend):
             return status
 
     def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
-
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -220,5 +200,3 @@ class MemoryBackend(Backend):
                         collection.get("manifest", [])
                     )
             return create_bundle(objs)
-
-        return None
