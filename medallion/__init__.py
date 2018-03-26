@@ -50,9 +50,8 @@ def init_backend(flask_application_instance, config_info):
 
 @auth.get_password
 def get_pwd(username):
-    users = current_app.users_backend.get("users", [])
-    if username in users:
-        return users.get(username)
+    if username in current_app.users_backend:
+        return current_app.users_backend.get(username)
     return None
 
 
