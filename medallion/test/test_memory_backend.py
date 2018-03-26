@@ -9,7 +9,7 @@ import uuid
 
 import six
 
-from medallion import (application_instance, get_backend, init_backend,
+from medallion import (application_instance, init_backend,
                        register_blueprints, set_config)
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
@@ -39,13 +39,19 @@ API_OBJECTS_2 = {
 class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
 
     def setUp(self):
-        application_instance.testing = True
-        register_blueprints(application_instance)
-        init_backend({"type": "memory", "data_file": DATA_FILE})
+        self.app = application_instance
+        self.app_context = application_instance.app_context()
+        self.app_context.push()
+        self.app.testing = True
+        register_blueprints(self.app)
+        init_backend(self.app, {"type": "memory", "data_file": DATA_FILE})
         set_config({"users": {"admin": "Password0"}})
-        self.app = application_instance.test_client()
+        self.client = application_instance.test_client()
         encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {'Authorization': encoded_auth}
+
+    def tearDown(self):
+        self.app_context.pop()
 
     @staticmethod
     def load_json_response(response):
@@ -55,7 +61,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         return json.load(io)
 
     def test_server_discovery(self):
-        r = self.app.get("/taxii/", headers=self.auth)
+        r = self.client.get("/taxii/", headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -63,7 +69,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
 
     def test_get_api_root_information(self):
-        r = self.app.get("/trustgroup1/", headers=self.auth)
+        r = self.client.get("/trustgroup1/", headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -71,7 +77,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert api_root_metadata["title"] == "Malware Research Group"
 
     def test_get_collections(self):
-        r = self.app.get("/trustgroup1/collections/", headers=self.auth)
+        r = self.client.get("/trustgroup1/collections/", headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -81,7 +87,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert collections_metadata[1]["id"] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
 
     def test_get_collection(self):
-        r = self.app.get(
+        r = self.client.get(
             "/trustgroup1/collections/52892447-4d7e-4f70-b94d-d7f22742ff63/",
             headers=self.auth
         )
@@ -92,7 +98,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert collections_metadata["media_types"][0] == "application/vnd.oasis.stix+json; version=2.0"
 
     def test_get_object(self):
-        r = self.app.get(
+        r = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/",
             headers=self.auth
         )
@@ -103,7 +109,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert obj["objects"][0]["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111"
 
     def test_get_objects(self):
-        r = self.app.get(
+        r = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[type]=relationship",
             headers=self.auth
         )
@@ -124,7 +130,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
-        r_post = self.app.post(
+        r_post = self.client.post(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
             data=json.dumps(new_bundle),
             headers=post_header
@@ -139,7 +145,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         get_header = copy.deepcopy(self.auth)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s" % new_id,
             headers=get_header
         )
@@ -152,7 +158,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get object section ------------- #
         # ------------- BEGIN: get status section ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/status/%s/" % status_response["id"],
             headers=self.auth
         )
@@ -165,7 +171,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get status section ------------- #
         # ------------- BEGIN: get manifest section ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[id]=%s" % new_id,
             headers=self.auth
         )
@@ -187,7 +193,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
-        r_post = self.app.post(
+        r_post = self.client.post(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
             data=json.dumps(new_bundle),
             headers=post_header
@@ -200,7 +206,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
             new_bundle = copy.deepcopy(API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
             new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
-            r_post = self.app.post(
+            r_post = self.client.post(
                 "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
                 data=json.dumps(new_bundle),
                 headers=post_header
@@ -216,7 +222,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         get_header = copy.deepcopy(self.auth)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
             % (new_id, "all"),
             headers=get_header
@@ -231,7 +237,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get object section 1 ------------- #
         # ------------- BEGIN: get object section 2 ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
             % (new_id, "first"),
             headers=get_header
@@ -246,7 +252,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get object section 2 ------------- #
         # ------------- BEGIN: get object section 3 ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
             % (new_id, "last"),
             headers=get_header
@@ -261,7 +267,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get object section 3 ------------- #
         # ------------- BEGIN: get object section 4 ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
             % (new_id, "2017-01-27T13:49:53.935Z"),
             headers=get_header
@@ -276,7 +282,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get object section 4 ------------- #
         # ------------- BEGIN: get status section ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/status/%s/" % status_response["id"],
             headers=self.auth
         )
@@ -289,7 +295,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- END: get status section ------------- #
         # ------------- BEGIN: get manifest section ------------- #
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[id]=%s" % new_id,
             headers=self.auth
         )
@@ -306,7 +312,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         get_header = copy.deepcopy(self.auth)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
-        r_get = self.app.get(
+        r_get = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?added_after=2016-11-01T03:04:05Z",
             headers=get_header
         )
@@ -326,17 +332,17 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
         with tempfile.NamedTemporaryFile() as f:
-            self.app.post(
+            self.client.post(
                 "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
                 data=json.dumps(new_bundle),
                 headers=post_header
             )
-            get_backend().save_data_to_file(f.name)
+            self.app.medallion_backend.save_data_to_file(f.name)
             assert os.path.isfile(f.name)
 
             init_backend({"type": "memory", "data_file": f.name})
 
-            r_get = self.app.get(
+            r_get = self.client.get(
                 "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s" % new_id,
                 headers=self.auth
             )
