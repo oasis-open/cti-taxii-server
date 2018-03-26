@@ -43,6 +43,32 @@ The easiest way to install *medallion* is with pip::
 Usage
 =====
 
+As a script
+-----------
+
+.. contents::
+    usage: run.py [-h] [--host HOST] [--port PORT] [--debug-mode]
+                  [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
+                  CONFIG_PATH
+
+    medallion v0.1.0
+
+    positional arguments:
+      CONFIG_PATH           The location of the JSON configuration file to use.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+
+      --host HOST           The host to listen on.
+
+      --port PORT           The port of the web server.
+
+      --debug-mode          If set, start application in debug mode.
+
+      --log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}
+                            The logging output level for medallion.
+
+
 To run *medallion*::
 
     $ python medallion/scripts/run.py <config-file>
