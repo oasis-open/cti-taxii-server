@@ -1,31 +1,37 @@
+import logging
+
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 from medallion.filters.mongodb_filter import MongoDBFilter
-from medallion.utils.builder import create_bundle
-from medallion.utils.common import (format_datetime, generate_status,
-                                    get_timestamp)
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, get_timestamp)
 
 from .base import Backend
+
+# Module-level logger
+log = logging.getLogger(__name__)
 
 
 class MongoBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, uri):
+    def __init__(self, uri=None, **kwargs):
         try:
             self.client = MongoClient(uri)
             # The ismaster command is cheap and does not require auth.
-            self.client.admin.command('ismaster')
+            self.client.admin.command("ismaster")
         except ConnectionFailure:
-            print("Mongo DB not available")
+            log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 
     def _update_manifest(self, new_obj, api_root, _collection_id):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        entry = manifest_info.find_one({"_collection_id": _collection_id, "id": new_obj["id"]})
+        entry = manifest_info.find_one(
+            {"_collection_id": _collection_id, "id": new_obj["id"]}
+        )
         if entry:
             if "modified" in new_obj:
                 entry["versions"].append(new_obj["modified"])
@@ -36,13 +42,14 @@ class MongoBackend(Backend):
             # If the new_obj is there, and it has no modified property,
             # then it is immutable, and there is nothing to do.
         else:
-            version = new_obj.get('modified', new_obj['created'])
-            manifest_info.insert_one({"id": new_obj["id"],
-                                      "_collection_id": _collection_id,
-                                      "date_added": format_datetime(get_timestamp()),
-                                      "versions": [version],
-                                      # hardcoded for now
-                                      "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
+            version = new_obj.get("modified", new_obj["created"])
+            manifest_info.insert_one(
+                {"id": new_obj["id"],
+                 "_collection_id": _collection_id,
+                 "date_added": format_datetime(get_timestamp()),
+                 "versions": [version],
+                 "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
+            )  # media_types hardcoded for now...
 
     def server_discovery(self):
         # TODO: Handle if mongodb is not available
@@ -59,7 +66,7 @@ class MongoBackend(Backend):
         collections = list(collection_info.find({}))
         for c in collections:
             del c["_id"]
-        return {'collections': collections}
+        return {"collections": collections}
 
     def get_collection(self, api_root, id_):
         # TODO: Handle if mongodb is not available
@@ -73,8 +80,12 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_}, allowed_filters)
-        objects_found = full_filter.process_filter(manifest_info, allowed_filters, None)
+        full_filter = MongoDBFilter(
+            filter_args,
+            {"_collection_id": id_}, allowed_filters
+        )
+        objects_found = full_filter.process_filter(manifest_info,
+                                                   allowed_filters, None)
         if objects_found:
             for obj in objects_found:
                 del obj["_id"]
@@ -105,11 +116,13 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_}, allowed_filters)
-        objects_found = full_filter.process_filter(objects,
-                                                   allowed_filters,
-                                                   {"mongodb_collection": api_root_db["manifests"],
-                                                    "_collection_id": id_})
+        full_filter = MongoDBFilter(filter_args,
+                                    {"_collection_id": id_}, allowed_filters)
+        objects_found = full_filter.process_filter(
+            objects,
+            allowed_filters,
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
+        )
         for obj in objects_found:
             del obj["_id"]
             del obj["_collection_id"]
@@ -121,20 +134,28 @@ class MongoBackend(Backend):
         objects = api_root_db["objects"]
         failed = 0
         succeeded = 0
+        pending = 0
+        successes = []
+        failures = []
+
         for new_obj in objs["objects"]:
             mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
             if "modified" in new_obj:
                 mongo_query["modified"] = new_obj["modified"]
             existing_entry = objects.find_one(mongo_query)
             if existing_entry:
+                failures.append({"id": new_obj["id"],
+                                 "message": "Unable to process object"})
                 failed += 1
             else:
                 new_obj.update({"_collection_id": collection_id})
                 objects.insert_one(new_obj)
                 self._update_manifest(new_obj, api_root, collection_id)
+                successes.append(new_obj["id"])
                 succeeded += 1
 
-        status = generate_status(request_time, succeeded, failed, 0)
+        status = generate_status(request_time, "complete", succeeded, failed,
+                                 pending, successes_ids=successes, failures=failures)
         api_root_db["status"].insert_one(status)
         del status["_id"]
         return status
@@ -143,10 +164,16 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args, {"_collection_id": id_, "id": object_id}, allowed_filters)
-        objects_found = full_filter.process_filter(objects,
-                                                   allowed_filters,
-                                                   {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_})
+        full_filter = MongoDBFilter(
+            filter_args,
+            {"_collection_id": id_, "id": object_id},
+            allowed_filters
+        )
+        objects_found = full_filter.process_filter(
+            objects,
+            allowed_filters,
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
+        )
         if objects_found:
             for obj in objects_found:
                 del obj["_id"]

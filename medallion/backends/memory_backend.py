@@ -1,12 +1,9 @@
 import copy
 import json
 
-from six import StringIO
-
 from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.builder import create_bundle
-from medallion.utils.common import (format_datetime, generate_status,
-                                    get_timestamp, iterpath)
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, get_timestamp, iterpath)
 
 from .base import Backend
 
@@ -15,19 +12,20 @@ class MemoryBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self):
-        self.data = {}
+    def __init__(self, filename=None, **kwargs):
+        if filename:
+            self.load_data_from_file(filename)
+        else:
+            self.data = {}
 
     def load_data_from_file(self, filename):
-        self.data = json.load(StringIO(open(filename, "r").read()))
+        with open(filename, "r") as infile:
+            self.data = json.load(infile)
 
-    def save_data_to_file(self, filename):
-        with open(filename, 'w') as outfile:
-            json.dump(self.data,
-                      outfile,
-                      indent=4,
-                      separators=(',', ': '),
-                      sort_keys=True)
+    def save_data_to_file(self, filename, **kwargs):
+        """The kwargs are passed to ``json.dump()`` if provided."""
+        with open(filename, "w") as outfile:
+            json.dump(self.data, outfile, **kwargs)
 
     def _get(self, key):
         for ancestors, item in iterpath(self.data):
@@ -47,18 +45,21 @@ class MemoryBackend(Backend):
                     if new_obj["id"] == entry["id"]:
                         if "modified" in new_obj:
                             entry["versions"].append(new_obj["modified"])
-                        # if the new_obj is there, and it has no modified property, then it is immutable, and there is nothing to do.
+                        # If the new_obj is there, and it has no modified
+                        # property, then it is immutable, and there is nothing
+                        # to do.
                         break
                 else:
                     if "modified" in new_obj:
                         version = new_obj["modified"]
                     else:
                         version = new_obj["created"]
-                    collection["manifest"].append({"id": new_obj["id"],
-                                                   "date_added": format_datetime(get_timestamp()),
-                                                   "versions": [version],
-                                                   # hardcoded for now
-                                                   "media_types": ["application/vnd.oasis.stix+json; version=2.0"]})
+                    collection["manifest"].append(
+                        {"id": new_obj["id"],
+                         "date_added": format_datetime(get_timestamp()),
+                         "versions": [version],
+                         "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
+                    )  # media_types hardcoded for now...
                 # quit once you have found the collection that needed updating
                 break
 
@@ -106,7 +107,11 @@ class MemoryBackend(Backend):
                     manifest = collection.get("manifest", [])
                     if filter_args:
                         full_filter = BasicFilter(filter_args)
-                        manifest = full_filter.process_filter(manifest, allowed_filters, None)
+                        manifest = full_filter.process_filter(
+                            manifest,
+                            allowed_filters,
+                            None
+                        )
                     return manifest
         return None
 
@@ -142,9 +147,13 @@ class MemoryBackend(Backend):
 
                     if filter_args:
                         full_filter = BasicFilter(filter_args)
-                        objs.extend(full_filter.process_filter(collection.get("objects", []),
-                                                               allowed_filters,
-                                                               collection.get("manifest", [])))
+                        objs.extend(
+                            full_filter.process_filter(
+                                collection.get("objects", []),
+                                allowed_filters,
+                                collection.get("manifest", [])
+                            )
+                        )
                     else:
                         objs.extend(collection.get("objects", []))
             return create_bundle(objs)
@@ -155,19 +164,22 @@ class MemoryBackend(Backend):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
+            failed = 0
+            succeeded = 0
+            pending = 0
+            successes = []
+            failures = []
 
             for collection in collections:
                 if "id" in collection and id_ == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
-                    failed = 0
-                    succeeded = 0
                     for new_obj in objs["objects"]:
                         id_and_version_already_present = False
-                        if new_obj['id'] in collection["objects"]:
-                            current_obj = collection["objects"][new_obj['id']]
+                        if new_obj["id"] in collection["objects"]:
+                            current_obj = collection["objects"][new_obj["id"]]
                             if "modified" in new_obj:
-                                if new_obj['modified'] == current_obj['modified']:
+                                if new_obj["modified"] == current_obj["modified"]:
                                     id_and_version_already_present = True
                             else:
                                 # There is no modified field, so this object is immutable
@@ -175,11 +187,16 @@ class MemoryBackend(Backend):
                         if not id_and_version_already_present:
                             collection["objects"].append(new_obj)
                             self._update_manifest(new_obj, api_root, collection["id"])
+                            successes.append(new_obj["id"])
                             succeeded += 1
                         else:
+                            failures.append({"id": new_obj["id"],
+                                             "message": "Unable to process object"})
                             failed += 1
 
-            status = generate_status(request_time, succeeded, failed, 0)
+            status = generate_status(request_time, "complete", succeeded,
+                                     failed, pending, successes_ids=successes,
+                                     failures=failures)
             api_info["status"].append(status)
             return status
 
@@ -197,9 +214,11 @@ class MemoryBackend(Backend):
                             objs.append(obj)
                 if filter_args:
                     full_filter = BasicFilter(filter_args)
-                    objs = full_filter.process_filter(objs,
-                                                      allowed_filters,
-                                                      collection.get("manifest", []))
+                    objs = full_filter.process_filter(
+                        objs,
+                        allowed_filters,
+                        collection.get("manifest", [])
+                    )
             return create_bundle(objs)
 
         return None

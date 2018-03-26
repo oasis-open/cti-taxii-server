@@ -13,6 +13,7 @@ Welcome to medallion's documentation!
    :caption: Contents:
 
    compatibility
+   custom_backend
    mongodb_schema
 
 
