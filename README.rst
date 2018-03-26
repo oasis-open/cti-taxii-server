@@ -46,8 +46,9 @@ Usage
 As a script
 -----------
 
-.. contents::
-    usage: run.py [-h] [--host HOST] [--port PORT] [--debug-mode]
+Medallion provides a command-line interface to start the TAXII Server::
+
+    usage: medallion [-h] [--host HOST] [--port PORT] [--debug-mode]
                   [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
                   CONFIG_PATH
 
@@ -67,7 +68,6 @@ As a script
 
       --log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}
                             The logging output level for medallion.
-
 
 To run *medallion*::
 

@@ -102,7 +102,7 @@ Our implementation of a users authentication system is not suitable for a produc
     db = MyCustomDBforUsers.init()  # Do some setup before attaching to application... (Imagine other steps happening here)
 
     with application_instance.app_context():
-        current_app.users_backend = db  # This will make it available inside the Flask instance in you also decide to perform changes internally.
+        current_app.users_backend = db  # This will make it available inside the Flask instance in case you decide to perform changes to the internal blueprints.
 
     init_backend(application_instance, {...})
     application_instance.run()
