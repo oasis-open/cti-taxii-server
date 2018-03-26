@@ -1,0 +1,15 @@
+Version 0.2.0
+2018-03-26
+- Fix error in MongoBackend that resulted in manifests not being updated
+- Fix error in MongoBackend that resulted in manifests versions not being sorted properly
+- Use argparse for medallion CLI
+- Return correct status responses from MemoryBackend and MongoBackend
+- Decouple some medallion initialization to allow usage as library or further integration
+- Use application proxy for endpoints
+- Allow for dynamic backend via JSON config file or set methods
+- Add logging messages
+- Improve code coverage/testing
+
+Version 0.1.0
+2017-07-14
+- Initial release
