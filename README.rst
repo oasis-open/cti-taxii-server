@@ -308,13 +308,9 @@ Repository participation to OASIS Staff at repository-admin@oasis-
 open.org and
 any specific CLA-related questions to repository-cla@oasis-open.org.
 
-.. |Build_Status| image:: https://travis-ci.org/oasis-open/cti-taxii-
-server.svg?branch=master
+.. |Build_Status| image:: https://travis-ci.org/oasis-open/cti-taxii-server.svg?branch=master
    :target: https://travis-ci.org/oasis-open/cti-taxii-server
-.. |Coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-
-server/branch/master/graph/badge.svg
+.. |Coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-server/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/oasis-open/cti-taxii-server
-.. |Version| image::
-https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
+.. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/medallion/
-
