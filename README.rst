@@ -69,8 +69,7 @@ Server::
     medallion v0.2.1
 
     positional arguments:
-      CONFIG_PATH           The location of the JSON configuration
-      file to use.
+      CONFIG_PATH           The location of the JSON configuration file to use.
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -115,8 +114,7 @@ To use the Mongo DB back-end plug, include the following in the
          "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "url": <Mongo DB server url>  # e.g.,
-            "mongodb://localhost:27017/"
+            "url": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
          }
     }
 
@@ -163,16 +161,14 @@ We also provide a Docker image to make it easier to run *medallion*::
 
 If operating behind a proxy, add the following option (replacing
 `<proxy>` with
-your proxy location and port):
-`--build-arg https_proxy=<proxy>`.
+your proxy location and port): ``--build-arg https_proxy=<proxy>``.
 
 Then run the image::
 
     $ docker run --rm -p 5000:5000 -v <directory>:/var/taxii medallion
 
-Replace `<directory` with the full path to the directory containing
-your
-medallion configuration.
+Replace ``<directory>`` with the full path to the directory containing
+your medallion configuration.
 
 Governance
 ==========
@@ -269,7 +265,7 @@ Current Maintainers of this TC Open Repository
    https://github.com/rpiazza/; WWW: `MITRE
    Corporation <https://www.mitre.org/>`__
 -  `Emmanuelle Vargas-Gonzalez <mailto:emmanuelle@mitre.org>`__;
-GitHub ID:
+   GitHub ID:
    https://github.com/emmanvg/; WWW: `MITRE
    Corporation <https://www.mitre.org/>`__
 
