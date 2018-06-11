@@ -3,7 +3,7 @@ from flask import Blueprint, Response, abort, current_app, request
 
 from medallion import auth
 from medallion.utils import common
-from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
+from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20, FILTERS
 
 mod = Blueprint("objects", __name__)
 
@@ -25,7 +25,7 @@ def get_or_add_objects(api_root, id_):
 
     if request.method == "GET":
         if permission_to_read(api_root, id_):
-            objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"))
+            objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, FILTERS)
             if objects:
                 return Response(response=flask.json.dumps(objects),
                                 status=200,
@@ -52,7 +52,7 @@ def get_object(api_root, id_, object_id):
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
 
     if permission_to_read(api_root, id_):
-        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("version",))
+        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, FILTERS)
         if objects:
             return Response(response=flask.json.dumps(objects),
                             status=200,

@@ -93,7 +93,8 @@ def format_datetime(dttm):
     if zoned.microsecond > 0:
         ms = zoned.strftime("%f")
         ts = ts + '.' + ms.rstrip("0")
-    return ts + "Z"
+
+    return convert_to_stix_datetime(ts + "Z")
 
 
 def convert_to_stix_datetime(timestamp_string):

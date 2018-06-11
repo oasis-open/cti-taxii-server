@@ -46,6 +46,7 @@ class MongoBackend(Backend):
             manifest_info.insert_one(
                 {"id": new_obj["id"],
                  "_collection_id": _collection_id,
+                 "_type": new_obj["type"],
                  "date_added": format_datetime(get_timestamp()),
                  "versions": [version],
                  "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
@@ -55,9 +56,26 @@ class MongoBackend(Backend):
         # TODO: Handle if mongodb is not available
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
-        info = collection.find_one()
-        if info:
-            info.pop("_id", None)
+        pipeline = [{
+            '$lookup': 
+            {
+                'from': "api_root_info",
+                'localField': "api_roots",
+                'foreignField': "_name",
+                'as': "roots"
+            }
+        }]
+        pipeline.append({
+            '$project': 
+            { 
+                '_id': 0, 
+                'title': 1, 
+                'description': 1, 
+                'contact': 1, 
+                'api_roots': "$roots._url" 
+            }
+        })
+        info = list(collection.aggregate(pipeline))[0]
         return info
 
     def get_collections(self, api_root):
