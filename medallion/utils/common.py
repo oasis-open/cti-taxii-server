@@ -94,7 +94,7 @@ def format_datetime(dttm):
         ms = zoned.strftime("%f")
         ts = ts + '.' + ms.rstrip("0")
 
-    return convert_to_stix_datetime(ts + "Z")
+    return ts + "Z"
 
 
 def convert_to_stix_datetime(timestamp_string):
