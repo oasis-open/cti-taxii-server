@@ -90,5 +90,5 @@ def handle_error(error):
         "http_status": "500"
     }
     return Response(response=flask.json.dumps(error),
-        status=500,
-        mimetype=MEDIA_TYPE_STIX_V20)
+                    status=500,
+                    mimetype=MEDIA_TYPE_STIX_V20)
