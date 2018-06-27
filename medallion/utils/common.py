@@ -93,7 +93,6 @@ def format_datetime(dttm):
     if zoned.microsecond > 0:
         ms = zoned.strftime("%f")
         ts = ts + '.' + ms.rstrip("0")
-
     return ts + "Z"
 
 
