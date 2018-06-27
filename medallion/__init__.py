@@ -7,7 +7,7 @@ from flask import Flask, current_app, Response
 from flask_httpauth import HTTPBasicAuth
 
 from medallion.version import __version__  # noqa
-from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
+from medallion.views import MEDIA_TYPE_STIX_V20
 
 # Console Handler for medallion messages
 ch = logging.StreamHandler()
@@ -19,6 +19,7 @@ log.addHandler(ch)
 
 application_instance = Flask(__name__)
 auth = HTTPBasicAuth()
+
 
 def load_app(config_file):
     with open(config_file, "r") as f:
@@ -81,12 +82,13 @@ def register_blueprints(flask_application_instance):
         current_app.register_blueprint(manifest.mod)
         current_app.register_blueprint(objects.mod)
 
+
 @application_instance.errorhandler(500)
 def handle_error(error):
     error = {
         "title": error.args[0],
-        "http_status" : "500"
+        "http_status": "500"
     }
     return Response(response=flask.json.dumps(error),
-                            status=500,
-                            mimetype=MEDIA_TYPE_STIX_V20)
+        status=500,
+        mimetype=MEDIA_TYPE_STIX_V20)
