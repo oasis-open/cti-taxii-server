@@ -3,6 +3,7 @@ from medallion.test.generic_initialize_mongodb import (add_api_root,
                                                        connect_to_client)
 from medallion.utils.common import convert_to_stix_datetime
 
+
 def reset_db():
     client = connect_to_client()
     client.drop_database("discovery_database")

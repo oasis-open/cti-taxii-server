@@ -35,14 +35,14 @@ class MongoDBFilter(BasicFilter):
         results = []
         date_filter = []
         version_filter = []
-        match_filter = { '$match': self.full_query }
+        match_filter = {'$match': self.full_query}
         pipeline = [match_filter]
         # create added_after filter
         if "added_after" in allowed:
             added_after_date = self.filter_args.get("added_after")
             if added_after_date:
                 added_after_timestamp = common.convert_to_stix_datetime(added_after_date)
-                date_filter = { '$match': { 'date_added': {'$gt': added_after_timestamp } } }
+                date_filter = {'$match': {'date_added': {'$gt': added_after_timestamp}}}
                 pipeline.append(date_filter)
 
         # create version filter
@@ -50,7 +50,7 @@ class MongoDBFilter(BasicFilter):
             match_version = self.filter_args.get("match[version]")
             if not match_version:
                     match_version = "last"
-            if not "all" in match_version:
+            if "all" not in match_version:
                 actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
                 # If specific dates have been selected, then we add these to the $match criteria
                 # created from the self.full_query at the beginning of this method. The reason we need
@@ -58,33 +58,32 @@ class MongoDBFilter(BasicFilter):
                 # doesn't exist in the versions array. -1 will be interrpreted by $arrayElemAt as the 
                 # final element in the array and we will return the wrong result. i.e. not only will the
                 # version dates be incorrect, but we shouldn't have returned a result at all. 
-                #if actual_dates:
+                # if actual_dates:
                 if len(actual_dates) > 0:
-                    pipeline.insert(1, { '$match': {'versions': { '$all': [",".join(actual_dates)] } } })
+                    pipeline.insert(1, {'$match': {'versions': {'$all': [",".join(actual_dates)]}}})
 
                 # The versions array in the mongodb document is ordered newest to oldest, so the 'last' 
                 # (most recent date) is in first position in the list and the oldest 'first' is in
                 # the last position (equal to index -1 for $arrayElemAt) 
                 version_selector = []
                 if "last" in match_version:
-                    version_selector.append({ '$arrayElemAt': [ "$versions", 0]})
+                    version_selector.append({'$arrayElemAt': ["$versions", 0]})
                 if "first" in match_version:
-                    version_selector.append({ '$arrayElemAt': [ "$versions", -1]})
+                    version_selector.append({'$arrayElemAt': ["$versions", -1]})
                 for d in actual_dates:
-                    version_selector.append({ '$arrayElemAt': [ "$versions", { '$indexOfArray': ["$versions", d]}]})
-                version_filter = { 
+                    version_selector.append({'$arrayElemAt': ["$versions", {'$indexOfArray': ["$versions", d]}]})
+                version_filter = {
                     '$project':
                     {
-                        'id': 1, 
-                        'date_added': 1, 
-                        'versions': version_selector, 
+                        'id': 1,
+                        'date_added': 1,
+                        'versions': version_selector,
                         'media_types': 1
-                    }  
+                    }
                 }
                 pipeline.append(version_filter)
 
         if data._Collection__name == "manifests":
-            
             cursor = data.aggregate(pipeline)
             results = list(cursor)
         else:
@@ -117,9 +116,9 @@ class MongoDBFilter(BasicFilter):
             }    
             pipeline.append(project_objects)
             # denormalise the embedded objects and replace the document root
-            pipeline.append({ '$unwind': '$obj' })
-            pipeline.append({ '$replaceRoot': { 'newRoot': "$obj" } })
-            # Redact the result set removing objects where the modified date is not in 
+            pipeline.append({'$unwind': '$obj'})
+            pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})
+            # Redact the result set removing objects where the modified date is not in
             # the versions array
             redact_objects = {
                 '$redact': {
@@ -136,13 +135,13 @@ class MongoDBFilter(BasicFilter):
             }
             pipeline.append(redact_objects)
             # Project the final results
-            project_results = { 
+            project_results = {
                 '$project': {
                     'versions': 0
-                }  
+                }
             }
             pipeline.append(project_results)
             cursor = manifest_info["mongodb_collection"].aggregate(pipeline)
             results = list(cursor)
-        
+
         return results

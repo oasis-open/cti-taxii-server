@@ -57,7 +57,7 @@ class MongoBackend(Backend):
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
         pipeline = [{
-            '$lookup': 
+            '$lookup':
             {
                 'from': "api_root_info",
                 'localField': "api_roots",
@@ -66,13 +66,13 @@ class MongoBackend(Backend):
             }
         }]
         pipeline.append({
-            '$project': 
-            { 
-                '_id': 0, 
-                'title': 1, 
-                'description': 1, 
-                'contact': 1, 
-                'api_roots': "$roots._url" 
+            '$project':
+            {
+                '_id': 0,
+                'title': 1,
+                'description': 1,
+                'contact': 1,
+                'api_roots': "$roots._url"
             }
         })
         info = list(collection.aggregate(pipeline))[0]
