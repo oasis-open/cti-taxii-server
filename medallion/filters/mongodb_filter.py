@@ -55,16 +55,16 @@ class MongoDBFilter(BasicFilter):
                 # If specific dates have been selected, then we add these to the $match criteria
                 # created from the self.full_query at the beginning of this method. The reason we need
                 # to do this is because the $indexOfArray function below will return -1 if the date
-                # doesn't exist in the versions array. -1 will be interrpreted by $arrayElemAt as the 
+                # doesn't exist in the versions array. -1 will be interrpreted by $arrayElemAt as the
                 # final element in the array and we will return the wrong result. i.e. not only will the
-                # version dates be incorrect, but we shouldn't have returned a result at all. 
+                # version dates be incorrect, but we shouldn't have returned a result at all.
                 # if actual_dates:
                 if len(actual_dates) > 0:
                     pipeline.insert(1, {'$match': {'versions': {'$all': [",".join(actual_dates)]}}})
 
-                # The versions array in the mongodb document is ordered newest to oldest, so the 'last' 
+                # The versions array in the mongodb document is ordered newest to oldest, so the 'last'
                 # (most recent date) is in first position in the list and the oldest 'first' is in
-                # the last position (equal to index -1 for $arrayElemAt) 
+                # the last position (equal to index -1 for $arrayElemAt)
                 version_selector = []
                 if "last" in match_version:
                     version_selector.append({'$arrayElemAt': ["$versions", 0]})
@@ -113,7 +113,7 @@ class MongoDBFilter(BasicFilter):
                     'obj.created_by_ref': 1,
                     'obj.object_marking_refs': 1
                 }
-            }    
+            }
             pipeline.append(project_objects)
             # denormalise the embedded objects and replace the document root
             pipeline.append({'$unwind': '$obj'})
