@@ -76,6 +76,8 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         server_info = self.load_json_response(r.data)
         assert server_info["title"] == "Some TAXII Server"
+        assert len(server_info["api_roots"]) == 2
+        assert server_info["api_roots"][0] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
         r = self.client.get("/trustgroup1/", headers=self.auth)
