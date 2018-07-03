@@ -2,7 +2,7 @@ import flask
 from flask import Blueprint, Response, abort, current_app, request
 
 from medallion import auth
-from medallion.views import MEDIA_TYPE_TAXII_V20, FILTERS
+from medallion.views import FILTERS, MEDIA_TYPE_TAXII_V20
 
 mod = Blueprint("manifest", __name__)
 

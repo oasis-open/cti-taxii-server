@@ -3,7 +3,7 @@ import json
 import logging
 
 import flask
-from flask import Flask, current_app, Response
+from flask import Flask, Response, current_app
 from flask_httpauth import HTTPBasicAuth
 
 from medallion.version import __version__  # noqa
