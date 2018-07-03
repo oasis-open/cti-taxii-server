@@ -47,6 +47,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+.pytest_cache/
 
 # Translations
 *.mo
@@ -129,4 +130,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
