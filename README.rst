@@ -99,7 +99,7 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
          "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "url": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+            "uri": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
          }
     }
 

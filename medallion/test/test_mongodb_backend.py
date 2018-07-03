@@ -47,7 +47,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
             "backend": {
                 "module": "medallion.backends.mongodb_backend",
                 "module_class": "MongoBackend",
-                "url": "mongodb://localhost:27017/"
+                "uri": "mongodb://localhost:27017/"
             },
             "users": {
                 "admin": "Password0"
