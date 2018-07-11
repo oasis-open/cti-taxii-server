@@ -38,12 +38,11 @@ class MongoDBFilter(BasicFilter):
         match_filter = {'$match': self.full_query}
         pipeline = [match_filter]
         # create added_after filter
-        if "added_after" in allowed:
-            added_after_date = self.filter_args.get("added_after")
-            if added_after_date:
-                added_after_timestamp = common.convert_to_stix_datetime(added_after_date)
-                date_filter = {'$match': {'date_added': {'$gt': added_after_timestamp}}}
-                pipeline.append(date_filter)
+        added_after_date = self.filter_args.get("added_after")
+        if added_after_date:
+            added_after_timestamp = common.convert_to_stix_datetime(added_after_date)
+            date_filter = {'$match': {'date_added': {'$gt': added_after_timestamp}}}
+            pipeline.append(date_filter)
 
         # create version filter
         if "version" in allowed:
