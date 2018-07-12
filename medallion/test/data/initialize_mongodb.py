@@ -95,8 +95,20 @@ def reset_db():
                             ],
                             '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
                             '_type': 'relationship'
+                        },
+                        {
+                            "date_added": "2017-01-20T00:00:00.000Z",
+                            "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+                            "media_types": [
+                                "application/vnd.oasis.stix+json; version=2.0"
+                            ],
+                            "versions": [
+                                "2017-01-20T00:00:00.000Z"
+                            ],
+                            "_type": "marking-definition"
                         }
-                    ])
+                        ])
 
     api_root_db["collections"].insert_one({
                      "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
@@ -180,6 +192,16 @@ def reset_db():
                             "target_ref": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
                             "type": "relationship",
                             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+                         },
+                         {
+                            "type": "marking-definition",
+                            "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+                            "created": "2017-01-20T00:00:00.000Z",
+                            "definition_type": "tlp",
+                            "definition": {
+                                "tlp": "green"
+                            }
                          }
                          ])
 

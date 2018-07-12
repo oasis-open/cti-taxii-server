@@ -343,3 +343,86 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         bundle = self.load_json_response(r_get.data)
 
         assert any(obj["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111" for obj in bundle["objects"])
+
+    def test_marking_defintions(self):
+        get_header = copy.deepcopy(self.auth)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+
+        # ------------- BEGIN: get manifest section 1 ------------- #
+        r_get = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[id]=marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
+
+        manifests = self.load_json_response(r_get.data)
+
+        assert manifests["objects"][0]["id"] == "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da"
+        self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
+        # ------------- END: get manifest section 1 ------------- #
+        # ------------- BEGIN: get manifest section 2 ------------- #
+        r_get = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[type]=marking-definition",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
+
+        manifests = self.load_json_response(r_get.data)
+
+        assert all(obj["id"].startswith("marking-definition") for obj in  manifests["objects"])
+        self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one results")
+        # ------------- END: get manifest section 2 ------------- #
+        # ------------- BEGIN: get objects section 1 ------------- #
+        r_get = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da/",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
+
+        manifests = self.load_json_response(r_get.data)
+
+        assert manifests["objects"][0]["id"] == "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da"
+        self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
+        # ------------- END: get objects section 1 ------------- #
+        # ------------- BEGIN: get objects section 2 ------------- #
+        r_get = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[type]=marking-definition",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
+
+        manifests = self.load_json_response(r_get.data)
+
+        assert all(obj["id"].startswith("marking-definition") for obj in  manifests["objects"])
+        self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
+        # ------------- END: get objects section 2 ------------- #
+        # ------------- BEGIN: get objects section 3 ------------- #
+        r_get = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[type]=marking-definition,malware",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
+
+        manifests = self.load_json_response(r_get.data)
+
+        assert all((obj["id"].startswith("marking-definition") or obj["id"].startswith("malware")) for obj in  manifests["objects"])
+        self.assertEqual(len(manifests["objects"]), 2, "Expected exactly two results")
+        # ------------- END: get objects section 3 ------------- #
+        # ------------- BEGIN: get objects section 4 ------------- #
+        r_get = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
+
+        manifests = self.load_json_response(r_get.data)
+
+        assert manifests["objects"][0]["id"] == "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da"
+        self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
+        # ------------- END: get objects section 4 ------------- #
