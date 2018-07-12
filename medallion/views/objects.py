@@ -52,7 +52,7 @@ def get_object(api_root, id_, object_id):
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
 
     if permission_to_read(api_root, id_):
-        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("id", "type", "version"))
+        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("version",))
         if objects:
             return Response(response=flask.json.dumps(objects),
                             status=200,
