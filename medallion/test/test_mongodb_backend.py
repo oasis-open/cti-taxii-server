@@ -2,10 +2,9 @@ import base64
 import copy
 import json
 import time
+import six
 import unittest
 import uuid
-
-import six
 
 from medallion import (application_instance, init_backend, register_blueprints,
                        set_config)
@@ -371,7 +370,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         manifests = self.load_json_response(r_get.data)
 
-        assert all(obj["id"].startswith("marking-definition") for obj in  manifests["objects"])
+        assert all(obj["id"].startswith("marking-definition") for obj in manifests["objects"])
         self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one results")
         # ------------- END: get manifest section 2 ------------- #
         # ------------- BEGIN: get objects section 1 ------------- #
@@ -397,7 +396,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         manifests = self.load_json_response(r_get.data)
 
-        assert all(obj["id"].startswith("marking-definition") for obj in  manifests["objects"])
+        assert all(obj["id"].startswith("marking-definition") for obj in manifests["objects"])
         self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
         # ------------- END: get objects section 2 ------------- #
         # ------------- BEGIN: get objects section 3 ------------- #
@@ -410,7 +409,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         manifests = self.load_json_response(r_get.data)
 
-        assert all((obj["id"].startswith("marking-definition") or obj["id"].startswith("malware")) for obj in  manifests["objects"])
+        assert all((obj["id"].startswith("marking-definition") or obj["id"].startswith("malware")) for obj in manifests["objects"])
         self.assertEqual(len(manifests["objects"]), 2, "Expected exactly two results")
         # ------------- END: get objects section 3 ------------- #
         # ------------- BEGIN: get objects section 4 ------------- #

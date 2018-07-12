@@ -162,8 +162,8 @@ class MongoDBFilter(BasicFilter):
             return True
 
         if "_type" in pipeline[0]["$match"].keys():
-            if (isinstance(pipeline[0]["$match"]["_type"], dict) and \
-                "$in" in pipeline[0]["$match"]["_type"].keys()) and \
+            if (isinstance(pipeline[0]["$match"]["_type"], dict) and
+                "$in" in pipeline[0]["$match"]["_type"].keys()) and
                 ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"]):
                 return True
             elif (pipeline[0]["$match"]["_type"].startswith("marking-definition")):
