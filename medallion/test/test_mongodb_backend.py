@@ -2,9 +2,10 @@ import base64
 import copy
 import json
 import time
-import six
 import unittest
 import uuid
+
+import six
 
 from medallion import (application_instance, init_backend, register_blueprints,
                        set_config)

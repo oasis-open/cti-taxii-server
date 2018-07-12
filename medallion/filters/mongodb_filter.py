@@ -50,9 +50,9 @@ class MongoDBFilter(BasicFilter):
             if data.name == "objects" and "_type" in pipeline[0]["$match"].keys():
                 pipeline[0]["$match"]["type"] = pipeline[0]["$match"].pop("_type")
             cursor = data.aggregate(pipeline)
-            results = list(cursor)   
+            results = list(cursor)
 
-            return results 
+            return results
 
         # create version filter
         if "version" in allowed:
@@ -91,7 +91,7 @@ class MongoDBFilter(BasicFilter):
                     }
                 }
                 pipeline.append(version_filter)
-   
+
         if data._Collection__name == "manifests":
             cursor = data.aggregate(pipeline)
             results = list(cursor)
@@ -126,7 +126,7 @@ class MongoDBFilter(BasicFilter):
             pipeline.append(project_objects)
             # denormalise the embedded objects and replace the document root
             pipeline.append({'$unwind': '$obj'})
-            pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})     
+            pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})
             # Redact the result set removing objects where the modified date is not in
             # the versions array
             redact_objects = {
@@ -157,14 +157,14 @@ class MongoDBFilter(BasicFilter):
 
     def filter_contains_marking_definition(self, pipeline):
         # If we are matching on id (either match[id]= or /{id}), then check if we are trying to find a marking definition.
-        # If so, we don't want do filter by version as marking-definition objects are not versioned. 
+        # If so, we don't want do filter by version as marking-definition objects are not versioned.
         if ("id" in pipeline[0]["$match"].keys() and pipeline[0]["$match"]["id"].startswith("marking-definition")):
             return True
 
         if "_type" in pipeline[0]["$match"].keys():
-            if (isinstance(pipeline[0]["$match"]["_type"], dict) and \
-                "$in" in pipeline[0]["$match"]["_type"].keys()) and \
-                ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"]):
+            if ((isinstance(pipeline[0]["$match"]["_type"], dict)
+                    and "$in" in pipeline[0]["$match"]["_type"].keys())
+                    and ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
                 return True
             elif (pipeline[0]["$match"]["_type"].startswith("marking-definition")):
                 return True
