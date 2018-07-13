@@ -7,7 +7,7 @@ from flask import Flask, Response, current_app
 from flask_httpauth import HTTPBasicAuth
 
 from medallion.version import __version__  # noqa
-from medallion.views import MEDIA_TYPE_STIX_V20
+from medallion.views import MEDIA_TYPE_TAXII_V20
 
 # Console Handler for medallion messages
 ch = logging.StreamHandler()
@@ -91,4 +91,4 @@ def handle_error(error):
     }
     return Response(response=flask.json.dumps(error),
                     status=500,
-                    mimetype=MEDIA_TYPE_STIX_V20)
+                    mimetype=MEDIA_TYPE_TAXII_V20)
