@@ -1,6 +1,7 @@
 from medallion.test.generic_initialize_mongodb import (add_api_root,
                                                        build_new_mongo_databases_and_collection,
                                                        connect_to_client)
+from medallion.utils.common import convert_to_stix_datetime
 
 
 def reset_db():
@@ -61,27 +62,53 @@ def reset_db():
     api_root_db["manifests"].insert_many([
                         {
                             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-                            "date_added": "2016-11-01T03:04:05Z",
+                            "date_added": convert_to_stix_datetime("2016-11-01T03:04:05Z"),
                             "versions": [
                                 "2014-05-08T09:00:00.000Z"
                             ],
                             "media_types": [
                                 "application/vnd.oasis.stix+json; version=2.0"
                             ],
-                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116'
+                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            '_type': 'indicator'
                         },
                         {
                             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
-                            "date_added": "2016-11-01T10:29:05Z",
+                            "date_added": convert_to_stix_datetime("2017-01-27T13:49:53.997Z"),
                             "versions": [
                                 "2017-01-27T13:49:53.997Z"
                             ],
                             "media_types": [
                                 "application/vnd.oasis.stix+json; version=2.0"
                             ],
-                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116'
+                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            '_type': 'malware'
+                        },
+                        {
+                            "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
+                            "date_added": convert_to_stix_datetime("2014-05-08T09:00:00.000Z"),
+                            "versions": [
+                                "2014-05-08T09:00:00.000Z"
+                            ],
+                            "media_types": [
+                                "application/vnd.oasis.stix+json; version=2.0"
+                            ],
+                            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            '_type': 'relationship'
+                        },
+                        {
+                            "date_added": "2017-01-20T00:00:00.000Z",
+                            "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+                            "media_types": [
+                                "application/vnd.oasis.stix+json; version=2.0"
+                            ],
+                            "versions": [
+                                "2017-01-20T00:00:00.000Z"
+                            ],
+                            "_type": "marking-definition"
                         }
-                    ])
+                        ])
 
     api_root_db["collections"].insert_one({
                      "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
@@ -165,6 +192,16 @@ def reset_db():
                             "target_ref": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
                             "type": "relationship",
                             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+                         },
+                         {
+                            "type": "marking-definition",
+                            "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                            "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+                            "created": "2017-01-20T00:00:00.000Z",
+                            "definition_type": "tlp",
+                            "definition": {
+                                "tlp": "green"
+                            }
                          }
                          ])
 

@@ -17,9 +17,9 @@ class MongoDBFilter(BasicFilter):
             if match_type and "type" in allowed:
                 types_ = match_type.split(",")
                 if len(types_) == 1:
-                    parameters["type"] = types_[0]
+                    parameters["_type"] = types_[0]
                 else:
-                    parameters["type"] = {"$in": types_}
+                    parameters["_type"] = {"$in": types_}
             match_id = self.filter_args.get("match[id]")
             if match_id and "id" in allowed:
                 ids_ = match_id.split(",")
@@ -30,32 +30,143 @@ class MongoDBFilter(BasicFilter):
         return parameters
 
     def process_filter(self, data, allowed, manifest_info):
-        results = list(data.find(self.full_query))
-        if results and self.filter_args:
-            if "version" in allowed:
-                match_version = self.filter_args.get("match[version]")
-                if not match_version:
+        # if not self.filter_args:
+        #     return list(data.find(self.full_query))
+        results = []
+        date_filter = []
+        version_filter = []
+        match_filter = {'$match': self.full_query}
+        pipeline = [match_filter]
+        # create added_after filter
+        added_after_date = self.filter_args.get("added_after")
+        if added_after_date:
+            added_after_timestamp = common.convert_to_stix_datetime(added_after_date)
+            date_filter = {'$match': {'date_added': {'$gt': added_after_timestamp}}}
+            pipeline.append(date_filter)
+
+        # need to handle marking-definitions differently as they are not versioned like SDO's
+        if self.filter_contains_marking_definition(pipeline):
+            # If we are finding marking-definitions from the objects collection we need to change the match criteria from "_type" to "type"
+            if data.name == "objects" and "_type" in pipeline[0]["$match"].keys():
+                pipeline[0]["$match"]["type"] = pipeline[0]["$match"].pop("_type")
+            cursor = data.aggregate(pipeline)
+            results = list(cursor)
+
+            return results
+
+        # create version filter
+        if "version" in allowed:
+            match_version = self.filter_args.get("match[version]")
+            if not match_version:
                     match_version = "last"
-                if self.is_manifest_entry(results[0]):
-                    results = self.filter_manifest_entries_by_version(results, match_version)
-                else:
-                    new_results = []
-                    for bucket in BasicFilter._equivalence_partition_by_id(results):
-                        new_results.extend(self.filter_by_version(bucket, match_version))
-                    results = new_results
-            added_after_date = self.filter_args.get("added_after")
-            if added_after_date:
-                added_after_timestamp = common.convert_to_stix_datetime(added_after_date)
-                new_results = []
-                for obj in results:
-                    info = manifest_info["mongodb_collection"].find_one(
-                        {"id": obj["id"], "_collection_id": manifest_info["_collection_id"]}
-                    )
-                    if info:
-                        added_date_timestamp = common.convert_to_stix_datetime(info["date_added"])
-                        if added_date_timestamp > added_after_timestamp:
-                            new_results.append(obj)
-                return new_results
-            else:
-                return results
+            if "all" not in match_version:
+                actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
+                # If specific dates have been selected, then we add these to the $match criteria
+                # created from the self.full_query at the beginning of this method. The reason we need
+                # to do this is because the $indexOfArray function below will return -1 if the date
+                # doesn't exist in the versions array. -1 will be interrpreted by $arrayElemAt as the
+                # final element in the array and we will return the wrong result. i.e. not only will the
+                # version dates be incorrect, but we shouldn't have returned a result at all.
+                # if actual_dates:
+                if len(actual_dates) > 0:
+                    pipeline.insert(1, {'$match': {'versions': {'$all': [",".join(actual_dates)]}}})
+
+                # The versions array in the mongodb document is ordered newest to oldest, so the 'last'
+                # (most recent date) is in first position in the list and the oldest 'first' is in
+                # the last position (equal to index -1 for $arrayElemAt)
+                version_selector = []
+                if "last" in match_version:
+                    version_selector.append({'$arrayElemAt': ["$versions", 0]})
+                if "first" in match_version:
+                    version_selector.append({'$arrayElemAt': ["$versions", -1]})
+                for d in actual_dates:
+                    version_selector.append({'$arrayElemAt': ["$versions", {'$indexOfArray': ["$versions", d]}]})
+                version_filter = {
+                    '$project':
+                    {
+                        'id': 1,
+                        'date_added': 1,
+                        'versions': version_selector,
+                        'media_types': 1
+                    }
+                }
+                pipeline.append(version_filter)
+
+        if data._Collection__name == "manifests":
+            cursor = data.aggregate(pipeline)
+            results = list(cursor)
+        else:
+            # Join the filtered manifest(s) to the objects collection
+            join_objects = {
+                '$lookup':
+                {
+                    'from': "objects",
+                    'localField': "id",
+                    'foreignField': "id",
+                    'as': "obj"
+                }
+            }
+            pipeline.append(join_objects)
+            # Copy the filtered version list to the embedded object document
+            project_objects = {
+                '$project': {
+                    'obj.versions': '$versions',
+                    'obj.id': 1,
+                    'obj.modified': 1,
+                    'obj.created': 1,
+                    'obj.labels': 1,
+                    'obj.name': 1,
+                    'obj.pattern': 1,
+                    'obj.type': 1,
+                    'obj.valid_from': 1,
+                    'obj.created_by_ref': 1,
+                    'obj.object_marking_refs': 1
+                }
+            }
+            pipeline.append(project_objects)
+            # denormalise the embedded objects and replace the document root
+            pipeline.append({'$unwind': '$obj'})
+            pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})
+            # Redact the result set removing objects where the modified date is not in
+            # the versions array
+            redact_objects = {
+                '$redact': {
+                    '$cond': {
+                        'if': {
+                            '$setIsSubset': [
+                                ["$modified"], "$versions"
+                            ]
+                        },
+                        'then': "$$KEEP",
+                        'else': "$$PRUNE"
+                    }
+                }
+            }
+            pipeline.append(redact_objects)
+            # Project the final results
+            project_results = {
+                '$project': {
+                    'versions': 0
+                }
+            }
+            pipeline.append(project_results)
+            cursor = manifest_info["mongodb_collection"].aggregate(pipeline)
+            results = list(cursor)
+
         return results
+
+    def filter_contains_marking_definition(self, pipeline):
+        # If we are matching on id (either match[id]= or /{id}), then check if we are trying to find a marking definition.
+        # If so, we don't want do filter by version as marking-definition objects are not versioned.
+        if ("id" in pipeline[0]["$match"].keys() and pipeline[0]["$match"]["id"].startswith("marking-definition")):
+            return True
+
+        if "_type" in pipeline[0]["$match"].keys():
+            if ((isinstance(pipeline[0]["$match"]["_type"], dict)
+                    and "$in" in pipeline[0]["$match"]["_type"].keys())
+                    and ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
+                return True
+            elif (pipeline[0]["$match"]["_type"].startswith("marking-definition")):
+                return True
+
+        return False
