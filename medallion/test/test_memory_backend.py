@@ -372,3 +372,167 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
             )
             objs = self.load_json_response(r_get.data)
             assert objs["objects"][0]["id"] == new_id
+
+    def test_get_collections_401(self):
+        r = self.client.get("/trustgroup1/collections/")
+        self.assertEqual(r.status_code, 401)
+
+    def test_get_collections_403(self):
+        """might not be possible or worth it"""
+        pass
+
+    def test_get_collections_404(self):
+        r = self.client.get("/carbon1/collections/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_status_401(self):
+        # non existent object ID but shouldnt matter as the request should never pass login auth
+        r = self.client.get("/trustgroup1/status/2223/")
+        self.assertEqual(r.status_code, 401)
+
+    def test_get_status_403(self):
+        """might not be possible or worth it"""
+        pass
+
+    def test_get_status_404(self):
+        r = self.client.get("/trustgroup1/status/22101993/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_object_manifest_401(self):
+        # non existent object ID but shouldnt matter as the request should never pass login
+        r = self.client("/trustgroup1/collections/24042009/manifest/")
+        self.assertEqual(r.status_code, 401)
+
+    def test_get_object_manifest_403(self):
+        """might not be possible or worth it"""
+        pass
+
+    def test_get_object_manifest_404(self):
+        r = self.client("/trustgroup1/collections/24042009/manifest/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_object_401(self):
+        r = self.client.get(
+           "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/"
+        )
+        self.assertEqual(r.status_code, 401)
+
+def test_get_object_403(self):
+        r = self.client.get(
+            "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 403)
+
+    def test_get_object_404(self):
+        r = self.client.get(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--cee60c30-a68c-11e3-b0c1-a01aac20d000/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 404)
+
+    def get_or_add_objects_401(self):
+        # note that no credentials are supplied with requests
+
+        # get_objects()
+        r = self.client.get_or_add_objects("/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/")
+        self.assertEqual(r.status_code, 401)
+
+        # add_objects()
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = {}
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        status_response = self.load_json_response(r_post.data)
+        self.assertEqual(r_post.status_code, 401)
+
+    def get_or_add_objects_403(self):
+        # get_objects()
+        r = self.client.get_or_add_objects(
+            "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 403)
+
+        # add_objects
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/",
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        status_response = self.load_json_response(r_post.data)
+        self.assertEqual(r_post.status_code, 403)
+
+    def get_or_add_objects_404(self):
+        # get_objects()
+        r = self.client.get_or_add_objects(
+            "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/objects/",
+            headers=self.auth,
+        )
+        self.assertEqual(r.status_code, 404)
+
+        # add_objects
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/objects/",
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        status_response = self.load_json_response(r_post.data)
+        self.assertEqual(r_post.status_code, 404)
+
+    def get_or_add_objects_422(self):
+        """ only applies to adding objects as would arise if user content is malformed"""
+
+        # add_objects()
+        new_id = "indicator--%s" % uuid.uuid4()
+        malformed_bundle = {
+            "created": "2016-11-03T12:30:59.000Z",
+            "description": "Accessing this url will infect your machine with malware.",
+            "id": new_id,
+            "labels": [
+                "url-watchlist"
+            ],
+            "modified": "2016-11-03T12:30:59.000Z",
+            "name": "Malicious site hosting downloader",
+            "pattern": "[url:value = 'http://yarg.cn/4712']",
+            "type": "indicator",
+            "valid_from": "2017-01-27T13:51:53.935382Z"
+        }
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/objects/",
+            data=json.dumps(malformed_bundle),
+            headers=post_header
+        )
+        status_response = self.load_json_response(r_post.data)
+        self.assertEqual(r_post.status_code, 422)
+

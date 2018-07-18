@@ -1,12 +1,12 @@
 import logging
 
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from medallion.filters.mongodb_filter import MongoDBFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp)
-
+from medallion.exceptions import ProcessingError, BackendError
 from .base import Backend
 
 # Module-level logger
@@ -24,6 +24,16 @@ class MongoBackend(Backend):
             self.client.admin.command("ismaster")
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(uri))
+
+    def _test_mongodb_conn(self):
+        """test mongodb is available
+
+        https://stackoverflow.com/questions/30539183/how-do-you-check-if-the-client-for-a-mongodb-instance-is-valid
+        """
+        try:
+            client.server_info()
+        except ServerSelectionTimeoutError as err:
+            raise BackendError(err)
 
     def _update_manifest(self, new_obj, api_root, _collection_id):
         # TODO: Handle if mongodb is not available
@@ -140,6 +150,8 @@ class MongoBackend(Backend):
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(filter_args,
                                     {"_collection_id": id_}, allowed_filters)
+        # Note: error handling (for an internal processing error) was not added to following call
+        # as MongoDB will handle (user supplied) filters gracefully if they dont exist
         objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
@@ -161,21 +173,24 @@ class MongoBackend(Backend):
         successes = []
         failures = []
 
-        for new_obj in objs["objects"]:
-            mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
-            if "modified" in new_obj:
-                mongo_query["modified"] = new_obj["modified"]
-            existing_entry = objects.find_one(mongo_query)
-            if existing_entry:
-                failures.append({"id": new_obj["id"],
-                                 "message": "Unable to process object"})
-                failed += 1
-            else:
-                new_obj.update({"_collection_id": collection_id})
-                objects.insert_one(new_obj)
-                self._update_manifest(new_obj, api_root, collection_id)
-                successes.append(new_obj["id"])
-                succeeded += 1
+        try:
+            for new_obj in objs["objects"]:
+                mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
+                if "modified" in new_obj:
+                    mongo_query["modified"] = new_obj["modified"]
+                existing_entry = objects.find_one(mongo_query)
+                if existing_entry:
+                    failures.append({"id": new_obj["id"],
+                                     "message": "Unable to process object"})
+                    failed += 1
+                else:
+                    new_obj.update({"_collection_id": collection_id})
+                    objects.insert_one(new_obj)
+                    self._update_manifest(new_obj, api_root, collection_id)
+                    successes.append(new_obj["id"])
+                    succeeded += 1
+        except Exception as e:
+            raise ProcessingError(e)
 
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)

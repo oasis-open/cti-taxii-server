@@ -4,6 +4,7 @@ from flask import Blueprint, Response, abort, current_app, request
 from medallion import auth
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
+from medallion.exceptions import ProcessingError
 
 mod = Blueprint("objects", __name__)
 
@@ -38,7 +39,11 @@ def get_or_add_objects(api_root, id_):
         if permission_to_write(api_root, id_):
             # Can't I get this from the request itself?
             request_time = common.format_datetime(common.get_timestamp())
-            status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(force=True), request_time)
+            try:
+                status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(force=True), request_time)
+            except ProcessingError as e:
+                abort(422)
+
             return Response(response=flask.json.dumps(status),
                             status=202,
                             mimetype=MEDIA_TYPE_TAXII_V20)
