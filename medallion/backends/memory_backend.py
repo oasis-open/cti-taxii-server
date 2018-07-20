@@ -1,10 +1,11 @@
 import copy
 import json
 
+from medallion.exceptions import ProcessingError
 from medallion.filters.basic_filter import BasicFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp, iterpath)
-from medallion.exceptions import ProcessingError
+
 from .base import Backend
 
 
@@ -157,24 +158,24 @@ class MemoryBackend(Backend):
                         collection["objects"] = []
                     try:
                         for new_obj in objs["objects"]:
-							id_and_version_already_present = False
-							if new_obj["id"] in collection["objects"]:
-							    current_obj = collection["objects"][new_obj["id"]]
-							    if "modified" in new_obj:
-								    if new_obj["modified"] == current_obj["modified"]:
-									    id_and_version_already_present = True
-							    else:
-								    # There is no modified field, so this object is immutable
-								    id_and_version_already_present = True
-						    if not id_and_version_already_present:
-							    collection["objects"].append(new_obj)
-							    self._update_manifest(new_obj, api_root, collection["id"])
-							    successes.append(new_obj["id"])
-							    succeeded += 1
-						    else:
-							    failures.append({"id": new_obj["id"],
-								                 "message": "Unable to process object"})
-							    failed += 1
+                            id_and_version_already_present = False
+                            if new_obj["id"] in collection["objects"]:
+                                current_obj = collection["objects"][new_obj["id"]]
+                                if "modified" in new_obj:
+                                    if new_obj["modified"] == current_obj["modified"]:
+                                        id_and_version_already_present = True
+                                else:
+                                    # There is no modified field, so this object is immutable
+                                    id_and_version_already_present = True
+                            if not id_and_version_already_present:
+                                collection["objects"].append(new_obj)
+                                self._update_manifest(new_obj, api_root, collection["id"])
+                                successes.append(new_obj["id"])
+                                succeeded += 1
+                            else:
+                                failures.append({"id": new_obj["id"],
+                                                 "message": "Unable to process object"})
+                                failed += 1
                     except Exception as e:
                         raise ProcessingError(e)
 

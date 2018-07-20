@@ -12,7 +12,6 @@ mod = Blueprint('collections', __name__)
 def get_collections(api_root):
     # TODO: Check if user has access to the each collection's metadata - unrelated to can_read, can_write attributes
     result = current_app.medallion_backend.get_collections(api_root)
-
     if result:
         return Response(response=flask.json.dumps(result), status=200, mimetype=MEDIA_TYPE_TAXII_V20)
     abort(404)

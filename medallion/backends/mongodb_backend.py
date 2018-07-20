@@ -3,10 +3,11 @@ import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
+from medallion.exceptions import BackendError, ProcessingError
 from medallion.filters.mongodb_filter import MongoDBFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp)
-from medallion.exceptions import ProcessingError, BackendError
+
 from .base import Backend
 
 # Module-level logger
@@ -31,7 +32,7 @@ class MongoBackend(Backend):
         https://stackoverflow.com/questions/30539183/how-do-you-check-if-the-client-for-a-mongodb-instance-is-valid
         """
         try:
-            client.server_info()
+            self.client.server_info()
         except ServerSelectionTimeoutError as err:
             raise BackendError(err)
 
@@ -93,10 +94,12 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}))
-        for c in collections:
-            if c:
-                c.pop("_id", None)
-        return {"collections": collections}
+        if collections:
+            # added existence check here to match memory backend behavior
+            for c in collections:
+                if c:
+                    c.pop("_id", None)
+            return {"collections": collections}
 
     def get_collection(self, api_root, id_):
         # TODO: Handle if mongodb is not available
@@ -150,8 +153,8 @@ class MongoBackend(Backend):
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(filter_args,
                                     {"_collection_id": id_}, allowed_filters)
-        # Note: error handling (for an internal processing error) was not added to following call
-        # as MongoDB will handle (user supplied) filters gracefully if they dont exist
+        # Note: error handling was not added to following call as mongo will handle (user
+        # supplied) filters gracefully if they dont exist
         objects_found = full_filter.process_filter(
             objects,
             allowed_filters,

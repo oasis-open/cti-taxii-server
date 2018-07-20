@@ -98,8 +98,12 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         collections_metadata = self.load_json_response(r.data)
         collections_metadata = sorted(collections_metadata["collections"], key=lambda x: x["id"])
-        assert collections_metadata[0]["id"] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
-        assert collections_metadata[1]["id"] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+        collection_ids = [cm["id"] for cm in collections_metadata]
+
+        assert len(collection_ids) == 3
+        assert "52892447-4d7e-4f70-b94d-d7f22742ff63" in collection_ids
+        assert "91a7b528-80eb-42ed-a74d-c6fbd5a26116" in collection_ids
+        assert "64993447-4d7e-4f70-b94d-d7f33742ee63" in collection_ids
 
     def test_get_collection(self):
         r = self.client.get(
@@ -344,7 +348,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         assert any(obj["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111" for obj in bundle["objects"])
 
-    def test_marking_definitions(self):
+    def test_marking_defintions(self):
         get_header = copy.deepcopy(self.auth)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
@@ -448,8 +452,8 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         """might not be possible or worth it"""
 
     def test_get_status_404(self):
-        r = self.client.get("/trustgroup1/status/22101993/")
-        self.assertEqual(r.status_code, 404, headers=self.auth)
+        r = self.client.get("/trustgroup1/status/22101993/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
 
     def test_get_object_manifest_401(self):
         # non existent ID but shouldnt matter as the request should never pass login
@@ -461,35 +465,39 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         pass
 
     def test_get_object_manifest_404(self):
-        r = self.client.get("/trustgroup1/collections/24042009/manifest/", header=self.auth)
+        r = self.client.get("/trustgroup1/collections/24042009/manifest/", headers=self.auth)
         self.assertEqual(r.status_code, 404)
 
     def test_get_object_401(self):
         r = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/",
-            headers=self.auth
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/"
         )
         self.assertEqual(r.status_code, 401)
 
-def test_get_object_403(self):
+    def test_get_object_403(self):
         r = self.client.get(
             "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/indicator--b81f86    b9-975b-bb0b-775e-810c5bd45b4f/",
             headers=self.auth
         )
-        r.assertEqual(r.status_code, 403)
+        self.assertEqual(r.status_code, 403)
 
     def test_get_object_404(self):
         r = self.client.get(
             "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--cee60c30    -a68c-11e3-b0c1-a01aac20d000/",
             headers=self.auth
         )
-        self.assertEqual(r.status_code, 404)
+        objs = self.load_json_response(r.data)
+
+        if r.status_code == 200:
+            assert len(objs["objects"]) == 0
+        else:
+            self.assertEqual(r.status_code, 404)
 
     def test_get_or_add_objects_401(self):
         # note that no credentials are supplied with requests
 
         # get_objects()
-        r = self.client.get_or_add_objects(
+        r = self.client.get(
             "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/"
         )
         self.assertEqual(r.status_code, 401)
@@ -508,12 +516,11 @@ def test_get_object_403(self):
             data=json.dumps(new_bundle),
             headers=post_header
         )
-        status_response = self.load_json_response(r_post.data)
         self.assertEqual(r_post.status_code, 401)
 
     def get_or_add_objects_403(self):
         # get_objects()
-        r = self.client.get_or_add_objects(
+        r = self.client.get(
             "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/",
             headers=self.auth
         )
@@ -533,20 +540,19 @@ def test_get_object_403(self):
             data=json.dumps(new_bundle),
             headers=post_header
         )
-        status_response = self.load_json_response(r_post.data)
         self.assertEqual(r_post.status_code, 403)
 
     def test_get_or_add_objects_404(self):
         # get_objects()
-        r = self.client.get_or_add_objects(
+        r = self.client.get(
             "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/objects/",
-            headers=self.auth,
+            headers=self.auth
         )
         self.assertEqual(r.status_code, 404)
 
         # add_objects
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(self.auth)
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.auth)
@@ -558,7 +564,6 @@ def test_get_object_403(self):
             data=json.dumps(new_bundle),
             headers=post_header
         )
-        status_response = self.load_json_response(r_post.data)
         self.assertEqual(r_post.status_code, 404)
 
     def test_get_or_add_objects_422(self):
@@ -585,10 +590,8 @@ def test_get_object_403(self):
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
         r_post = self.client.post(
-            "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/objects/",
+            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
             data=json.dumps(malformed_bundle),
             headers=post_header
         )
-        status_response = self.load_json_response(r_post.data)
         self.assertEqual(r_post.status_code, 422)
-
