@@ -382,7 +382,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
 
     def test_get_collections_403(self):
-        """might not be possible or worth it"""
+        """not implemented
+
+        Medallion TAXII	implementation does not have access control for Collection resource metadata
+        """
         pass
 
     def test_get_collections_404(self):
@@ -395,7 +398,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
 
     def test_get_status_403(self):
-        """might not be possible or worth it"""
+        """not implemented
+
+        Medallion TAXII implementation does not have access control for Status resources
+        """
         pass
 
     def test_get_status_404(self):
@@ -408,8 +414,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
 
     def test_get_object_manifest_403(self):
-        """might not be possible or worth it"""
-        pass
+        r = self.client.get(
+            "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/manifest/",
+            headers=self.auth)
+        self.assertEqual(r.status_code, 403)
 
     def test_get_object_manifest_404(self):
         r = self.client.get("/trustgroup1/collections/24042009/manifest/", headers=self.auth)
@@ -422,6 +430,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
 
     def test_get_object_403(self):
+        """ note that the 403 code is still being generated at the Collection resource level
+
+           (i.e. we dont have access rights to the collection specified, not just the object)
+        """
         r = self.client.get(
             "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f/",
             headers=self.auth
@@ -465,6 +477,10 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r_post.status_code, 401)
 
     def test_get_or_add_objects_403(self):
+        """note that the 403 code is still being generated at the Collection resource level
+
+           (i.e. we dont have access rights to collection specified here, not just the objects)
+        """
         # get_objects()
         r = self.client.get(
             "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/",

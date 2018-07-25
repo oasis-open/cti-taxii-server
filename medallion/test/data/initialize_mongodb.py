@@ -242,3 +242,11 @@ def reset_db():
                                title="STIX 2.0 Indicator Collections",
                                description="A repo for general STIX data.",
                                max_content_length=9765625)
+
+
+def wipe_mongodb_server():
+    """remove all databases on the server (excluding required MongoDB system databases)"""
+    client = connect_to_client()
+
+    for db in set(client.list_database_names()) - set(["admin", "config", "local"]):
+        client.drop_database(db)

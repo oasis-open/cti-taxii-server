@@ -3,7 +3,7 @@ import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
-from medallion.exceptions import BackendError, ProcessingError
+from medallion.exceptions import MongoBackendError, ProcessingError
 from medallion.filters.mongodb_filter import MongoDBFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp)
@@ -12,6 +12,18 @@ from .base import Backend
 
 # Module-level logger
 log = logging.getLogger(__name__)
+
+
+def catch_mongodb_error(func):
+    """catch mongodb availability error"""
+
+    def api_wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (ConnectionFailure, ServerSelectionTimeoutError) as err:
+            raise MongoBackendError(err, "Unable to connect to MongoDB")
+
+    return api_wrapper
 
 
 class MongoBackend(Backend):
@@ -26,16 +38,7 @@ class MongoBackend(Backend):
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 
-    def _test_mongodb_conn(self):
-        """test mongodb is available
-
-        https://stackoverflow.com/questions/30539183/how-do-you-check-if-the-client-for-a-mongodb-instance-is-valid
-        """
-        try:
-            self.client.server_info()
-        except ServerSelectionTimeoutError as err:
-            raise BackendError(err)
-
+    @catch_mongodb_error
     def _update_manifest(self, new_obj, api_root, _collection_id):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -63,6 +66,7 @@ class MongoBackend(Backend):
                  "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
             )  # media_types hardcoded for now...
 
+    @catch_mongodb_error
     def server_discovery(self):
         # TODO: Handle if mongodb is not available
         discovery_db = self.client["discovery_database"]
@@ -89,6 +93,7 @@ class MongoBackend(Backend):
         info = list(collection.aggregate(pipeline))[0]
         return info
 
+    @catch_mongodb_error
     def get_collections(self, api_root):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -101,6 +106,7 @@ class MongoBackend(Backend):
                     c.pop("_id", None)
             return {"collections": collections}
 
+    @catch_mongodb_error
     def get_collection(self, api_root, id_):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -110,6 +116,7 @@ class MongoBackend(Backend):
             info.pop("_id", None)
         return info
 
+    @catch_mongodb_error
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -127,6 +134,7 @@ class MongoBackend(Backend):
                     obj.pop("_collection_id", None)
         return objects_found
 
+    @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
         # TODO: Handle if mongodb is not available
         db = self.client["discovery_database"]
@@ -138,6 +146,7 @@ class MongoBackend(Backend):
             info.pop("_name", None)
         return info
 
+    @catch_mongodb_error
     def get_status(self, api_root, id_):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -147,6 +156,7 @@ class MongoBackend(Backend):
             result.pop("_id", None)
         return result
 
+    @catch_mongodb_error
     def get_objects(self, api_root, id_, filter_args, allowed_filters):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -166,6 +176,7 @@ class MongoBackend(Backend):
                 obj.pop("_collection_id", None)
         return create_bundle(objects_found)
 
+    @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
@@ -193,7 +204,7 @@ class MongoBackend(Backend):
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
-            raise ProcessingError(e)
+            raise ProcessingError(e, "While processing supplied content, an error occured.")
 
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)
@@ -201,6 +212,7 @@ class MongoBackend(Backend):
         status.pop("_id", None)
         return status
 
+    @catch_mongodb_error
     def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
         # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
