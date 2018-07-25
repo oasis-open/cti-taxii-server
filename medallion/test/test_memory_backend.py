@@ -430,7 +430,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
 
     def test_get_object_403(self):
-        """ note that the 403 code is still being generated at the Collection resource level
+        """note that the 403 code is still being generated at the Collection resource level
 
            (i.e. we dont have access rights to the collection specified, not just the object)
         """
@@ -529,7 +529,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r_post.status_code, 404)
 
     def test_get_or_add_objects_422(self):
-        """ only applies to adding objects as would arise if user content is malformed"""
+        """only applies to adding objects as would arise if user content is malformed"""
 
         # add_objects()
         new_id = "indicator--%s" % uuid.uuid4()
@@ -557,3 +557,9 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
             headers=post_header
         )
         self.assertEqual(r_post.status_code, 422)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+        error_data = self.load_json_response(r_post.data)
+        assert error_data["title"] == "ProcessingError"
+        assert error_data["http_status"] == "422"
+        assert "While processing supplied content, an error occured" in error_data["desc"]
+        assert error_data["exception"] is not None

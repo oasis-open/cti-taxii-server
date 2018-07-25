@@ -102,7 +102,7 @@ def handle_processing_error(error):
         "http_status": "422",
         "exception": str(error.args[0])
     }
-    if error.desc is not None:
+    if error.args[1] is not None:
         e["desc"] = error.args[1]
 
     return Response(response=flask.json.dumps(e),
@@ -117,7 +117,7 @@ def handle_backend_error(error):
         "http_status": "500",
         "exception": str(error.args[0])
     }
-    if error.desc is not None:
+    if error.args[1] is not None:
         e["desc"] = error.args[1]
 
     return Response(response=flask.json.dumps(e),

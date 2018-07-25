@@ -2,8 +2,15 @@
 
 
 class MedallionError(Exception):
-    "base error class for Medallion"""
-    pass
+    """base error class for Medallion
+
+    Args:
+        root_exception (Exception): Exception instance of root exception
+        desc (str): specific error description
+    """
+    def __init__(self, root_exception, desc=None):
+        self.root_exception = root_exception
+        self.desc = desc
 
 
 class ProcessingError(MedallionError):
@@ -11,10 +18,10 @@ class ProcessingError(MedallionError):
 
     Args:
         root_exception (Exception): Exception instance of root exception
+        desc (str): specific error description
     """
     def __init__(self, root_exception, desc=None):
-        self.root_exception = root_exception
-        self.desc = desc
+        super().__init__(root_exception, desc)
 
 
 class BackendError(MedallionError):
@@ -22,10 +29,10 @@ class BackendError(MedallionError):
 
     Args:
         root_exception (Exception): Exception instance of root exception
+        desc (str): specific error description
     """
     def __init__(self, root_exception, desc=None):
-        self.root_exception = root_exception
-        self.desc = desc
+        super().__init__(root_exception, desc)
 
 
 class MongoBackendError(BackendError):
@@ -33,7 +40,7 @@ class MongoBackendError(BackendError):
 
     Args:
         root_exception (Exception): Exception instance of root exception
+        desc(str): specific error description
     """
     def __init__(self, root_exception, desc=None):
-        self.root_exception = root_exception
-        self.desc = desc
+        super().__init__(root_exception, desc)

@@ -488,7 +488,6 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         """note that the 403 code is still being generated at the Collection resource level
 
            (i.e. we dont have access rights to the collection specified, not just the object)
-
         """
         r = self.client.get(
             "/trustgroup1/collections/64993447-4d7e-4f70-b94d-d7f33742ee63/objects/indicator--b81f86    b9-975b-bb0b-775e-810c5bd45b4f/",
@@ -613,4 +612,11 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
             data=json.dumps(malformed_bundle),
             headers=post_header
         )
+
         self.assertEqual(r_post.status_code, 422)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+        error_data = self.load_json_response(r_post.data)
+        assert error_data["title"] == "ProcessingError"
+        assert error_data["http_status"] == "422"
+        assert "While processing supplied content, an error occured" in error_data["desc"]
+        assert error_data["exception"] is not None

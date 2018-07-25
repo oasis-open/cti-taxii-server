@@ -40,7 +40,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def _update_manifest(self, new_obj, api_root, _collection_id):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         entry = manifest_info.find_one(
@@ -68,7 +67,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def server_discovery(self):
-        # TODO: Handle if mongodb is not available
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
         pipeline = [{
@@ -95,7 +93,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_collections(self, api_root):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}))
@@ -108,7 +105,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_collection(self, api_root, id_):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         info = collection_info.find_one({"id": id_})
@@ -118,7 +114,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         full_filter = MongoDBFilter(
@@ -136,7 +131,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
-        # TODO: Handle if mongodb is not available
         db = self.client["discovery_database"]
         api_root_info = db["api_root_info"]
         info = api_root_info.find_one({"_name": api_root_name})
@@ -148,7 +142,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_status(self, api_root, id_):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         status_info = api_root_db["status"]
         result = status_info.find_one({"id": id_})
@@ -158,7 +151,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_objects(self, api_root, id_, filter_args, allowed_filters):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(filter_args,
@@ -178,7 +170,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         failed = 0
@@ -214,7 +205,6 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
-        # TODO: Handle if mongodb is not available
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(
