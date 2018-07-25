@@ -21,7 +21,7 @@ class ProcessingError(MedallionError):
         desc (str): specific error description
     """
     def __init__(self, root_exception, desc=None):
-        super().__init__(root_exception, desc)
+        super(ProcessingError, self).__init__(root_exception, desc)
 
 
 class BackendError(MedallionError):
@@ -32,7 +32,7 @@ class BackendError(MedallionError):
         desc (str): specific error description
     """
     def __init__(self, root_exception, desc=None):
-        super().__init__(root_exception, desc)
+        super(BackendError, self).__init__(root_exception, desc)
 
 
 class MongoBackendError(BackendError):
@@ -43,4 +43,4 @@ class MongoBackendError(BackendError):
         desc(str): specific error description
     """
     def __init__(self, root_exception, desc=None):
-        super().__init__(root_exception, desc)
+        super(MongoBackendError, self).__init__(root_exception, desc)
