@@ -1,7 +1,6 @@
 import base64
 import copy
 import json
-import time
 import unittest
 import uuid
 
@@ -236,7 +235,6 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
             status_response = self.load_json_response(r_post.data)
             self.assertEqual(r_post.status_code, 202)
             self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
-            time.sleep(1)
 
         # ------------- END: add object section ------------- #
         # ------------- BEGIN: get object section 1 ------------- #
