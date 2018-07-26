@@ -84,20 +84,6 @@ def register_blueprints(flask_application_instance):
         current_app.register_blueprint(objects.mod)
 
 
-def _modify_py2_exception(exception):
-    """modify python2 exceptions to be handled uniformly the same as python3 exceptions
-
-      (wrt custom error handlers below)
-    """
-    args = ()
-    if hasattr(exception, "root_exception"):
-        args = args + (exception.root_exception,)
-        if hasattr(exception, "desc"):
-            args = args + (exception.desc,)
-
-        exception.args = args
-
-
 @application_instance.errorhandler(500)
 def handle_error(error):
     error = {
@@ -111,16 +97,11 @@ def handle_error(error):
 
 @application_instance.errorhandler(ProcessingError)
 def handle_processing_error(error):
-    _modify_py2_exception(error)  # python 2 --> python3 exception format
-
     e = {
         "title": "ProcessingError",
         "http_status": "422",
-        "exception": str(error.args[0])
+        "description": str(error)
     }
-    if error.args[1] is not None:
-        e["desc"] = error.args[1]
-
     return Response(response=flask.json.dumps(e),
                     status=422,
                     mimetype=MEDIA_TYPE_TAXII_V20)
@@ -128,16 +109,11 @@ def handle_processing_error(error):
 
 @application_instance.errorhandler(BackendError)
 def handle_backend_error(error):
-    error = _modify_py2_exception(error)  # python 2 --> python3 exception format
-
     e = {
         "title": "MongoBackendError",
         "http_status": "500",
-        "exception": str(error.args[0])
+        "description": str(error)
     }
-    if error.args[1] is not None:
-        e["desc"] = error.args[1]
-
     return Response(response=flask.json.dumps(e),
                     status=500,
                     mimetype=MEDIA_TYPE_TAXII_V20)

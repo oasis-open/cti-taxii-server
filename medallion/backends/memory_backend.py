@@ -177,7 +177,7 @@ class MemoryBackend(Backend):
                                                  "message": "Unable to process object"})
                                 failed += 1
                     except Exception as e:
-                        raise ProcessingError(e, "While processing supplied content, an error occured.")
+                        raise ProcessingError("While processing supplied content, an error occured", e)
 
             status = generate_status(request_time, "complete", succeeded,
                                      failed, pending, successes_ids=successes,

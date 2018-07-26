@@ -21,7 +21,7 @@ def catch_mongodb_error(func):
         try:
             return func(*args, **kwargs)
         except (ConnectionFailure, ServerSelectionTimeoutError) as err:
-            raise MongoBackendError(err, "Unable to connect to MongoDB")
+            raise MongoBackendError("Unable to connect to MongoDB", err)
 
     return api_wrapper
 
@@ -195,7 +195,7 @@ class MongoBackend(Backend):
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
-            raise ProcessingError(e, "While processing supplied content, an error occured.")
+            raise ProcessingError("While processing supplied content, an error occured", e)
 
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)

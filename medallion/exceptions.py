@@ -5,42 +5,26 @@ class MedallionError(Exception):
     """base error class for Medallion
 
     Args:
+        message (str): specific error message
         root_exception (Exception): Exception instance of root exception
-        desc (str): specific error description
     """
-    def __init__(self, root_exception, desc=None):
+    def __init__(self, message, root_exception):
+        self.message = message
         self.root_exception = root_exception
-        self.desc = desc
+
+    def __str__(self):
+        return "{0.message}. Root exception: {0.root_exception}".format(self)
 
 
 class ProcessingError(MedallionError):
-    """Internal processing error when processing user supplied data
-
-    Args:
-        root_exception (Exception): Exception instance of root exception
-        desc (str): specific error description
-    """
-    def __init__(self, root_exception, desc=None):
-        super(ProcessingError, self).__init__(root_exception, desc)
+    """Internal processing error when processing user supplied data"""
+    pass
 
 
 class BackendError(MedallionError):
-    """Medallion data backend error
-
-    Args:
-        root_exception (Exception): Exception instance of root exception
-        desc (str): specific error description
-    """
-    def __init__(self, root_exception, desc=None):
-        super(BackendError, self).__init__(root_exception, desc)
+    """Medallion data backend error"""
+    pass
 
 
 class MongoBackendError(BackendError):
-    """cannot connect or obtain access to MongoDC backend
-
-    Args:
-        root_exception (Exception): Exception instance of root exception
-        desc(str): specific error description
-    """
-    def __init__(self, root_exception, desc=None):
-        super(MongoBackendError, self).__init__(root_exception, desc)
+    """cannot connect or obtain access to MongoDC backend"""
