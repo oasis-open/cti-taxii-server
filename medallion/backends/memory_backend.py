@@ -65,28 +65,32 @@ class MemoryBackend(Backend):
                 break
 
     def get_collections(self, api_root):
-        if api_root in self.data:
-            api_info = self._get(api_root)
-            result = dict(collections=copy.deepcopy(api_info.get("collections", [])))
+        if api_root not in self.data:
+            return None  # must return None so 404 is raised
 
-            # Remove data that is not part of the response.
-            for collection in result["collections"]:
+        api_info = self._get(api_root)
+        result = dict(collections=copy.deepcopy(api_info.get("collections", [])))
+
+        # Remove data that is not part of the response.
+        for collection in result["collections"]:
+            collection.pop("manifest", None)
+            collection.pop("responses", None)
+            collection.pop("objects", None)
+        return result["collections"]
+
+    def get_collection(self, api_root, id_):
+        if api_root not in self.data:
+            return None  # must return None so 404 is raised
+
+        api_info = self._get(api_root)
+        collections = copy.deepcopy(api_info.get("collections", []))
+
+        for collection in collections:
+            if "id" in collection and id_ == collection["id"]:
                 collection.pop("manifest", None)
                 collection.pop("responses", None)
                 collection.pop("objects", None)
-            return result
-
-    def get_collection(self, api_root, id_):
-        if api_root in self.data:
-            api_info = self._get(api_root)
-            collections = copy.deepcopy(api_info.get("collections", []))
-
-            for collection in collections:
-                if "id" in collection and id_ == collection["id"]:
-                    collection.pop("manifest", None)
-                    collection.pop("responses", None)
-                    collection.pop("objects", None)
-                    return collection
+                return collection
 
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
         if api_root in self.data:

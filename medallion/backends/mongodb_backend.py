@@ -93,18 +93,22 @@ class MongoBackend(Backend):
 
     @catch_mongodb_error
     def get_collections(self, api_root):
+        if api_root not in self.client.list_database_names():
+            return None   # must return None, so 404 is raised
+
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}))
-        if collections:
-            # added existence check here to match memory backend behavior
-            for c in collections:
-                if c:
-                    c.pop("_id", None)
-            return {"collections": collections}
+        for c in collections:
+            if c:
+                c.pop("_id", None)
+        return collections
 
     @catch_mongodb_error
     def get_collection(self, api_root, id_):
+        if api_root not in self.client.list_database_names():
+            return None  # must return None, so 404 is raised
+
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         info = collection_info.find_one({"id": id_})
