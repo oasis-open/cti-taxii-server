@@ -203,6 +203,44 @@
                         ]
                     }
                 ]
+            },
+            {
+                "id": "64993447-4d7e-4f70-b94d-d7f33742ee63",
+                "title": "Secret Indicators",
+                "description": "Non accessilble",
+                "can_read":false,
+                "can_write": false,
+                "media_types": [
+                    "application/vnd.oasis.stix+json; version=2.0"
+                ],
+                "objects": [
+                    {
+                        "created": "2016-11-03T12:30:59.000Z",
+                        "description": "Accessing this url will infect your machine with malware.",
+                        "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+                        "labels": [
+                            "url-watchlist"
+                        ],
+                        "modified": "2016-11-03T12:30:59.000Z",
+                        "name": "Malicious site hosting downloader",
+                        "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
+                        "type": "indicator",
+                        "valid_from": "2017-01-27T13:49:53.935382Z"
+                    }
+                ],
+                "manifest": [
+                    {
+                        "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+                        "date_added": "2016-12-27T13:49:53Z",
+                        "versions": [
+                            "2016-11-03T12:30:59.000Z",
+                            "2017-01-27T13:49:53.935Z"
+                        ],
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.0"
+                        ]
+                    }
+                ]
             }
         ]
     }

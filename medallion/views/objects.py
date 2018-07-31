@@ -18,10 +18,19 @@ def permission_to_write(api_root, collection_id):
     return collection_info["can_write"]
 
 
+def collection_exists(api_root, collection_id):
+    if current_app.medallion_backend.get_collection(api_root, collection_id):
+        return True
+    return False
+
+
 @mod.route("/<string:api_root>/collections/<string:id_>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, id_):
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
+
+    if not collection_exists(api_root, id_):
+        abort(404)
 
     if request.method == "GET":
         if permission_to_read(api_root, id_):
@@ -39,6 +48,7 @@ def get_or_add_objects(api_root, id_):
             # Can't I get this from the request itself?
             request_time = common.format_datetime(common.get_timestamp())
             status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(force=True), request_time)
+
             return Response(response=flask.json.dumps(status),
                             status=202,
                             mimetype=MEDIA_TYPE_TAXII_V20)
@@ -50,6 +60,9 @@ def get_or_add_objects(api_root, id_):
 @auth.login_required
 def get_object(api_root, id_, object_id):
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
+
+    if not collection_exists(api_root, id_):
+        abort(404)
 
     if permission_to_read(api_root, id_):
         objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("version",))

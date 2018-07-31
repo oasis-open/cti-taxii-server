@@ -1,6 +1,7 @@
 import copy
 import json
 
+from medallion.exceptions import ProcessingError
 from medallion.filters.basic_filter import BasicFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp, iterpath)
@@ -64,28 +65,32 @@ class MemoryBackend(Backend):
                 break
 
     def get_collections(self, api_root):
-        if api_root in self.data:
-            api_info = self._get(api_root)
-            result = dict(collections=copy.deepcopy(api_info.get("collections", [])))
+        if api_root not in self.data:
+            return None  # must return None so 404 is raised
 
-            # Remove data that is not part of the response.
-            for collection in result["collections"]:
+        api_info = self._get(api_root)
+        result = dict(collections=copy.deepcopy(api_info.get("collections", [])))
+
+        # Remove data that is not part of the response.
+        for collection in result["collections"]:
+            collection.pop("manifest", None)
+            collection.pop("responses", None)
+            collection.pop("objects", None)
+        return result["collections"]
+
+    def get_collection(self, api_root, id_):
+        if api_root not in self.data:
+            return None  # must return None so 404 is raised
+
+        api_info = self._get(api_root)
+        collections = copy.deepcopy(api_info.get("collections", []))
+
+        for collection in collections:
+            if "id" in collection and id_ == collection["id"]:
                 collection.pop("manifest", None)
                 collection.pop("responses", None)
                 collection.pop("objects", None)
-            return result
-
-    def get_collection(self, api_root, id_):
-        if api_root in self.data:
-            api_info = self._get(api_root)
-            collections = copy.deepcopy(api_info.get("collections", []))
-
-            for collection in collections:
-                if "id" in collection and id_ == collection["id"]:
-                    collection.pop("manifest", None)
-                    collection.pop("responses", None)
-                    collection.pop("objects", None)
-                    return collection
+                return collection
 
     def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
         if api_root in self.data:
@@ -155,25 +160,28 @@ class MemoryBackend(Backend):
                 if "id" in collection and id_ == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
-                    for new_obj in objs["objects"]:
-                        id_and_version_already_present = False
-                        if new_obj["id"] in collection["objects"]:
-                            current_obj = collection["objects"][new_obj["id"]]
-                            if "modified" in new_obj:
-                                if new_obj["modified"] == current_obj["modified"]:
+                    try:
+                        for new_obj in objs["objects"]:
+                            id_and_version_already_present = False
+                            if new_obj["id"] in collection["objects"]:
+                                current_obj = collection["objects"][new_obj["id"]]
+                                if "modified" in new_obj:
+                                    if new_obj["modified"] == current_obj["modified"]:
+                                        id_and_version_already_present = True
+                                else:
+                                    # There is no modified field, so this object is immutable
                                     id_and_version_already_present = True
+                            if not id_and_version_already_present:
+                                collection["objects"].append(new_obj)
+                                self._update_manifest(new_obj, api_root, collection["id"])
+                                successes.append(new_obj["id"])
+                                succeeded += 1
                             else:
-                                # There is no modified field, so this object is immutable
-                                id_and_version_already_present = True
-                        if not id_and_version_already_present:
-                            collection["objects"].append(new_obj)
-                            self._update_manifest(new_obj, api_root, collection["id"])
-                            successes.append(new_obj["id"])
-                            succeeded += 1
-                        else:
-                            failures.append({"id": new_obj["id"],
-                                             "message": "Unable to process object"})
-                            failed += 1
+                                failures.append({"id": new_obj["id"],
+                                                 "message": "Unable to process object"})
+                                failed += 1
+                    except Exception as e:
+                        raise ProcessingError("While processing supplied content, an error occured", e)
 
             status = generate_status(request_time, "complete", succeeded,
                                      failed, pending, successes_ids=successes,

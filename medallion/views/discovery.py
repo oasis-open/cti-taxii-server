@@ -32,7 +32,7 @@ def get_api_root_information(api_root):
 @mod.route("/<string:api_root>/status/<string:id_>/", methods=["GET"])
 @auth.login_required
 def get_status(api_root, id_):
-    # TODO: Check if user has access to objects in collection.
+    # TODO: Check if user has access to the Status resource.
     status = current_app.medallion_backend.get_status(api_root, id_)
 
     if status:

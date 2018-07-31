@@ -7,7 +7,7 @@ import uuid
 import six
 
 from medallion import (application_instance, init_backend, register_blueprints,
-                       set_config)
+                       set_config, test)
 from medallion.test.data.initialize_mongodb import reset_db
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
@@ -69,7 +69,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         return json.load(io)
 
     def test_server_discovery(self):
-        r = self.client.get("/taxii/", headers=self.auth)
+        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -79,7 +79,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         assert server_info["api_roots"][0] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
-        r = self.client.get("/trustgroup1/", headers=self.auth)
+        r = self.client.get(test.API_ROOT_EP, headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -91,18 +91,22 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(r.status_code, 404)
 
     def test_get_collections(self):
-        r = self.client.get("/trustgroup1/collections/", headers=self.auth)
+        r = self.client.get(test.COLLECTIONS_EP, headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         collections_metadata = self.load_json_response(r.data)
         collections_metadata = sorted(collections_metadata["collections"], key=lambda x: x["id"])
-        assert collections_metadata[0]["id"] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
-        assert collections_metadata[1]["id"] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+        collection_ids = [cm["id"] for cm in collections_metadata]
+
+        assert len(collection_ids) == 3
+        assert "52892447-4d7e-4f70-b94d-d7f22742ff63" in collection_ids
+        assert "91a7b528-80eb-42ed-a74d-c6fbd5a26116" in collection_ids
+        assert "64993447-4d7e-4f70-b94d-d7f33742ee63" in collection_ids
 
     def test_get_collection(self):
         r = self.client.get(
-            "/trustgroup1/collections/52892447-4d7e-4f70-b94d-d7f22742ff63/",
+            test.GET_COLLECTION_EP,
             headers=self.auth
         )
 
@@ -113,15 +117,15 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
     def test_get_collection_not_existent(self):
         r = self.client.get(
-            "/trustgroup1/collections/12345678-1234-1234-1234-123456789012/",
+            test.NON_EXISTENT_COLLECTION_EP,
             headers=self.auth
         )
         self.assertEqual(r.status_code, 404)
 
     def test_get_object(self):
         r = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/",
-            headers=self.auth
+           test.GET_OBJECT_EP + "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/",
+           headers=self.auth
         )
 
         self.assertEqual(r.status_code, 200)
@@ -131,7 +135,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
     def test_get_objects(self):
         r = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[type]=relationship",
+            test.GET_OBJECTS_EP + "?match[type]=relationship",
             headers=self.auth
         )
 
@@ -152,7 +156,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
         r_post = self.client.post(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
+            test.ADD_OBJECTS_EP,
             data=json.dumps(new_bundle),
             headers=post_header
         )
@@ -167,7 +171,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s" % new_id,
+            test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -180,7 +184,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get status section ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/status/%s/" % status_response["id"],
+            test.API_ROOT_EP + "status/%s/" % status_response["id"],
             headers=self.auth
         )
         self.assertEqual(r_get.status_code, 200)
@@ -193,7 +197,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get manifest section ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[id]=%s" % new_id,
+            test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=%s" % new_id,
             headers=self.auth
         )
         self.assertEqual(r_get.status_code, 200)
@@ -215,7 +219,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
         r_post = self.client.post(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
+            test.ADD_OBJECTS_EP,
             data=json.dumps(new_bundle),
             headers=post_header
         )
@@ -228,7 +232,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
             new_bundle["objects"][0]["id"] = new_id
             new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
             r_post = self.client.post(
-                "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/",
+                test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
                 headers=post_header
             )
@@ -243,7 +247,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
+            test.GET_OBJECTS_EP + "?match[id]=%s&match[version]=%s"
             % (new_id, "all"),
             headers=get_header
         )
@@ -258,7 +262,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get object section 2 ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
+            test.GET_OBJECTS_EP + "?match[id]=%s&match[version]=%s"
             % (new_id, "first"),
             headers=get_header
         )
@@ -273,7 +277,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get object section 3 ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
+            test.GET_OBJECTS_EP + "?match[id]=%s&match[version]=%s"
             % (new_id, "last"),
             headers=get_header
         )
@@ -288,7 +292,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get object section 4 ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=%s&match[version]=%s"
+            test.GET_OBJECTS_EP + "?match[id]=%s&match[version]=%s"
             % (new_id, "2017-01-27T13:49:53.935Z"),
             headers=get_header
         )
@@ -303,7 +307,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get status section ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/status/%s/" % status_response["id"],
+            test.API_ROOT_EP + "status/%s/" % status_response["id"],
             headers=self.auth
         )
         self.assertEqual(r_get.status_code, 200)
@@ -316,7 +320,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- BEGIN: get manifest section ------------- #
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[id]=%s" % new_id,
+            test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=%s" % new_id,
             headers=self.auth
         )
         self.assertEqual(r_get.status_code, 200)
@@ -333,7 +337,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?added_after=2016-11-01T03:04:05Z",
+            test.GET_OBJECTS_EP + "?added_after=2016-11-01T03:04:05Z",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -348,7 +352,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         # ------------- BEGIN: get manifest section 1 ------------- #
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[id]=marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+            test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -361,7 +365,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- END: get manifest section 1 ------------- #
         # ------------- BEGIN: get manifest section 2 ------------- #
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/manifest/?match[type]=marking-definition",
+            test.GET_ADD_COLLECTION_EP + "manifest/?match[type]=marking-definition",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -374,7 +378,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- END: get manifest section 2 ------------- #
         # ------------- BEGIN: get objects section 1 ------------- #
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da/",
+            test.GET_OBJECT_EP + "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da/",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -387,7 +391,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- END: get objects section 1 ------------- #
         # ------------- BEGIN: get objects section 2 ------------- #
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[type]=marking-definition",
+            test.GET_OBJECTS_EP + "?match[type]=marking-definition",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -400,7 +404,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- END: get objects section 2 ------------- #
         # ------------- BEGIN: get objects section 3 ------------- #
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[type]=marking-definition,malware",
+            test.GET_OBJECTS_EP + "?match[type]=marking-definition,malware",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -413,7 +417,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         # ------------- END: get objects section 3 ------------- #
         # ------------- BEGIN: get objects section 4 ------------- #
         r_get = self.client.get(
-            "/trustgroup1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116/objects/?match[id]=marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+            test.GET_OBJECTS_EP + "?match[id]=marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
@@ -424,3 +428,184 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         assert manifests["objects"][0]["id"] == "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da"
         self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
         # ------------- END: get objects section 4 ------------- #
+
+    def test_get_collections_401(self):
+        r = self.client.get(test.COLLECTIONS_EP)
+        self.assertEqual(r.status_code, 401)
+
+    """get_collections 403 - not implemented. Medallion TAXII implementation does not have
+    access control for Collection resource metadata"""
+
+    def test_get_collections_404(self):
+        # note that api root "carbon1" is nonexistent
+        r = self.client.get("/carbon1/collections/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_status_401(self):
+        # non existent ID but shouldnt matter as the request should never pass login
+        r = self.client.get(test.API_ROOT_EP + "status/2223/")
+        self.assertEqual(r.status_code, 401)
+
+    """get_status 403 - not implemented. Medallion TAXII implementation does not have
+     access control for Status resources"""
+
+    def test_get_status_404(self):
+        r = self.client.get(test.API_ROOT_EP + "status/22101993/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_object_manifest_401(self):
+        # non existent collection ID but shouldnt matter as the request should never pass login
+        r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/")
+        self.assertEqual(r.status_code, 401)
+
+    def test_get_object_manifest_403(self):
+        r = self.client.get(
+            test.FORBIDDEN_COLLECTION_EP + "manifest/",
+            headers=self.auth)
+        self.assertEqual(r.status_code, 403)
+
+    def test_get_object_manifest_404(self):
+        # note that collection ID does not exist
+        r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=self.auth)
+        self.assertEqual(r.status_code, 404)
+
+    def test_get_object_401(self):
+        r = self.client.get(
+            test.GET_OBJECT_EP + "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/"
+        )
+        self.assertEqual(r.status_code, 401)
+
+    def test_get_object_403(self):
+        """note that the 403 code is still being generated at the Collection resource level
+
+           (i.e. we dont have access rights to the collection specified, not just the object)
+        """
+        r = self.client.get(
+            test.FORBIDDEN_COLLECTION_EP + "objects/indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 403)
+
+    def test_get_object_404(self):
+        # TAXII spec allows for a 404 or empty bundle if object is not found
+        r = self.client.get(
+            test.GET_OBJECT_EP + "malware--cee60c30-a68c-11e3-b0c1-a01aac20d000/",
+            headers=self.auth
+        )
+        objs = self.load_json_response(r.data)
+
+        if r.status_code == 200:
+            assert len(objs["objects"]) == 0
+        else:
+            self.assertEqual(r.status_code, 404)
+
+    def test_get_or_add_objects_401(self):
+        # note that no credentials are supplied with requests
+
+        # get_objects()
+        r = self.client.get(test.GET_OBJECT_EP)
+        self.assertEqual(r.status_code, 401)
+
+        # add_objects()
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = {}
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_STIX_V20
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        self.assertEqual(r_post.status_code, 401)
+
+    def get_or_add_objects_403(self):
+        """note that the 403 code is still being generated at the Collection resource level
+
+          (i.e. we dont have access rights to the collection specified here, not just the object)
+        """
+        # get_objects()
+        r = self.client.get(
+            test.FORBIDDEN_COLLECTION_EP + "objects/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 403)
+
+        # add_objects
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.FORBIDDEN_COLLECTION_EP + "objects/",
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        self.assertEqual(r_post.status_code, 403)
+
+    def test_get_or_add_objects_404(self):
+        # get_objects()
+        r = self.client.get(
+            test.NON_EXISTENT_COLLECTION_EP + "objects/",
+            headers=self.auth
+        )
+        self.assertEqual(r.status_code, 404)
+
+        # add_objects
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.NON_EXISTENT_COLLECTION_EP + "objects/",
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        self.assertEqual(r_post.status_code, 404)
+
+    def test_get_or_add_objects_422(self):
+        """only applies to adding objects as would arise if user content is malformed"""
+
+        # add_objects()
+        new_id = "indicator--%s" % uuid.uuid4()
+        malformed_bundle = {
+            "created": "2016-11-03T12:30:59.000Z",
+            "description": "Accessing this url will infect your machine with malware.",
+            "id": new_id,
+            "labels": [
+                "url-watchlist"
+            ],
+            "modified": "2016-11-03T12:30:59.000Z",
+            "name": "Malicious site hosting downloader",
+            "pattern": "[url:value = 'http://yarg.cn/4712']",
+            "type": "indicator",
+            "valid_from": "2017-01-27T13:51:53.935382Z"
+        }
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(malformed_bundle),
+            headers=post_header
+        )
+
+        self.assertEqual(r_post.status_code, 422)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+        error_data = self.load_json_response(r_post.data)
+        assert error_data["title"] == "ProcessingError"
+        assert error_data["http_status"] == "422"
+        assert "While processing supplied content, an error occured" in error_data["description"]

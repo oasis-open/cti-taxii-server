@@ -6,6 +6,7 @@ import flask
 from flask import Flask, Response, current_app
 from flask_httpauth import HTTPBasicAuth
 
+from medallion.exceptions import BackendError, ProcessingError
 from medallion.version import __version__  # noqa
 from medallion.views import MEDIA_TYPE_TAXII_V20
 
@@ -90,5 +91,29 @@ def handle_error(error):
         "http_status": "500"
     }
     return Response(response=flask.json.dumps(error),
+                    status=500,
+                    mimetype=MEDIA_TYPE_TAXII_V20)
+
+
+@application_instance.errorhandler(ProcessingError)
+def handle_processing_error(error):
+    e = {
+        "title": "ProcessingError",
+        "http_status": "422",
+        "description": str(error)
+    }
+    return Response(response=flask.json.dumps(e),
+                    status=422,
+                    mimetype=MEDIA_TYPE_TAXII_V20)
+
+
+@application_instance.errorhandler(BackendError)
+def handle_backend_error(error):
+    e = {
+        "title": "MongoBackendError",
+        "http_status": "500",
+        "description": str(error)
+    }
+    return Response(response=flask.json.dumps(e),
                     status=500,
                     mimetype=MEDIA_TYPE_TAXII_V20)
