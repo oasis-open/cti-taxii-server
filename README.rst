@@ -209,8 +209,8 @@ additional or substitute Maintainers, per `consensus agreements
 Current Maintainers of this TC Open Repository
 -------------------------------------------
 
--  `Greg Back <mailto:gback@mitre.org>`__; GitHub ID:
-   https://github.com/gtback/; WWW: `MITRE
+-  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID:
+   https://github.com/clenk/; WWW: `MITRE
    Corporation <https://www.mitre.org/>`__
 -  `Rich Piazza <mailto:rpiazza@mitre.org>`__; GitHub ID:
    https://github.com/rpiazza/; WWW: `MITRE
