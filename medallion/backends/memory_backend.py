@@ -163,7 +163,7 @@ class MemoryBackend(Backend):
                     try:
                         for new_obj in objs["objects"]:
                             id_and_version_already_present = False
-                            if new_obj["id"] in collection["objects"]:
+                            if any(element.id == new_obj["id"] for element in collection["obejcts"]):
                                 current_obj = collection["objects"][new_obj["id"]]
                                 if "modified" in new_obj:
                                     if new_obj["modified"] == current_obj["modified"]:
