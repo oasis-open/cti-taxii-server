@@ -178,9 +178,6 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
 
         objs = self.load_json_response(r_get.data)
-        print "***************************************"
-        print objs["objects"]
-        print "***************************************"
         assert objs["objects"][0]["id"] == new_id
 
         # ------------- END: get object section ------------- #
