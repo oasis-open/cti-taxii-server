@@ -162,6 +162,7 @@ class MemoryBackend(Backend):
                         collection["objects"] = []
                     try:
                         for new_obj in objs["objects"]:
+                            id_and_version_already_present = False
                             for obj in collection["objects"]:
                                 id_and_version_already_present = False
 
