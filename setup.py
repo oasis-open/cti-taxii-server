@@ -17,14 +17,16 @@ def get_version():
         raise AttributeError("Package does not have a __version__")
 
 
-with open('README.rst') as f:
-    readme = f.read()
+def get_long_description():
+    with open('README.rst') as f:
+        return f.read()
+
 
 setup(
     name="medallion",
     version=get_version(),
     description="A TAXII 2.0 Server.",
-    long_description=readme,
+    long_description=get_long_description(),
     url='https://github.com/oasis-open/cti-taxii-server',
     author='OASIS Cyber Threat Intelligence Technical Committee',
     author_email='cti-users@lists.oasis-open.org',

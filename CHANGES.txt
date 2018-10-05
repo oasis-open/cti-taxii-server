@@ -1,4 +1,4 @@
-Version 0.3
+Version 0.3.0
 2018-10-05
 - #41 Fixed MemoryBackend bug where checking for an object was incorrectly being performed.
 - #34 Performance enhancements for the MongoDBBackend.
