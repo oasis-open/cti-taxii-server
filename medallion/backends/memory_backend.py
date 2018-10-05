@@ -163,22 +163,23 @@ class MemoryBackend(Backend):
                     try:
                         for new_obj in objs["objects"]:
                             id_and_version_already_present = False
-                            if new_obj["id"] in collection["objects"]:
-                                current_obj = collection["objects"][new_obj["id"]]
-                                if "modified" in new_obj:
-                                    if new_obj["modified"] == current_obj["modified"]:
+                            for obj in collection["objects"]:
+                                id_and_version_already_present = False
+
+                                if new_obj['id'] == obj['id']:
+                                    if "modified" in new_obj:
+                                        if new_obj["modified"] == obj["modified"]:
+                                            id_and_version_already_present = True
+                                    else:
+                                        # There is no modified field, so this object is immutable
                                         id_and_version_already_present = True
-                                else:
-                                    # There is no modified field, so this object is immutable
-                                    id_and_version_already_present = True
                             if not id_and_version_already_present:
                                 collection["objects"].append(new_obj)
                                 self._update_manifest(new_obj, api_root, collection["id"])
                                 successes.append(new_obj["id"])
                                 succeeded += 1
                             else:
-                                failures.append({"id": new_obj["id"],
-                                                 "message": "Unable to process object"})
+                                failures.append({"id": new_obj["id"], "message": "Unable to process object"})
                                 failed += 1
                     except Exception as e:
                         raise ProcessingError("While processing supplied content, an error occured", e)
