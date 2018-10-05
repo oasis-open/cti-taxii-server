@@ -207,7 +207,7 @@ additional or substitute Maintainers, per `consensus agreements
 <https://www.oasis-open.org/resources/open-repositories/maintainers-guide#additionalMaintainers>`__.
 
 Current Maintainers of this TC Open Repository
--------------------------------------------
+----------------------------------------------
 
 -  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID:
    https://github.com/clenk/; WWW: `MITRE
@@ -221,7 +221,7 @@ Current Maintainers of this TC Open Repository
 
 
 About OASIS TC Open Repositories
------------------------------
+--------------------------------
 
 -  `TC Open Repositories: Overview and
    Resources <https://www.oasis-open.org/resources/open-repositories/>`__
