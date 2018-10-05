@@ -1,3 +1,7 @@
+Version 0.3.1
+2018-10-05
+- Fix packaging problem
+
 Version 0.3.0
 2018-10-05
 - #41 Fixed MemoryBackend bug where checking for an object was incorrectly being performed.
