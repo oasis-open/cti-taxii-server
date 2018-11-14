@@ -56,12 +56,7 @@ class BasicFilter(object):
         t_first = t_last = None
 
         for obj in data:
-            if obj["id"].startswith("marking-definition--"):
-                prop = "created"
-            else:
-                prop = "modified"
-
-            time_of_obj = dt.datetime.strptime(obj[prop], "%Y-%m-%dT%H:%M:%S.%fZ")
+            time_of_obj = dt.datetime.strptime(obj["modified"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
             if first is None:
                 first = last = obj
@@ -75,7 +70,7 @@ class BasicFilter(object):
                     last = obj
                     t_last = time_of_obj
 
-            if obj[prop] in actual_dates:
+            if obj["modified"] in actual_dates:
                 match_objects.append(obj)
 
         if "first" in version_indicators:
@@ -100,7 +95,7 @@ class BasicFilter(object):
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [x for x in version_indicators if (x != "first" and x != "last")]
+        actual_dates = [x for x in version_indicators if x != "first" and x != "last"]
         for obj in data:
             versions_returned = []
             first = last = None
