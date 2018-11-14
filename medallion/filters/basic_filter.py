@@ -50,13 +50,19 @@ class BasicFilter(object):
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [x for x in version_indicators if (x != "first" and x != "last")]
+        actual_dates = [x for x in version_indicators if x != "first" and x != "last"]
 
         first = last = None
         t_first = t_last = None
 
         for obj in data:
-            time_of_obj = dt.datetime.strptime(obj["modified"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            if obj["id"].startswith("marking-definition--"):
+                prop = "created"
+            else:
+                prop = "modified"
+
+            time_of_obj = dt.datetime.strptime(obj[prop], "%Y-%m-%dT%H:%M:%S.%fZ")
+
             if first is None:
                 first = last = obj
                 t_first = time_of_obj
@@ -69,7 +75,7 @@ class BasicFilter(object):
                     last = obj
                     t_last = time_of_obj
 
-            if obj["modified"] in actual_dates:
+            if obj[prop] in actual_dates:
                 match_objects.append(obj)
 
         if "first" in version_indicators:
@@ -81,8 +87,9 @@ class BasicFilter(object):
         return match_objects
 
     @staticmethod
-    def is_manifest_entry(x):
-        return "modified" not in x
+    def is_manifest_entry(obj):
+        # "id" is required, all other properties are optional.
+        return any(prop in obj for prop in ("id", "date_added", "versions", "media_types"))
 
     @staticmethod
     def filter_manifest_entries_by_version(data, version):
@@ -142,7 +149,6 @@ class BasicFilter(object):
         return match_objects
 
     def process_filter(self, data, allowed, manifest_info):
-
         filtered_by_type = []
         filtered_by_id = []
 
@@ -161,6 +167,7 @@ class BasicFilter(object):
                 for id_match in filtered_by_id:
                     if type_match == id_match:
                         results.append(type_match)
+
         elif match_type:
             if filtered_by_type:
                 results.extend(filtered_by_type)
@@ -176,7 +183,8 @@ class BasicFilter(object):
         if "version" in allowed:
             if not match_version:
                 match_version = "last"
-            if self.is_manifest_entry(data[0]):
+            # manifest_info must be None when called from get_object_manifest()
+            if len(data) > 0 and self.is_manifest_entry(data[0]) and manifest_info is None:
                 results = self.filter_manifest_entries_by_version(results, match_version)
             else:
                 new_results = []
