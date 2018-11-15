@@ -56,8 +56,11 @@ class BasicFilter(object):
         t_first = t_last = None
 
         for obj in data:
-            time_of_obj = dt.datetime.strptime(obj["modified"], "%Y-%m-%dT%H:%M:%S.%fZ")
-
+            if "modified" not in obj:
+                prop = "created"  # Handles marking-definition case
+            else:
+                prop = "modified"
+            time_of_obj = dt.datetime.strptime(obj[prop], "%Y-%m-%dT%H:%M:%S.%fZ")
             if first is None:
                 first = last = obj
                 t_first = time_of_obj
@@ -70,7 +73,7 @@ class BasicFilter(object):
                     last = obj
                     t_last = time_of_obj
 
-            if obj["modified"] in actual_dates:
+            if obj[prop] in actual_dates:
                 match_objects.append(obj)
 
         if "first" in version_indicators:
