@@ -56,8 +56,8 @@ class BasicFilter(object):
         t_first = t_last = None
 
         for obj in data:
-            if "modified" not in obj:
-                prop = "created"  # Handles marking-definition case
+            if obj["id"].startswith("marking-definition--"):
+                prop = "created"
             else:
                 prop = "modified"
             time_of_obj = dt.datetime.strptime(obj[prop], "%Y-%m-%dT%H:%M:%S.%fZ")
