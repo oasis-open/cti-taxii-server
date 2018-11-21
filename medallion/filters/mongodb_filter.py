@@ -30,13 +30,9 @@ class MongoDBFilter(BasicFilter):
         return parameters
 
     def process_filter(self, data, allowed, manifest_info):
-        # if not self.filter_args:
-        #     return list(data.find(self.full_query))
-        results = []
-        date_filter = []
-        version_filter = []
         match_filter = {'$match': self.full_query}
         pipeline = [match_filter]
+
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
@@ -82,8 +78,7 @@ class MongoDBFilter(BasicFilter):
                 for d in actual_dates:
                     version_selector.append({'$arrayElemAt': ["$versions", {'$indexOfArray': ["$versions", d]}]})
                 version_filter = {
-                    '$project':
-                    {
+                    '$project': {
                         'id': 1,
                         'date_added': 1,
                         'versions': version_selector,
@@ -98,8 +93,7 @@ class MongoDBFilter(BasicFilter):
         else:
             # Join the filtered manifest(s) to the objects collection
             join_objects = {
-                '$lookup':
-                {
+                '$lookup': {
                     'from': "objects",
                     'localField': "id",
                     'foreignField': "id",
@@ -156,9 +150,10 @@ class MongoDBFilter(BasicFilter):
         return results
 
     def filter_contains_marking_definition(self, pipeline):
-        # If we are matching on id (either match[id]= or /{id}), then check if we are trying to find a marking definition.
-        # If so, we don't want do filter by version as marking-definition objects are not versioned.
-        if ("id" in pipeline[0]["$match"].keys() and pipeline[0]["$match"]["id"].startswith("marking-definition")):
+        # If we are matching on id (either match[id]= or /{id}), then check if
+        # we are trying to find a marking definition. If so, we don't want do
+        # filter by version as marking-definition objects are not versioned.
+        if "id" in pipeline[0]["$match"].keys() and pipeline[0]["$match"]["id"].startswith("marking-definition"):
             return True
 
         if "_type" in pipeline[0]["$match"].keys():
@@ -166,7 +161,7 @@ class MongoDBFilter(BasicFilter):
                     and "$in" in pipeline[0]["$match"]["_type"].keys())
                     and ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
                 return True
-            elif (pipeline[0]["$match"]["_type"].startswith("marking-definition")):
+            elif pipeline[0]["$match"]["_type"].startswith("marking-definition"):
                 return True
 
         return False

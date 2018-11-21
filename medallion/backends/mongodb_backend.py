@@ -70,24 +70,21 @@ class MongoBackend(Backend):
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
         pipeline = [{
-            '$lookup':
-            {
-                'from': "api_root_info",
-                'localField': "api_roots",
-                'foreignField': "_name",
-                'as': "roots"
+            "$lookup": {
+                "from": "api_root_info",
+                "localField": "api_roots",
+                "foreignField": "_name",
+                "as": "roots"
+            }
+        }, {
+            "$project": {
+                "_id": 0,
+                "title": 1,
+                "description": 1,
+                "contact": 1,
+                "api_roots": "$roots._url"
             }
         }]
-        pipeline.append({
-            '$project':
-            {
-                '_id': 0,
-                'title': 1,
-                'description': 1,
-                'contact': 1,
-                'api_roots': "$roots._url"
-            }
-        })
         info = list(collection.aggregate(pipeline))[0]
         return info
 
@@ -122,7 +119,8 @@ class MongoBackend(Backend):
         manifest_info = api_root_db["manifests"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"_collection_id": id_}, allowed_filters
+            {"_collection_id": id_},
+            allowed_filters
         )
         objects_found = full_filter.process_filter(manifest_info,
                                                    allowed_filters, None)
@@ -157,10 +155,13 @@ class MongoBackend(Backend):
     def get_objects(self, api_root, id_, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
-        full_filter = MongoDBFilter(filter_args,
-                                    {"_collection_id": id_}, allowed_filters)
-        # Note: error handling was not added to following call as mongo will handle (user
-        # supplied) filters gracefully if they dont exist
+        full_filter = MongoDBFilter(
+            filter_args,
+            {"_collection_id": id_},
+            allowed_filters
+        )
+        # Note: error handling was not added to following call as mongo will
+        # handle (user supplied) filters gracefully if they don't exist
         objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
