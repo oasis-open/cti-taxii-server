@@ -250,3 +250,7 @@ def wipe_mongodb_server():
 
     for db in set(client.list_database_names()) - set(["admin", "config", "local"]):
         client.drop_database(db)
+
+
+if __name__ == "__main__":
+    reset_db()
