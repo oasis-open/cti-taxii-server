@@ -336,15 +336,49 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         get_header = copy.deepcopy(self.auth)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
+        # ------------- BEGIN: test with static data section ------------- #
+
         r_get = self.client.get(
-            test.GET_OBJECTS_EP + "?added_after=2016-11-01T03:04:05Z",
+            test.GET_OBJECTS_EP + "?added_after=2018-01-01T00:00:00Z",
             headers=get_header
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
         bundle = self.load_json_response(r_get.data)
 
-        assert any(obj["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111" for obj in bundle["objects"])
+        # none of the objects in the test data set has an added_after date post 1 Jan 2018
+        self.assertEqual(0, len(bundle['objects']))
+
+        # ------------- END: test with static data section ------------- #
+        # ------------- BEGIN: test with object added via API ------------- #
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+        self.load_json_response(r_post.data)
+        self.assertEqual(r_post.status_code, 202)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+
+        # refetch objects post 1 Jan 2018 - should now have 1 result
+        r_get = self.client.get(
+            test.GET_OBJECTS_EP + "?added_after=2018-01-01T00:00:00Z",
+            headers=get_header
+        )
+        self.assertEqual(r_get.status_code, 200)
+        self.assertEqual(r_get.content_type, MEDIA_TYPE_STIX_V20)
+        bundle = self.load_json_response(r_get.data)
+
+        self.assertEqual(1, len(bundle['objects']))
+        self.assertEqual(new_id, bundle['objects'][0]['id'])
 
     def test_marking_defintions(self):
         get_header = copy.deepcopy(self.auth)

@@ -54,7 +54,7 @@ class MongoDBFilter(BasicFilter):
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
             if not match_version:
-                    match_version = "last"
+                match_version = "last"
             if "all" not in match_version:
                 actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
                 # If specific dates have been selected, then we add these to the $match criteria

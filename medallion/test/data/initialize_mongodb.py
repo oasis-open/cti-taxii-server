@@ -1,6 +1,5 @@
-from medallion.test.generic_initialize_mongodb import (add_api_root,
-                                                       build_new_mongo_databases_and_collection,
-                                                       connect_to_client)
+from medallion.test.generic_initialize_mongodb import (
+    add_api_root, build_new_mongo_databases_and_collection, connect_to_client)
 from medallion.utils.common import convert_to_stix_datetime
 
 
@@ -96,7 +95,7 @@ def reset_db():
                     '_type': 'relationship'
                 },
                 {
-                    "date_added": "2017-01-20T00:00:00.000Z",
+                    "date_added": convert_to_stix_datetime("2017-01-20T00:00:00.000Z"),
                     "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
                     "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
                     "media_types": [
@@ -108,15 +107,17 @@ def reset_db():
                     "_type": "marking-definition"
                 },
                 {
-                        "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
-                        "date_added": "2016-12-27T13:49:53Z",
-                        "versions": [
-                            "2016-11-03T12:30:59.000Z",
-                            "2017-01-27T13:49:53.935Z"
-                        ],
-                        "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.0"
-                        ]
+                    "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+                    "date_added": convert_to_stix_datetime("2016-12-27T13:49:53Z"),
+                    "versions": [
+                        "2016-11-03T12:30:59.000Z",
+                        "2017-01-27T13:49:53.935Z"
+                    ],
+                    "media_types": [
+                        "application/vnd.oasis.stix+json; version=2.0"
+                    ],
+                    "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
+                    '_type': 'indicator'
                 }])
 
     api_root_db["collections"].insert_one({
@@ -233,7 +234,8 @@ def reset_db():
                     "name": "Malicious site hosting downloader",
                     "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
                     "type": "indicator",
-                    "valid_from": "2017-01-27T13:49:53.935382Z"
+                    "valid_from": "2017-01-27T13:49:53.935382Z",
+                    "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
                 }])
 
     client.drop_database("api2")

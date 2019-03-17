@@ -5,8 +5,8 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from medallion.exceptions import MongoBackendError, ProcessingError
 from medallion.filters.mongodb_filter import MongoDBFilter
-from medallion.utils.common import (create_bundle, format_datetime,
-                                    generate_status, get_timestamp)
+from medallion.utils.common import (create_bundle, generate_status,
+                                    get_timestamp)
 
 from .base import Backend
 
@@ -60,7 +60,7 @@ class MongoBackend(Backend):
                 {"id": new_obj["id"],
                  "_collection_id": _collection_id,
                  "_type": new_obj["type"],
-                 "date_added": format_datetime(get_timestamp()),
+                 "date_added": get_timestamp(),
                  "versions": [version],
                  "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
             )  # media_types hardcoded for now...
