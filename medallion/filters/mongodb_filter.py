@@ -102,22 +102,10 @@ class MongoDBFilter(BasicFilter):
             }
             pipeline.append(join_objects)
             # Copy the filtered version list to the embedded object document
-            project_objects = {
-                '$project': {
-                    'obj.versions': '$versions',
-                    'obj.id': 1,
-                    'obj.modified': 1,
-                    'obj.created': 1,
-                    'obj.labels': 1,
-                    'obj.name': 1,
-                    'obj.pattern': 1,
-                    'obj.type': 1,
-                    'obj.valid_from': 1,
-                    'obj.created_by_ref': 1,
-                    'obj.object_marking_refs': 1
-                }
+            add_versions = {
+                '$addFields': {'obj.versions': '$versions'}
             }
-            pipeline.append(project_objects)
+            pipeline.append(add_versions)
             # denormalise the embedded objects and replace the document root
             pipeline.append({'$unwind': '$obj'})
             pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})

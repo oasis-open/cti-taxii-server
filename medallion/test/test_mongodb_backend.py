@@ -643,3 +643,39 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         assert error_data["title"] == "ProcessingError"
         assert error_data["http_status"] == "422"
         assert "While processing supplied content, an error occured" in error_data["description"]
+
+    def test_get_object_containing_additional_properties(self):
+        """tests fix for issue where additional indicator SDO properties such as external_references
+        are not being returned correctly"""
+
+        # setup data by adding indicator with valid_until date and external_references
+        new_id = "indicator--%s" % uuid.uuid4()
+        valid_until = "2018-01-27T13:49:53.935382Z"
+        external_references = [{
+            "source_name": "capec",
+            "external_id": "CAPEC-163"
+            }]
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+        new_bundle["objects"][0]["valid_until"] = valid_until
+        new_bundle["objects"][0]["external_references"] = external_references
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+
+        self.assertEqual(r_post.status_code, 202)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+
+        # get the indicator and check the valid_until date and external_references are returned
+        r = self.client.get(test.GET_OBJECT_EP + new_id + '/', headers=self.auth)
+        self.assertEqual(r.status_code, 200)
+        event = json.loads(r.data)
+        self.assertEqual(event['objects'][0]['valid_until'], valid_until)
+        self.assertEqual(event['objects'][0]['external_references'], external_references)
