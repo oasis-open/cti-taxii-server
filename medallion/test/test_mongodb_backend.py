@@ -99,10 +99,11 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         collections_metadata = sorted(collections_metadata["collections"], key=lambda x: x["id"])
         collection_ids = [cm["id"] for cm in collections_metadata]
 
-        assert len(collection_ids) == 3
+        assert len(collection_ids) == 4
         assert "52892447-4d7e-4f70-b94d-d7f22742ff63" in collection_ids
         assert "91a7b528-80eb-42ed-a74d-c6fbd5a26116" in collection_ids
         assert "64993447-4d7e-4f70-b94d-d7f33742ee63" in collection_ids
+        assert "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4" in collection_ids
 
     def test_get_collection(self):
         r = self.client.get(
@@ -143,6 +144,23 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
         objs = self.load_json_response(r.data)
         assert any(obj["id"] == "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463" for obj in objs["objects"])
+
+        # ------------- BEGIN: test that all returned objects belong to the correct collection ------------- #
+        r = self.client.get(
+            test.GET_OBJECTS_EP + "?match[type]=indicator",
+            headers=self.auth
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
+        objs = self.load_json_response(r.data)
+
+        # there should be only two indicators in this collection
+        self.assertEqual(len(objs["objects"]), 2)
+        # check that the returned objects are the ones we expected
+        expected_ids = set(['indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f', 'indicator--a932fcc6-e032-176c-126f-cb970a5a1ade'])
+        received_ids = set(obj["id"] for obj in objs["objects"])
+        self.assertEqual(expected_ids, received_ids)
 
     def test_add_objects(self):
         new_bundle = copy.deepcopy(API_OBJECTS_2)
@@ -679,3 +697,49 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         event = json.loads(r.data)
         self.assertEqual(event['objects'][0]['valid_until'], valid_until)
         self.assertEqual(event['objects'][0]['external_references'], external_references)
+
+    def test_get_object_exists_in_multiple_collections(self):
+        # setup data by adding indicator with valid_until date and external_references
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle["objects"][0]["id"] = new_id
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+
+        self.assertEqual(r_post.status_code, 202)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+
+        # now also add that identical object to another collection
+        r_post = self.client.post(
+            test.EMPTY_COLLECTION_EP + "objects/",
+            data=json.dumps(new_bundle),
+            headers=post_header
+        )
+
+        self.assertEqual(r_post.status_code, 202)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
+
+        # ------------- BEGIN: test that all returned objects belong to the correct collection ------------- #
+        # now query for that object in one collection and confirm we don't recieve both
+        # instances back
+        r = self.client.get(
+            test.ADD_OBJECTS_EP + new_id + "/",
+            headers=self.auth
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
+        objs = self.load_json_response(r.data)
+
+        # there should be only one indicator in this collection
+        self.assertEqual(len(objs["objects"]), 1)
+        # check that the returned object is the one we expected
+        self.assertEqual(new_id, objs["objects"][0]["id"])

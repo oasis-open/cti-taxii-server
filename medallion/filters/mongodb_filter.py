@@ -110,13 +110,16 @@ class MongoDBFilter(BasicFilter):
             pipeline.append({'$unwind': '$obj'})
             pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})
             # Redact the result set removing objects where the modified date is not in
-            # the versions array
+            # the versions array and the object isn't in the correct collection.
+            # The collection filter is required because the join between manifests and objects
+            # does not include collection_id
             redact_objects = {
                 '$redact': {
                     '$cond': {
                         'if': {
-                            '$setIsSubset': [
-                                ["$modified"], "$versions"
+                            '$and': [
+                                {'$setIsSubset': [["$modified"], "$versions"]},
+                                {'$eq': ["$_collection_id", self.full_query['_collection_id']]}
                             ]
                         },
                         'then': "$$KEEP",

@@ -131,6 +131,16 @@ def reset_db():
                 ]})
 
     api_root_db["collections"].insert_one({
+                "id": "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4",
+                "title": "Empty test Collection",
+                "description": "This data collection is for testing querying across collections",
+                "can_read": True,
+                "can_write": True,
+                "media_types": [
+                    "application/vnd.oasis.stix+json; version=2.0"
+                ]})
+
+    api_root_db["collections"].insert_one({
                 "id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
                 "title": "Indicators from the past 24-hours",
                 "description": "This data collection is for collecting current IOCs",
