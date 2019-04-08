@@ -106,7 +106,7 @@ class MongoDBFilter(BasicFilter):
             results = list(cursor)
         else:
             # Get the count of matching documents - need to unwind the versions selected to get accurate count.
-            count_pipeline = pipeline.copy()
+            count_pipeline = list(pipeline)
             count_pipeline.append({'$unwind': '$versions'})
             count = self.get_result_count(count_pipeline, manifest_info["mongodb_collection"])
 
@@ -171,7 +171,7 @@ class MongoDBFilter(BasicFilter):
             pipeline.append({"$limit": self.end_index - self.start_index})
 
     def get_result_count(self, pipeline, data):
-        count_pipeline = pipeline.copy()
+        count_pipeline = list(pipeline)
         count_pipeline.append({"$count": "total_count"})
         count_result = list(data.aggregate(count_pipeline))
 

@@ -31,8 +31,8 @@ def get_range_request_from_headers(request):
         matches = re.match(r'items (\d+)-(\d+)$', request.headers.get('Range'))
         if matches is None:
             abort(Response('Bad Range header supplied', status=400))
-        start_index = int(matches[1])
-        end_index = int(matches[2])
+        start_index = int(matches.group(1))
+        end_index = int(matches.group(2))
         # check that the requested number of items isn't larger than the maximum support server page size
         if end_index - start_index > current_app.taxii_config['max_page_size']:
             end_index = start_index + current_app.taxii_config['max_page_size']
