@@ -1,10 +1,19 @@
-FROM python:alpine3.6
+FROM ubuntu:xenial
+
+RUN apt-get update && apt-get install -y \
+    python-dev \
+    python-pip \
+    python-setuptools \
+    virtualenv \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . /taxii
 WORKDIR /taxii
+RUN pip install pymongo
 RUN pip install .
 
 WORKDIR /var/taxii
 EXPOSE 5000
 
-CMD ["medallion", "config.json"]
+CMD ["medallion", "--host", "0.0.0.0", "config.json"]

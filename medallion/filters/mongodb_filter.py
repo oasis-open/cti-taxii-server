@@ -5,10 +5,12 @@ from .basic_filter import BasicFilter
 
 class MongoDBFilter(BasicFilter):
 
-    def __init__(self, filter_args, basic_filter, allowed):
+    def __init__(self, filter_args, basic_filter, allowed, start_index=None, end_index=None):
         super(MongoDBFilter, self).__init__(filter_args)
         self.basic_filter = basic_filter
         self.full_query = self._query_parameters(allowed)
+        self.start_index = start_index
+        self.end_index = end_index
 
     def _query_parameters(self, allowed):
         parameters = self.basic_filter
@@ -45,10 +47,19 @@ class MongoDBFilter(BasicFilter):
             # If we are finding marking-definitions from the objects collection we need to change the match criteria from "_type" to "type"
             if data.name == "objects" and "_type" in pipeline[0]["$match"].keys():
                 pipeline[0]["$match"]["type"] = pipeline[0]["$match"].pop("_type")
+
+            # Calculate total number of matching documents
+            if data.name == "objects":
+                count = self.get_result_count(pipeline, manifest_info["mongodb_collection"])
+            else:
+                count = self.get_result_count(pipeline, data)
+
+            self.add_pagination_operations(pipeline)
+
             cursor = data.aggregate(pipeline)
             results = list(cursor)
 
-            return results
+            return count, results
 
         # create version filter
         if "version" in allowed:
@@ -88,9 +99,17 @@ class MongoDBFilter(BasicFilter):
                 pipeline.append(version_filter)
 
         if data._Collection__name == "manifests":
+            count = self.get_result_count(pipeline, data)
+            self.add_pagination_operations(pipeline)
+
             cursor = data.aggregate(pipeline)
             results = list(cursor)
         else:
+            # Get the count of matching documents - need to unwind the versions selected to get accurate count.
+            count_pipeline = pipeline.copy()
+            count_pipeline.append({'$unwind': '$versions'})
+            count = self.get_result_count(count_pipeline, manifest_info["mongodb_collection"])
+
             # Join the filtered manifest(s) to the objects collection
             join_objects = {
                 '$lookup': {
@@ -113,13 +132,17 @@ class MongoDBFilter(BasicFilter):
             # the versions array and the object isn't in the correct collection.
             # The collection filter is required because the join between manifests and objects
             # does not include collection_id
+            col_id = self.full_query['_collection_id']
             redact_objects = {
                 '$redact': {
                     '$cond': {
                         'if': {
-                            '$and': [
-                                {'$setIsSubset': [["$modified"], "$versions"]},
-                                {'$eq': ["$_collection_id", self.full_query['_collection_id']]}
+                            '$or': [
+                                {'$eq': ["$type", "marking-definition"]},
+                                {'$and': [
+                                    {'$setIsSubset': [["$modified"], "$versions"]},
+                                    {'$eq': ["$_collection_id", col_id]}
+                                ]}
                             ]
                         },
                         'then': "$$KEEP",
@@ -135,10 +158,30 @@ class MongoDBFilter(BasicFilter):
                 }
             }
             pipeline.append(project_results)
+            self.add_pagination_operations(pipeline)
+
             cursor = manifest_info["mongodb_collection"].aggregate(pipeline)
             results = list(cursor)
 
-        return results
+        return count, results
+
+    def add_pagination_operations(self, pipeline):
+        if self.start_index is not None and self.end_index is not None:
+            pipeline.append({"$skip": self.start_index})
+            pipeline.append({"$limit": self.end_index - self.start_index})
+
+    def get_result_count(self, pipeline, data):
+        count_pipeline = pipeline.copy()
+        count_pipeline.append({"$count": "total_count"})
+        count_result = list(data.aggregate(count_pipeline))
+
+        if len(count_result) == 0:
+            # No results
+            return 0
+
+        count = count_result[0]['total_count']
+
+        return count
 
     def filter_contains_marking_definition(self, pipeline):
         # If we are matching on id (either match[id]= or /{id}), then check if
@@ -148,9 +191,9 @@ class MongoDBFilter(BasicFilter):
             return True
 
         if "_type" in pipeline[0]["$match"].keys():
-            if ((isinstance(pipeline[0]["$match"]["_type"], dict)
-                    and "$in" in pipeline[0]["$match"]["_type"].keys())
-                    and ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
+            if ((isinstance(pipeline[0]["$match"]["_type"], dict) and
+                    "$in" in pipeline[0]["$match"]["_type"].keys()) and
+                    ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
                 return True
             elif pipeline[0]["$match"]["_type"].startswith("marking-definition"):
                 return True

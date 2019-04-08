@@ -9,7 +9,7 @@ import uuid
 import six
 
 from medallion import (application_instance, init_backend, register_blueprints,
-                       set_config, test)
+                       set_taxii_config, set_users_config, test)
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
@@ -51,10 +51,14 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
             },
             "users": {
                 "admin": "Password0"
+            },
+            "taxii": {
+                "max_page_size": 20
             }
         }
         init_backend(self.app, self.configuration["backend"])
-        set_config(self.app, self.configuration["users"])
+        set_users_config(self.app, self.configuration["users"])
+        set_taxii_config(self.app, self.configuration["taxii"])
         self.client = application_instance.test_client()
         encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {'Authorization': encoded_auth}
