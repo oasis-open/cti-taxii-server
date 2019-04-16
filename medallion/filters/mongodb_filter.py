@@ -137,11 +137,11 @@ class MongoDBFilter(BasicFilter):
                 '$redact': {
                     '$cond': {
                         'if': {
-                            '$or': [
-                                {'$eq': ["$type", "marking-definition"]},
-                                {'$and': [
-                                    {'$setIsSubset': [["$modified"], "$versions"]},
-                                    {'$eq': ["$_collection_id", col_id]}
+                            '$and': [
+                                {'$eq': ["$_collection_id", col_id]},
+                                {'$or': [
+                                    {'$eq': ["$type", "marking-definition"]},
+                                    {'$setIsSubset': [["$modified"], "$versions"]}
                                 ]}
                             ]
                         },
