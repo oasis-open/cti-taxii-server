@@ -783,7 +783,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         self.assertEqual(r.status_code, 206)
         self.assertEqual(r.headers.get('Content-Range'), 'items 0-10/100')
-        self.assertEqual(len(objs['objects']), 10)
+        self.assertEqual(len(objs['objects']), 11)
 
         # ------------- END: test request for subset of objects endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size on objects endpoint ------------- #
@@ -797,7 +797,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         # should return a maximum of 20 objects as that is what we have set in the server configuration
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-20/100')
+        self.assertEqual(r.headers.get('Content-Range'), 'items 0-19/100')
         self.assertEqual(len(objs['objects']), 20)
 
         # ------------- END: test request for more than servers supported page size on objects endpoint ------------- #
@@ -811,10 +811,34 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 90-100/100')
+        self.assertEqual(r.headers.get('Content-Range'), 'items 90-99/100')
         self.assertEqual(len(objs['objects']), 10)
 
         # ------------- END: test request for range beyond result set of objects endpoint ------------- #
+        # ------------- BEGIN: test request for just the first item ------------- #
+
+        headers = {
+            'Authorization': self.auth['Authorization'],
+            'Range': 'items 0-0'
+        }
+        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        objs = self.load_json_response(r.data)
+
+        self.assertEqual(r.status_code, 206)
+        self.assertEqual(r.headers.get('Content-Range'), 'items 0-0/100')
+        self.assertEqual(len(objs['objects']), 1)
+
+        # ------------- END: test request for just the first item ------------- #
+        # ------------- BEGIN: test request for one item past the end of the range ------------- #
+
+        headers = {
+            'Authorization': self.auth['Authorization'],
+            'Range': 'items 100-100'
+        }
+        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        self.assertEqual(r.status_code, 416)
+
+        # ------------- END: test request for one item past the end of the range ------------- #
 
     def test_manifest_pagination(self):
         # setup data by adding 100 indicators
@@ -850,7 +874,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         self.assertEqual(r.status_code, 206)
         self.assertEqual(r.headers.get('Content-Range'), 'items 0-10/100')
-        self.assertEqual(len(objs['objects']), 10)
+        self.assertEqual(len(objs['objects']), 11)
 
         # ------------- END: test request for subset of manifests endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size of manifests endpoint------------- #
@@ -863,7 +887,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-20/100')
+        self.assertEqual(r.headers.get('Content-Range'), 'items 0-19/100')
         self.assertEqual(len(objs['objects']), 20)
 
         # ------------- END: test request for more than servers supported page size of manifests endpoint ------------- #
@@ -877,7 +901,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 90-100/100')
+        self.assertEqual(r.headers.get('Content-Range'), 'items 90-99/100')
         self.assertEqual(len(objs['objects']), 10)
 
         # ------------- END: test request for range beyond result set of manifests endpoint ------------- #
@@ -913,7 +937,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         self.assertEqual(r.status_code, 206)
         self.assertEqual(r.headers.get('Content-Range'), 'items 0-10/100')
-        self.assertEqual(len(objs['collections']), 10)
+        self.assertEqual(len(objs['collections']), 11)
 
         # ------------- END: test request for subset of collections endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size of collections endpoint------------- #
@@ -926,7 +950,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-20/100')
+        self.assertEqual(r.headers.get('Content-Range'), 'items 0-19/100')
         self.assertEqual(len(objs['collections']), 20)
 
         # ------------- END: test request for more than servers supported page size of collections endpoint ------------- #
@@ -940,7 +964,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 90-100/100')
+        self.assertEqual(r.headers.get('Content-Range'), 'items 90-99/100')
         self.assertEqual(len(objs['collections']), 10)
 
         # ------------- END: test request for range beyond result set of collections endpoint ------------- #

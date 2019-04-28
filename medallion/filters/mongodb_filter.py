@@ -168,7 +168,7 @@ class MongoDBFilter(BasicFilter):
     def add_pagination_operations(self, pipeline):
         if self.start_index is not None and self.end_index is not None:
             pipeline.append({"$skip": self.start_index})
-            pipeline.append({"$limit": self.end_index - self.start_index})
+            pipeline.append({"$limit": (self.end_index - self.start_index) + 1})
 
     def get_result_count(self, pipeline, data):
         count_pipeline = list(pipeline)

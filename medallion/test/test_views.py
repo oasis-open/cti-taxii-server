@@ -156,7 +156,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
         self.assertIsNotNone(r.headers.get('Accept-Ranges', None))
         self.assertIsNotNone(r.headers.get('Content-Range', None))
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-{}/100'.format(page_size))
+        self.assertEqual(r.headers.get('Content-Range'), 'items 0-{}/100'.format(page_size - 1))
         self.assertEqual(len(objs['objects']), page_size)
 
         # ------------- END: test large result set ------------- #

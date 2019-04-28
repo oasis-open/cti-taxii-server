@@ -34,16 +34,17 @@ def get_range_request_from_headers(request):
         start_index = int(matches.group(1))
         end_index = int(matches.group(2))
         # check that the requested number of items isn't larger than the maximum support server page size
-        if end_index - start_index > current_app.taxii_config['max_page_size']:
-            end_index = start_index + current_app.taxii_config['max_page_size']
+        # the +1 and -1 below account for the fact that paging is zero index based.
+        if (end_index - start_index) + 1 > current_app.taxii_config['max_page_size']:
+            end_index = start_index + (current_app.taxii_config['max_page_size'] - 1)
         return start_index, end_index
     else:
-        return 0, current_app.taxii_config['max_page_size']
+        return 0, current_app.taxii_config['max_page_size'] - 1
 
 
 def get_response_status_and_headers(start_index, total_count, objects):
     # If the requested range is outside the size of the result set, return a HTTP 416
-    if start_index > total_count:
+    if start_index >= total_count and total_count > 0:
         headers = {
             'Accept-Ranges': 'items',
             'Content-Range': 'items */{}'.format(total_count)
@@ -55,10 +56,11 @@ def get_response_status_and_headers(start_index, total_count, objects):
         status = 200
         headers = {'Accept-Ranges': 'items'}
     else:
+        # The minus one below is due to the fact that the range is zero based
         status = 206
         headers = {
             'Accept-Ranges': 'items',
-            'Content-Range': 'items {}-{}/{}'.format(start_index, start_index + len(objects), total_count)
+            'Content-Range': 'items {}-{}/{}'.format(start_index, start_index + (len(objects) - 1), total_count)
         }
     return status, headers
 

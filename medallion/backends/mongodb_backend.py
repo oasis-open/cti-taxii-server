@@ -95,11 +95,11 @@ class MongoBackend(Backend):
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        count = collection_info.count_documents({})
+        count = collection_info.count()
 
         pipeline = [{'$match': {}}, {'$sort': {'_id': 1}}]
         pipeline.append({"$skip": start_index})
-        pipeline.append({"$limit": end_index - start_index})
+        pipeline.append({"$limit": (end_index - start_index) + 1})
         collections = list(collection_info.aggregate(pipeline))
         for c in collections:
             if c:
