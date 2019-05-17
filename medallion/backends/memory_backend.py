@@ -187,7 +187,17 @@ class MemoryBackend(Backend):
             status = generate_status(request_time, "complete", succeeded,
                                      failed, pending, successes_ids=successes,
                                      failures=failures)
-            api_info["status"].append(status)
+            
+            if isinstance(api_info["status"], list):
+                api_info["status"].append(status)
+
+            elif isinstance(api_info["status"], dict):
+                api_info["status"].update(status)
+
+            else:
+                raise TypeError("api_info[\"status\"] is not an instance of dict or list. Enable to add status to object type: '{}'".format(
+                    type(api_info["status"]).__name__))
+            
             return status
 
     def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
