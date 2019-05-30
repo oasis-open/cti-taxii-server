@@ -1,66 +1,22 @@
-import base64
 import copy
 import json
 import os.path
 import tempfile
-import unittest
 import uuid
 
 import six
 
-from medallion import (application_instance, init_backend, register_blueprints,
-                       set_config, test)
+from base_test import TaxiiTest
+from medallion import init_backend, test
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "default_data.json")
-API_OBJECTS_2 = {
-    "id": "bundle--8fab937e-b694-11e3-b71c-0800271e87d2",
-    "objects": [
-        {
-            "created": "2017-01-27T13:49:53.935Z",
-            "id": "indicator--%s",
-            "labels": [
-                "url-watchlist"
-            ],
-            "modified": "2017-01-27T13:49:53.935Z",
-            "name": "Malicious site hosting downloader",
-            "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-            "type": "indicator",
-            "valid_from": "2017-01-27T13:49:53.935382Z"
-        }
-    ],
-    "spec_version": "2.0",
-    "type": "bundle"
-}
 
+class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
-class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
-
-    def setUp(self):
-        self.app = application_instance
-        self.app_context = application_instance.app_context()
-        self.app_context.push()
-        self.app.testing = True
-        register_blueprints(self.app)
-        self.configuration = {
-            "backend": {
-                "module": "medallion.backends.memory_backend",
-                "module_class": "MemoryBackend",
-                "filename": DATA_FILE
-            },
-            "users": {
-                "admin": "Password0"
-            }
-        }
-        init_backend(self.app, self.configuration["backend"])
-        set_config(self.app, self.configuration["users"])
-        self.client = application_instance.test_client()
-        encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
-        self.auth = {'Authorization': encoded_auth}
-
-    def tearDown(self):
-        self.app_context.pop()
+    @classmethod
+    def setUpClass(cls):
+        cls.type = "memory"
 
     @staticmethod
     def load_json_response(response):
@@ -145,7 +101,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert any(obj["id"] == "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463" for obj in objs["objects"])
 
     def test_add_objects(self):
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
@@ -208,7 +164,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         # ------------- BEGIN: end manifest section ------------- #
 
     def test_add_existing_objects(self):
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
@@ -257,7 +213,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
 
     def test_client_object_versioning(self):
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         # ------------- BEGIN: add object section ------------- #
@@ -276,7 +232,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
 
         for i in range(0, 5):
-            new_bundle = copy.deepcopy(API_OBJECTS_2)
+            new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
             new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
             r_post = self.client.post(
@@ -395,7 +351,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
         assert any(obj["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111" for obj in bundle["objects"])
 
     def test_saving_data_file(self):  # just for the memory backend
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
@@ -503,7 +459,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
 
         # add_objects()
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = {}
@@ -531,7 +487,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
 
         # add_objects
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.auth)
@@ -555,7 +511,7 @@ class TestTAXIIServerWithMemoryBackend(unittest.TestCase):
 
         # add_objects
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.auth)
