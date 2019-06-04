@@ -199,3 +199,21 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 
         self.assertEqual(r.status_code, 400)
+
+    @mock.patch('medallion.backends.base.Backend')
+    def test_content_range_header_empty_response(self, mock_backend):
+        ''' This test checks that the Content-Range header is correctly formed for queries that return
+        an empty (zero record) response. '''
+        self.app.medallion_backend = mock_backend()
+
+        # Set up the backend to return the total number of results = 0.
+        mock_backend.return_value.get_objects.return_value = (0, {'objects': []})
+
+        headers = {
+            'Authorization': self.auth['Authorization'],
+            'Range': 'items 0-10'
+        }
+        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+
+        self.assertEqual(r.status_code, 206)
+        self.assertEqual(r.headers.get('Content-Range'), 'items 0-0/0')

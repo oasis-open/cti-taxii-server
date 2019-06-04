@@ -58,9 +58,15 @@ def get_response_status_and_headers(start_index, total_count, objects):
     else:
         # The minus one below is due to the fact that the range is zero based
         status = 206
+        # This check is required as if the number of objects returned is zero, subtracting one would give us
+        # an end index of -1
+        if len(objects) == 0:
+            end_index = start_index
+        else:
+            end_index = start_index + (len(objects) - 1)
         headers = {
             'Accept-Ranges': 'items',
-            'Content-Range': 'items {}-{}/{}'.format(start_index, start_index + (len(objects) - 1), total_count)
+            'Content-Range': 'items {}-{}/{}'.format(start_index, end_index, total_count)
         }
     return status, headers
 
