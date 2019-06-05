@@ -105,63 +105,66 @@ class MongoDBFilter(BasicFilter):
             cursor = data.aggregate(pipeline)
             results = list(cursor)
         else:
+            results = []
             # Get the count of matching documents - need to unwind the versions selected to get accurate count.
             count_pipeline = list(pipeline)
             count_pipeline.append({'$unwind': '$versions'})
             count = self.get_result_count(count_pipeline, manifest_info["mongodb_collection"])
 
-            # Join the filtered manifest(s) to the objects collection
-            join_objects = {
-                '$lookup': {
-                    'from': "objects",
-                    'localField': "id",
-                    'foreignField': "id",
-                    'as': "obj"
-                }
-            }
-            pipeline.append(join_objects)
-            # Copy the filtered version list to the embedded object document
-            add_versions = {
-                '$addFields': {'obj.versions': '$versions'}
-            }
-            pipeline.append(add_versions)
-            # denormalise the embedded objects and replace the document root
-            pipeline.append({'$unwind': '$obj'})
-            pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})
-            # Redact the result set removing objects where the modified date is not in
-            # the versions array and the object isn't in the correct collection.
-            # The collection filter is required because the join between manifests and objects
-            # does not include collection_id
-            col_id = self.full_query['_collection_id']
-            redact_objects = {
-                '$redact': {
-                    '$cond': {
-                        'if': {
-                            '$and': [
-                                {'$eq': ["$_collection_id", col_id]},
-                                {'$or': [
-                                    {'$eq': ["$type", "marking-definition"]},
-                                    {'$setIsSubset': [["$modified"], "$versions"]}
-                                ]}
-                            ]
-                        },
-                        'then': "$$KEEP",
-                        'else': "$$PRUNE"
+            # only bother doing the rest of the query if the start index is less than the total number of results.
+            if self.start_index < count:
+                # Join the filtered manifest(s) to the objects collection
+                join_objects = {
+                    '$lookup': {
+                        'from': "objects",
+                        'localField': "id",
+                        'foreignField': "id",
+                        'as': "obj"
                     }
                 }
-            }
-            pipeline.append(redact_objects)
-            # Project the final results
-            project_results = {
-                '$project': {
-                    'versions': 0
+                pipeline.append(join_objects)
+                # Copy the filtered version list to the embedded object document
+                add_versions = {
+                    '$addFields': {'obj.versions': '$versions'}
                 }
-            }
-            pipeline.append(project_results)
-            self.add_pagination_operations(pipeline)
+                pipeline.append(add_versions)
+                # denormalise the embedded objects and replace the document root
+                pipeline.append({'$unwind': '$obj'})
+                pipeline.append({'$replaceRoot': {'newRoot': "$obj"}})
+                # Redact the result set removing objects where the modified date is not in
+                # the versions array and the object isn't in the correct collection.
+                # The collection filter is required because the join between manifests and objects
+                # does not include collection_id
+                col_id = self.full_query['_collection_id']
+                redact_objects = {
+                    '$redact': {
+                        '$cond': {
+                            'if': {
+                                '$and': [
+                                    {'$eq': ["$_collection_id", col_id]},
+                                    {'$or': [
+                                        {'$eq': ["$type", "marking-definition"]},
+                                        {'$setIsSubset': [["$modified"], "$versions"]}
+                                    ]}
+                                ]
+                            },
+                            'then': "$$KEEP",
+                            'else': "$$PRUNE"
+                        }
+                    }
+                }
+                pipeline.append(redact_objects)
+                # Project the final results
+                project_results = {
+                    '$project': {
+                        'versions': 0
+                    }
+                }
+                pipeline.append(project_results)
+                self.add_pagination_operations(pipeline)
 
-            cursor = manifest_info["mongodb_collection"].aggregate(pipeline)
-            results = list(cursor)
+                cursor = manifest_info["mongodb_collection"].aggregate(pipeline)
+                results = list(cursor)
 
         return count, results
 
