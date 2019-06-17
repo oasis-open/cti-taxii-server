@@ -4,6 +4,7 @@ import unittest
 
 from medallion import (application_instance, init_backend, register_blueprints,
                        set_config)
+from medallion.test.data.initialize_mongodb import reset_db
 
 
 class TaxiiTest(unittest.TestCase):
@@ -57,6 +58,7 @@ class TaxiiTest(unittest.TestCase):
         self.app.testing = True
         register_blueprints(self.app)
         if self.type == "mongo":
+            reset_db()
             self.configuration = self.mongodb_config
         else:
             self.memory_config['backend']['filename'] = self.DATA_FILE
