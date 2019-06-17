@@ -5,7 +5,7 @@ from .basic_filter import BasicFilter
 
 class MongoDBFilter(BasicFilter):
 
-    def __init__(self, filter_args, basic_filter, allowed, start_index=None, end_index=None):
+    def __init__(self, filter_args, basic_filter, allowed, start_index=0, end_index=None):
         super(MongoDBFilter, self).__init__(filter_args)
         self.basic_filter = basic_filter
         self.full_query = self._query_parameters(allowed)
