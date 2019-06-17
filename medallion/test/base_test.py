@@ -8,7 +8,8 @@ from medallion.test.data.initialize_mongodb import reset_db
 
 
 class TaxiiTest(unittest.TestCase):
-    DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "default_data.json")
+    DATA_FILE = os.path.join(
+        os.path.dirname(__file__), "data", "default_data.json")
     API_OBJECTS_2 = {
         "id": "bundle--8fab937e-b694-11e3-b71c-0800271e87d2",
         "objects": [
@@ -30,14 +31,14 @@ class TaxiiTest(unittest.TestCase):
     }
 
     memory_config = {
-            "backend": {
+        "backend": {
                 "module": "medallion.backends.memory_backend",
                 "module_class": "MemoryBackend",
                 "filename": DATA_FILE
             },
-            "users": {
-                "admin": "Password0"
-            }
+        "users": {
+            "admin": "Password0"
+        }
         }
 
     mongodb_config = {
@@ -66,7 +67,8 @@ class TaxiiTest(unittest.TestCase):
         init_backend(self.app, self.configuration["backend"])
         set_config(self.app, self.configuration["users"])
         self.client = application_instance.test_client()
-        encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
+        encoded_auth = 'Basic ' + \
+            base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {'Authorization': encoded_auth}
 
     def tearDown(self):
