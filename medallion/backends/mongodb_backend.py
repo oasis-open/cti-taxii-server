@@ -5,8 +5,8 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from medallion.exceptions import MongoBackendError, ProcessingError
 from medallion.filters.mongodb_filter import MongoDBFilter
-from medallion.utils.common import (create_bundle, generate_status,
-                                    get_timestamp)
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, get_timestamp)
 
 from .base import Backend
 
@@ -136,6 +136,9 @@ class MongoBackend(Backend):
                 if obj:
                     obj.pop("_id", None)
                     obj.pop("_collection_id", None)
+                    obj.pop("_type", None)
+                    # format date_added which is an ISODate object
+                    obj['date_added'] = format_datetime(obj['date_added'])
         return total, objects_found
 
     @catch_mongodb_error
