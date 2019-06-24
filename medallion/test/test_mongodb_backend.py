@@ -1,70 +1,21 @@
-import base64
 import copy
 import json
-import unittest
 import uuid
 
 import six
 
-from medallion import (application_instance, init_backend, register_blueprints,
-                       set_taxii_config, set_users_config, test)
-from medallion.test.data.initialize_mongodb import reset_db
+from medallion import test
 from medallion.test.generic_initialize_mongodb import connect_to_client
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
-API_OBJECTS_2 = {
-    "id": "bundle--8fab937e-b694-11e3-b71c-0800271e87d2",
-    "objects": [
-        {
-            "created": "2017-01-27T13:49:53.935Z",
-            "id": "indicator--%s",
-            "labels": [
-                "url-watchlist"
-            ],
-            "modified": "2017-01-27T13:49:53.935Z",
-            "name": "Malicious site hosting downloader",
-            "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-            "type": "indicator",
-            "valid_from": "2017-01-27T13:49:53.935382Z"
-        }
-    ],
-    "spec_version": "2.0",
-    "type": "bundle"
-}
+from .base_test import TaxiiTest
 
 
-class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
-
-    def setUp(self):
-        self.app = application_instance
-        self.application_context = self.app.app_context()
-        self.application_context.push()
-        self.app.testing = True
-        register_blueprints(self.app)
-        reset_db()
-        self.configuration = {
-            "backend": {
-                "module": "medallion.backends.mongodb_backend",
-                "module_class": "MongoBackend",
-                "uri": "mongodb://localhost:27017/"
-            },
-            "users": {
-                "admin": "Password0"
-            },
-            "taxii": {
-                "max_page_size": 20
-            }
-        }
-        init_backend(self.app, self.configuration["backend"])
-        set_users_config(self.app, self.configuration["users"])
-        set_taxii_config(self.app, self.configuration["taxii"])
-        self.client = application_instance.test_client()
-        encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
-        self.auth = {'Authorization': encoded_auth}
-
-    def tearDown(self):
-        self.application_context.pop()
+class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
+    @classmethod
+    def setUpClass(cls):
+        cls.type = "mongo"
 
     @staticmethod
     def load_json_response(response):
@@ -168,7 +119,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(expected_ids, received_ids)
 
     def test_add_objects(self):
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
@@ -232,7 +183,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
     def test_client_object_versioning(self):
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         # ------------- BEGIN: add object section ------------- #
@@ -251,7 +202,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
         self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
 
         for i in range(0, 5):
-            new_bundle = copy.deepcopy(API_OBJECTS_2)
+            new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
             new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
             r_post = self.client.post(
@@ -374,7 +325,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         # ------------- END: test with static data section ------------- #
         # ------------- BEGIN: test with object added via API ------------- #
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
@@ -565,7 +516,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         # add_objects()
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = {}
@@ -593,7 +544,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         # add_objects
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.auth)
@@ -617,7 +568,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
         # add_objects
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.auth)
@@ -678,7 +629,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
             "source_name": "capec",
             "external_id": "CAPEC-163"
             }]
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
         new_bundle["objects"][0]["valid_until"] = valid_until
         new_bundle["objects"][0]["external_references"] = external_references
@@ -706,7 +657,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
     def test_get_object_exists_in_multiple_collections(self):
         # setup data by adding indicator with valid_until date and external_references
         new_id = "indicator--%s" % uuid.uuid4()
-        new_bundle = copy.deepcopy(API_OBJECTS_2)
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.auth)
@@ -751,7 +702,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
     def test_object_pagination(self):
         # setup data by adding 100 indicators
-        bundle = copy.deepcopy(API_OBJECTS_2)
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
         # 5 objects in the collection already so add another 95 to make it up to 100
         for i in range(0, 94):
             new_id = "indicator--%s" % uuid.uuid4()
@@ -842,7 +793,7 @@ class TestTAXIIServerWithMongoDBBackend(unittest.TestCase):
 
     def test_manifest_pagination(self):
         # setup data by adding 100 indicators
-        bundle = copy.deepcopy(API_OBJECTS_2)
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
         # 6 items in the manifests collection already so add another 94 to make it up to 100
         for i in range(0, 94):
             new_id = "indicator--%s" % uuid.uuid4()
