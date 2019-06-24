@@ -650,7 +650,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # get the indicator and check the valid_until date and external_references are returned
         r = self.client.get(test.GET_OBJECT_EP + new_id + '/', headers=self.auth)
         self.assertEqual(r.status_code, 200)
-        event = json.loads(r.data)
+        event = self.load_json_response(r.data)
         self.assertEqual(event['objects'][0]['valid_until'], valid_until)
         self.assertEqual(event['objects'][0]['external_references'], external_references)
 
