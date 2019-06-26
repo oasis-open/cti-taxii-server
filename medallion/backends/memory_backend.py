@@ -182,7 +182,7 @@ class MemoryBackend(Backend):
                                 failures.append({"id": new_obj["id"], "message": "Unable to process object"})
                                 failed += 1
                     except Exception as e:
-                        raise ProcessingError("While processing supplied content, an error occured", e)
+                        raise ProcessingError("While processing supplied content, an error occurred", e)
 
             status = generate_status(request_time, "complete", succeeded,
                                      failed, pending, successes_ids=successes,
