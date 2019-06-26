@@ -200,7 +200,7 @@ class MongoBackend(Backend):
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
-            raise ProcessingError("While processing supplied content, an error occured", e)
+            raise ProcessingError("While processing supplied content, an error occurred", e)
 
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)
