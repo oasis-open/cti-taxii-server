@@ -21,7 +21,15 @@ def get_object_manifest(api_root, id_):
     manifest = current_app.medallion_backend.get_object_manifest(api_root, id_, request.args, ("id", "type", "version"))
 
     if manifest:
-        return Response(response=flask.json.dumps({"objects": manifest}),
-                        status=200,
-                        mimetype=MEDIA_TYPE_TAXII_V20)
+        times = []
+        for obj in manifest:
+            times.append(str(obj['date_added']))
+        times.sort()
+        response = Response(response=flask.json.dumps({"objects": manifest}),
+                            status=200,
+                            mimetype=MEDIA_TYPE_TAXII_V20)
+        if len(times) > 0:
+            response.headers['X-TAXII-Date-Added-First'] = times[0]
+            response.headers['X-TAXII-Date-Added-Last'] = times[-1]
+        return response
     abort(404)
