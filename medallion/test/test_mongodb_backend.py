@@ -616,7 +616,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         error_data = self.load_json_response(r_post.data)
         assert error_data["title"] == "ProcessingError"
         assert error_data["http_status"] == "422"
-        assert "While processing supplied content, an error occured" in error_data["description"]
+        assert "While processing supplied content, an error occurred" in error_data["description"]
 
     def test_get_object_containing_additional_properties(self):
         """tests fix for issue where additional indicator SDO properties such as external_references
