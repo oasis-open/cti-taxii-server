@@ -873,7 +873,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
             }
             collections.append(col)
 
-        client = connect_to_client()
+        client = connect_to_client(self.configuration["backend"]["uri"])
         api_root_db = client['trustgroup1']
         api_root_db["collections"].insert_many(collections)
 
