@@ -3,8 +3,8 @@ import json
 import logging
 import textwrap
 
-from medallion import (__version__, application_instance, init_backend,
-                       register_blueprints, set_taxii_config, set_users_config)
+from medallion import (__version__, application_instance,
+                       register_blueprints, set_config)
 
 log = logging.getLogger("medallion")
 
@@ -74,9 +74,9 @@ def main():
     with open(medallion_args.CONFIG_PATH, "r") as f:
         configuration = json.load(f)
 
-    set_users_config(application_instance, configuration["users"])
-    set_taxii_config(application_instance, configuration["taxii"])
-    init_backend(application_instance, configuration["backend"])
+    set_config(application_instance, "users", configuration)
+    set_config(application_instance, "taxii", configuration)
+    set_config(application_instance, "backend", configuration)
     register_blueprints(application_instance)
 
     application_instance.run(
