@@ -87,12 +87,12 @@ def handle_error(error):
     e = {
         "title": "InternalError",
         "http_status": "500",
-        "description": str(error.args[0])
+        "description": str(error.args[0]),
     }
     return Response(
         response=json.dumps(e),
         status=500,
-        mimetype=MEDIA_TYPE_TAXII_V20
+        mimetype=MEDIA_TYPE_TAXII_V20,
     )
 
 
@@ -101,13 +101,13 @@ def handle_processing_error(error):
     e = {
         "title": str(error.__class__.__name__),
         "http_status": str(error.status),
-        "description": str(error)
+        "description": str(error),
     }
     return Response(
         response=json.dumps(e),
         status=error.status,
         headers=getattr(error, "headers", None),
-        mimetype=MEDIA_TYPE_TAXII_V20
+        mimetype=MEDIA_TYPE_TAXII_V20,
     )
 
 
@@ -116,10 +116,10 @@ def handle_backend_error(error):
     e = {
         "title": str(error.__class__.__name__),
         "http_status": str(error.status),
-        "description": str(error)
+        "description": str(error),
     }
     return Response(
         response=json.dumps(e),
         status=error.status,
-        mimetype=MEDIA_TYPE_TAXII_V20
+        mimetype=MEDIA_TYPE_TAXII_V20,
     )

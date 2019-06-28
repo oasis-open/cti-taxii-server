@@ -68,6 +68,7 @@ def add_api_root(client, url=None, title=None, description=None, versions=None, 
         "title": title,
         "description": description,
         "versions": versions,
-        "max_content_length": max_content_length})
+        "max_content_length": max_content_length,
+    })
     api_root_db = client[name]
     return api_root_db

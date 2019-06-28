@@ -40,44 +40,49 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         entry = manifest_info.find_one(
-            {"_collection_id": _collection_id, "id": new_obj["id"]}
+            {"_collection_id": _collection_id, "id": new_obj["id"]},
         )
         if entry:
             if "modified" in new_obj:
                 entry["versions"].append(new_obj["modified"])
                 manifest_info.update_one(
                     {"_collection_id": _collection_id, "id": new_obj["id"]},
-                    {"$set": {"versions": sorted(entry["versions"], reverse=True)}}
+                    {"$set": {"versions": sorted(entry["versions"], reverse=True)}},
                 )
             # If the new_obj is there, and it has no modified property,
             # then it is immutable, and there is nothing to do.
         else:
             version = new_obj.get("modified", new_obj["created"])
             manifest_info.insert_one(
-                {"id": new_obj["id"],
-                 "_collection_id": _collection_id,
-                 "_type": new_obj["type"],
-                 "date_added": get_timestamp(),
-                 "versions": [version],
-                 "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
+                {
+                    "id": new_obj["id"],
+                    "_collection_id": _collection_id,
+                    "_type": new_obj["type"],
+                    "date_added": get_timestamp(),
+                    "versions": [version],
+                    "media_types": ["application/vnd.oasis.stix+json; version=2.0"],
+                },
             )  # media_types hardcoded for now...
 
     @catch_mongodb_error
     def server_discovery(self):
         discovery_db = self.client["discovery_database"]
         collection = discovery_db["discovery_information"]
-        pipeline = [{
-            "$lookup": {
-                "from": "api_root_info",
-                "localField": "api_roots",
-                "foreignField": "_name",
-                "as": "_roots"
-            }
-        }, {
-            "$addFields": {
-                "api_roots": "$_roots._url"
-            }
-        }]
+        pipeline = [
+            {
+                "$lookup": {
+                    "from": "api_root_info",
+                    "localField": "api_roots",
+                    "foreignField": "_name",
+                    "as": "_roots",
+                },
+            },
+            {
+                "$addFields": {
+                    "api_roots": "$_roots._url",
+                },
+            },
+        ]
         info = list(collection.aggregate(pipeline))[0]
         info.pop("_roots", None)
         info.pop("_id", None)
@@ -125,10 +130,13 @@ class MongoBackend(Backend):
             {"_collection_id": id_},
             allowed_filters,
             start_index,
-            page_size
+            page_size,
         )
-        total, objects_found = full_filter.process_filter(manifest_info,
-                                                          allowed_filters, None)
+        total, objects_found = full_filter.process_filter(
+            manifest_info,
+            allowed_filters,
+            None,
+        )
         if objects_found:
             for obj in objects_found:
                 if obj:
@@ -168,14 +176,14 @@ class MongoBackend(Backend):
             {"_collection_id": id_},
             allowed_filters,
             start_index,
-            page_size
+            page_size,
         )
         # Note: error handling was not added to following call as mongo will
         # handle (user supplied) filters gracefully if they don't exist
         total, objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_},
         )
         for obj in objects_found:
             if obj:
@@ -200,8 +208,10 @@ class MongoBackend(Backend):
                     mongo_query["modified"] = new_obj["modified"]
                 existing_entry = objects.find_one(mongo_query)
                 if existing_entry:
-                    failures.append({"id": new_obj["id"],
-                                     "message": "Unable to process object"})
+                    failures.append({
+                        "id": new_obj["id"],
+                        "message": "Unable to process object",
+                    })
                     failed += 1
                 else:
                     new_obj.update({"_collection_id": collection_id})
@@ -212,8 +222,10 @@ class MongoBackend(Backend):
         except Exception as e:
             raise ProcessingError("While processing supplied content, an error occured", 422, e)
 
-        status = generate_status(request_time, "complete", succeeded, failed,
-                                 pending, successes_ids=successes, failures=failures)
+        status = generate_status(
+            request_time, "complete", succeeded, failed,
+            pending, successes_ids=successes, failures=failures,
+        )
         api_root_db["status"].insert_one(status)
         status.pop("_id", None)
         return status
@@ -225,12 +237,12 @@ class MongoBackend(Backend):
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": id_, "id": object_id},
-            allowed_filters
+            allowed_filters,
         )
         count, objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_},
         )
         if objects_found:
             for obj in objects_found:

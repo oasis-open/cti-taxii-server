@@ -91,7 +91,7 @@ class MongoDBFilter(BasicFilter):
                 version_filter = {
                     "$addFields": {
                         "versions": version_selector,
-                    }
+                    },
                 }
                 pipeline.append(version_filter)
 
@@ -116,13 +116,13 @@ class MongoDBFilter(BasicFilter):
                         "from": "objects",
                         "localField": "id",
                         "foreignField": "id",
-                        "as": "obj"
-                    }
+                        "as": "obj",
+                    },
                 }
                 pipeline.append(join_objects)
                 # Copy the filtered version list to the embedded object document
                 add_versions = {
-                    "$addFields": {"obj.versions": "$versions"}
+                    "$addFields": {"obj.versions": "$versions"},
                 }
                 pipeline.append(add_versions)
                 # denormalize the embedded objects and replace the document root
@@ -139,23 +139,25 @@ class MongoDBFilter(BasicFilter):
                             "if": {
                                 "$and": [
                                     {"$eq": ["$_collection_id", col_id]},
-                                    {"$or": [
-                                        {"$eq": ["$type", "marking-definition"]},
-                                        {"$setIsSubset": [["$modified"], "$versions"]}
-                                    ]}
-                                ]
+                                    {
+                                        "$or": [
+                                            {"$eq": ["$type", "marking-definition"]},
+                                            {"$setIsSubset": [["$modified"], "$versions"]},
+                                        ],
+                                    },
+                                ],
                             },
                             "then": "$$KEEP",
-                            "else": "$$PRUNE"
-                        }
-                    }
+                            "else": "$$PRUNE",
+                        },
+                    },
                 }
                 pipeline.append(redact_objects)
                 # Project the final results
                 project_results = {
                     "$project": {
-                        "versions": 0
-                    }
+                        "versions": 0,
+                    },
                 }
                 pipeline.append(project_results)
                 self.add_pagination_operations(pipeline)
@@ -191,8 +193,10 @@ class MongoDBFilter(BasicFilter):
             return True
 
         if "_type" in pipeline[0]["$match"].keys():
-            if ((isinstance(pipeline[0]["$match"]["_type"], dict) and
-                    "$in" in pipeline[0]["$match"]["_type"].keys()) and
+            if ((
+                isinstance(pipeline[0]["$match"]["_type"], dict) and
+                "$in" in pipeline[0]["$match"]["_type"].keys()
+            ) and
                     ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
                 return True
             elif pipeline[0]["$match"]["_type"].startswith("marking-definition"):

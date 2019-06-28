@@ -4,8 +4,7 @@ import json
 from medallion.backends.base import Backend
 from medallion.exceptions import ProcessingError
 from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.common import (create_bundle, generate_status,
-                                    iterpath)
+from medallion.utils.common import create_bundle, generate_status, iterpath
 
 
 class MemoryBackend(Backend):
@@ -53,10 +52,12 @@ class MemoryBackend(Backend):
                 else:
                     version = new_obj.get("modified", new_obj["created"])
                     collection["manifest"].append(
-                        {"id": new_obj["id"],
-                         "date_added": request_time,
-                         "versions": [version],
-                         "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
+                        {
+                            "id": new_obj["id"],
+                            "date_added": request_time,
+                            "versions": [version],
+                            "media_types": ["application/vnd.oasis.stix+json; version=2.0"],
+                        },
                     )  # media_types hardcoded for now...
                 # quit once you have found the collection that needed updating
                 break
@@ -104,7 +105,7 @@ class MemoryBackend(Backend):
                         manifest = full_filter.process_filter(
                             manifest,
                             allowed_filters,
-                            None
+                            None,
                         )
                     count = len(manifest)
                     result = manifest[start_index:end_index]
@@ -141,8 +142,8 @@ class MemoryBackend(Backend):
                             full_filter.process_filter(
                                 collection.get("objects", []),
                                 allowed_filters,
-                                collection.get("manifest", [])
-                            )
+                                collection.get("manifest", []),
+                            ),
                         )
                     else:
                         objs.extend(collection.get("objects", []))
@@ -190,9 +191,11 @@ class MemoryBackend(Backend):
                     except Exception as e:
                         raise ProcessingError("While processing supplied content, an error occured", 422, e)
 
-            status = generate_status(request_time, "complete", succeeded,
-                                     failed, pending, successes_ids=successes,
-                                     failures=failures)
+            status = generate_status(
+                request_time, "complete", succeeded,
+                failed, pending, successes_ids=successes,
+                failures=failures,
+            )
             api_info["status"].append(status)
             return status
 
@@ -212,6 +215,6 @@ class MemoryBackend(Backend):
                     objs = full_filter.process_filter(
                         objs,
                         allowed_filters,
-                        collection.get("manifest", [])
+                        collection.get("manifest", []),
                     )
             return create_bundle(objs)

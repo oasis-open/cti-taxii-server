@@ -7,8 +7,8 @@ import uuid
 
 import six
 
-from medallion import (application_instance, register_blueprints,
-                       set_config, test)
+from medallion import (application_instance, register_blueprints, set_config,
+                       test)
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
 if sys.version_info < (3, 3, 0):
@@ -21,20 +21,20 @@ BUNDLE = {
     "objects": [
     ],
     "spec_version": "2.0",
-    "type": "bundle"
+    "type": "bundle",
 }
 
 API_OBJECT = {
     "created": "2017-01-27T13:49:53.935Z",
     "id": "indicator--%s",
     "labels": [
-        "url-watchlist"
+        "url-watchlist",
     ],
     "modified": "2017-01-27T13:49:53.935Z",
     "name": "Malicious site hosting downloader",
     "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
     "type": "indicator",
-    "valid_from": "2017-01-27T13:49:53.935382Z"
+    "valid_from": "2017-01-27T13:49:53.935382Z",
 }
 
 
@@ -51,14 +51,14 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
                 "module": "medallion.backends.mongodb_backend",
                 "module_class": "MongoBackend",
                 "uri": "mongodb://localhost:27017/",
-                "default_page_size": 20
+                "default_page_size": 20,
             },
             "users": {
-                "admin": "Password0"
+                "admin": "Password0",
             },
             "taxii": {
-                "max_page_size": 20
-            }
+                "max_page_size": 20,
+            },
         }
         self.client = application_instance.test_client()
         set_config(self.app, "users", self.configuration)
@@ -94,8 +94,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         # ------------- END: test collection endpoint ------------- #
         # ------------- BEGIN: test manifests endpoint ------------- #
         mock_backend.return_value.get_object_manifest.return_value = (10, {'objects': []})
-        r = self.client.get(test.MANIFESTS_EP,
-                            headers=self.auth)
+        r = self.client.get(
+            test.MANIFESTS_EP,
+            headers=self.auth,
+        )
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -104,8 +106,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         # ------------- END: test manifests endpoint ------------- #
         # ------------- BEGIN: test objects endpoint ------------- #
         mock_backend.return_value.get_objects.return_value = (10, {'objects': []})
-        r = self.client.get(test.GET_OBJECTS_EP,
-                            headers=self.auth)
+        r = self.client.get(
+            test.GET_OBJECTS_EP,
+            headers=self.auth,
+        )
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
@@ -174,7 +178,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         headers = {
             'Authorization': self.auth['Authorization'],
-            'Range': 'items 100-199'
+            'Range': 'items 100-199',
         }
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 
@@ -194,7 +198,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         headers = {
             'Authorization': self.auth['Authorization'],
-            'Range': 'items x-199'
+            'Range': 'items x-199',
         }
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 
@@ -211,7 +215,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         headers = {
             'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10'
+            'Range': 'items 0-10',
         }
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 

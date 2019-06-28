@@ -53,7 +53,7 @@ def get_response_status_and_headers(start_index, total_count, objects):
         error = ProcessingError("The requested range is outside the size of the result set", 416)
         error.headers = {
             "Accept-Ranges": "items",
-            "Content-Range": "items */{}".format(total_count)
+            "Content-Range": "items */{}".format(total_count),
         }
         raise error
 
@@ -72,7 +72,7 @@ def get_response_status_and_headers(start_index, total_count, objects):
             end_index = start_index + (len(objects) - 1)
         headers = {
             "Accept-Ranges": "items",
-            "Content-Range": "items {}-{}/{}".format(start_index, end_index, total_count)
+            "Content-Range": "items {}-{}/{}".format(start_index, end_index, total_count),
         }
     return status, headers
 
@@ -86,7 +86,7 @@ def get_or_add_objects(api_root, id_):
         if request.method == "GET" and permission_to_read(api_root, id_):
             start_index, end_index = get_range_request_from_headers()
             total_count, objects = current_app.medallion_backend.get_objects(
-                api_root, id_, request.args, ("id", "type", "version"), start_index, end_index
+                api_root, id_, request.args, ("id", "type", "version"), start_index, end_index,
             )
             if objects:
                 status, headers = get_response_status_and_headers(start_index, total_count, objects["objects"])

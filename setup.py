@@ -72,5 +72,5 @@ setup(
         "mongo": [
             "pymongo",
         ],
-    }
+    },
 )

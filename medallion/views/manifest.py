@@ -18,7 +18,7 @@ def get_object_manifest(api_root, id_):
     if collection_exists(api_root, id_) and permission_to_read(api_root, id_):
         start_index, end_index = get_range_request_from_headers()
         total_count, manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, request.args, ("id", "type", "version"), start_index, end_index
+            api_root, id_, request.args, ("id", "type", "version"), start_index, end_index,
         )
         status, headers = get_response_status_and_headers(start_index, total_count, manifest)
         if manifest:
