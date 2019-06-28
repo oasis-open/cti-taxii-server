@@ -1,8 +1,8 @@
 from flask import Blueprint, Response, current_app, json
 
-from medallion import auth
-from medallion.exceptions import ProcessingError
-from medallion.views import MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_TAXII_V20
+from .. import auth
+from ..exceptions import ProcessingError
 
 mod = Blueprint("discovery", __name__)
 

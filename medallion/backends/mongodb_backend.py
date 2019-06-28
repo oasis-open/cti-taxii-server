@@ -3,11 +3,11 @@ import logging
 from pymongo import ASCENDING, MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
-from medallion.backends.base import Backend
-from medallion.exceptions import MongoBackendError, ProcessingError
-from medallion.filters.mongodb_filter import MongoDBFilter
-from medallion.utils.common import (create_bundle, format_datetime,
-                                    generate_status, get_timestamp)
+from ..exceptions import MongoBackendError, ProcessingError
+from ..filters.mongodb_filter import MongoDBFilter
+from ..utils.common import (create_bundle, format_datetime, generate_status,
+                            get_timestamp)
+from .base import Backend
 
 # Module-level logger
 log = logging.getLogger(__name__)

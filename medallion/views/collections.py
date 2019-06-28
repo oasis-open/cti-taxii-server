@@ -1,10 +1,10 @@
 from flask import Blueprint, Response, current_app, json
 
-from medallion import auth
-from medallion.exceptions import ProcessingError
-from medallion.views import MEDIA_TYPE_TAXII_V20
-from medallion.views.objects import (get_range_request_from_headers,
-                                     get_response_status_and_headers)
+from . import MEDIA_TYPE_TAXII_V20
+from .. import auth
+from ..exceptions import ProcessingError
+from .objects import (get_range_request_from_headers,
+                      get_response_status_and_headers)
 
 mod = Blueprint("collections", __name__)
 

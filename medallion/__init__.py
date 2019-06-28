@@ -4,9 +4,9 @@ import logging
 from flask import Flask, Response, current_app, json
 from flask_httpauth import HTTPBasicAuth
 
-from medallion.exceptions import BackendError, ProcessingError
-from medallion.version import __version__  # noqa
-from medallion.views import MEDIA_TYPE_TAXII_V20
+from .exceptions import BackendError, ProcessingError
+from .version import __version__  # noqa
+from .views import MEDIA_TYPE_TAXII_V20
 
 # Console Handler for medallion messages
 ch = logging.StreamHandler()

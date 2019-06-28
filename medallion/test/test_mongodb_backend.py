@@ -629,7 +629,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         external_references = [{
             "source_name": "capec",
             "external_id": "CAPEC-163",
-            }]
+        }]
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
         new_bundle["objects"][0]["valid_until"] = valid_until
