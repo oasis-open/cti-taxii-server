@@ -13,9 +13,7 @@ from .base_test import TaxiiTest
 
 
 class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
-    @classmethod
-    def setUpClass(cls):
-        cls.type = "mongo"
+    type = "mongo"
 
     @staticmethod
     def load_json_response(response):

@@ -7,6 +7,7 @@ from medallion.test.data.initialize_mongodb import reset_db
 
 
 class TaxiiTest(unittest.TestCase):
+    type = None
     DATA_FILE = os.path.join(
         os.path.dirname(__file__), "data", "default_data.json",
     )
@@ -48,7 +49,7 @@ class TaxiiTest(unittest.TestCase):
         "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "uri": "mongodb://localhost:27017/",
+            "uri": "mongodb://root:example@localhost:27017/",
         },
         "users": {
             "admin": "Password0",
@@ -67,9 +68,11 @@ class TaxiiTest(unittest.TestCase):
         if self.type == "mongo":
             reset_db()
             self.configuration = self.mongodb_config
-        else:
+        elif self.type == "memory":
             self.memory_config["backend"]["filename"] = self.DATA_FILE
             self.configuration = self.memory_config
+        else:
+            raise RuntimeError("Unknown backend!")
         set_config(self.app, "backend", self.configuration)
         set_config(self.app, "users", self.configuration)
         set_config(self.app, "taxii", self.configuration)

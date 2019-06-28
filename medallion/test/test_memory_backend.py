@@ -14,10 +14,7 @@ from .base_test import TaxiiTest
 
 
 class TestTAXIIServerWithMemoryBackend(TaxiiTest):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.type = "memory"
+    type = "memory"
 
     @staticmethod
     def load_json_response(response):
@@ -371,10 +368,10 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             self.app.medallion_backend.save_data_to_file(f.name)
             assert os.path.isfile(f.name)
 
-            test_config = self.configuration["backend"]
-            test_config["filename"] = f.name
+            configuration = copy.deepcopy(self.configuration)
+            configuration["backend"]["filename"] = f.name
 
-            set_config(self.app, "backend", test_config)
+            set_config(self.app, "backend", configuration)
 
             r_get = self.client.get(
                 test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
