@@ -4,14 +4,13 @@ class Backend(object):
     def server_discovery(self):
         """
         Fill:
-
             Returns the discovery information (api_roots, etc) for this server
 
         Args:
-                -none-
+            -none-
 
         Returns:
-                discovery information
+            discovery information
 
         """
         raise NotImplementedError()
@@ -19,20 +18,15 @@ class Backend(object):
     def get_collections(self, api_root, start_index, end_index):
         """
         Fill:
-
-            implement the get_collections TAXII endpoint by obtaining the collection metadata
+            Implement the get_collections TAXII endpoint by obtaining the collection metadata
             for this api_root
 
         Args:
-
             api_root (str): the name of the api_root.
-
             start_index (int): the index within the query results to start returning results from
-
             end_index (int): the last index within the query include in the result set
 
         Returns:
-
             tuple containing the total count, and metadata for all collections at this api root
 
         """
@@ -41,18 +35,14 @@ class Backend(object):
     def get_collection(self, api_root, collection_id):
         """
         Fill:
-
-            implement the get_collection TAXII service by obtaining the collection metadata
+            Implement the get_collection TAXII service by obtaining the collection metadata
             for collection
 
         Args:
-
             api_root (str): the name of the api_root.
-
             collection_id (str): the id of the collection
 
         Returns:
-
             collection metadata
 
         """
@@ -61,26 +51,18 @@ class Backend(object):
     def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, start_index, end_index):
         """
         Fill:
-
-            implement the get_object_manifest TAXII endpoint by obtaining the metadata
+            Implement the get_object_manifest TAXII endpoint by obtaining the metadata
             for the selected objects
 
         Args:
-
             api_root (str): the name of the api_root.
-
             collection_id (str): the id of the collection
-
-            filter_args (str):  query string from URL containing filter args
-
-            allowed_filters (list):  STIX properties which are allowed in the filter for this endpoint
-
+            filter_args (str): query string from URL containing filter args
+            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
             start_index (int): the index within the query results to start returning results from
-
             end_index (int): the last index within the query include in the result set
 
         Returns:
-
             tuple containing the total count of matching objects, and a collection of metadata for the objects
 
         """
@@ -89,15 +71,12 @@ class Backend(object):
     def get_api_root_information(self, api_root):
         """
         Fill:
-
-            implement the get_api_root_information TAXII endpoint by obtaining api_root metadata
+            Implement the get_api_root_information TAXII endpoint by obtaining api_root metadata
 
         Args:
-
             api_root (str): the name of the api_root.
 
         Returns:
-
             metadata for the api root
 
         """
@@ -106,17 +85,13 @@ class Backend(object):
     def get_status(self, api_root, status_id):
         """
         Fill:
-
-            implement the get_status TAXII endpoint by obtaining the status of an add_objects request
+            Implement the get_status TAXII endpoint by obtaining the status of an add_objects request
 
         Args:
-
             api_root (str): the name of the api_root.
-
             status_id (str): the id of the add_objects request
 
         Returns:
-
             status of the request (including):
                 how many objects were successful saved
                 how many objects failed to be saved
@@ -128,49 +103,36 @@ class Backend(object):
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters, start_index, end_index):
         """
         Fill:
-
-            implement the get_objects TAXII endpoint by obtaining the data from a collection
+            Implement the get_objects TAXII endpoint by obtaining the data from a collection
 
         Args:
-
             api_root (str): the name of the api_root.
-
             collection_id (str): the id of the collection
-
-            filter_args (str):  query string from URL containing filter args, plus start index and page
+            filter_args (str): query string from URL containing filter args, plus start index and page
                                 size to support pagination.
-
-            allowed_filters (list):  STIX properties which are allowed in the filter for this endpoint
-
+            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
             start_index (int): the index within the query results to start returning results from
-
             end_index (int): the last index within the query include in the result set
 
         Returns:
-
             tuple containing the total count of matching objects, and a collection of objects containing
             the data from the collection that satisfies the filter
-
 
         """
         raise NotImplementedError()
 
-    def add_objects(self, api_root, collection_id, objs):
+    def add_objects(self, api_root, collection_id, objs, request_time):
         """
         Fill:
-
-            implement the add_objects TAXII endpoint by save data into a collection
+            Implement the add_objects TAXII endpoint by save data into a collection
 
         Args:
-
             api_root (str): the name of the api_root.
-
             collection_id (str): the id of the collection
-
-            objs (list):  objects to insert into the collection
+            objs (dict): bundle containing objects to insert into the collection
+            request_time (str): a formatted timestamp string with the time of the request
 
         Returns:
-
             status of the request (including):
                 how many objects were successful saved
                 how many objects failed to be saved
@@ -185,24 +147,17 @@ class Backend(object):
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         """
         Fill:
-
-            implement the get_object TAXII endpoint by obtaining the data from a collection related
+            Implement the get_object TAXII endpoint by obtaining the data from a collection related
             to the object_id
 
         Args:
-
             api_root (str): the name of the api_root.
-
             collection_id (str): the id of the collection
-
             object_id (str): the id of the requested object
-
-            filter_args (str):  query string from URL containing filter args
-
-            allowed_filters (list):  STIX properties which are allowed in the filter for this endpoint
+            filter_args (str): query string from URL containing filter args
+            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
-
             data from the collection that satisfies the filter
 
         """
