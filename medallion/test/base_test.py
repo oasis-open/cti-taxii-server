@@ -3,7 +3,7 @@ import os
 import unittest
 
 from medallion import (application_instance, init_backend, register_blueprints,
-                       set_config)
+                       set_taxii_config, set_users_config)
 from medallion.test.data.initialize_mongodb import reset_db
 
 
@@ -32,25 +32,31 @@ class TaxiiTest(unittest.TestCase):
 
     memory_config = {
         "backend": {
-                "module": "medallion.backends.memory_backend",
-                "module_class": "MemoryBackend",
-                "filename": DATA_FILE
-            },
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "filename": DATA_FILE
+        },
         "users": {
             "admin": "Password0"
+        },
+        "taxii": {
+            "max_page_size": 20
         }
-        }
+    }
 
     mongodb_config = {
-            "backend": {
-                "module": "medallion.backends.mongodb_backend",
-                "module_class": "MongoBackend",
-                "uri": "mongodb://localhost:27017/"
-            },
-            "users": {
-                "admin": "Password0"
-            }
+        "backend": {
+            "module": "medallion.backends.mongodb_backend",
+            "module_class": "MongoBackend",
+            "uri": "mongodb://localhost:27017/"
+        },
+        "users": {
+            "admin": "Password0"
+        },
+        "taxii": {
+            "max_page_size": 20
         }
+    }
 
     def setUp(self):
         self.app = application_instance
@@ -65,7 +71,8 @@ class TaxiiTest(unittest.TestCase):
             self.memory_config['backend']['filename'] = self.DATA_FILE
             self.configuration = self.memory_config
         init_backend(self.app, self.configuration["backend"])
-        set_config(self.app, self.configuration["users"])
+        set_users_config(self.app, self.configuration["users"])
+        set_taxii_config(self.app, self.configuration["taxii"])
         self.client = application_instance.test_client()
         encoded_auth = 'Basic ' + \
             base64.b64encode(b"admin:Password0").decode("ascii")

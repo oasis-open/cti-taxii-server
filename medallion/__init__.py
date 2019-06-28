@@ -26,17 +26,24 @@ def load_app(config_file):
     with open(config_file, "r") as f:
         configuration = json.load(f)
 
-    set_config(application_instance, configuration["users"])
+    set_users_config(application_instance, configuration["users"])
+    set_taxii_config(application_instance, configuration["taxii"])
     init_backend(application_instance, configuration["backend"])
     register_blueprints(application_instance)
 
     return application_instance
 
 
-def set_config(flask_application_instance, config):
+def set_users_config(flask_application_instance, config):
     with flask_application_instance.app_context():
         log.debug("Registering medallion users configuration into {}".format(current_app))
         flask_application_instance.users_backend = config
+
+
+def set_taxii_config(flask_application_instance, config):
+    with flask_application_instance.app_context():
+        log.debug("Registering medallion taxii configuration into {}".format(current_app))
+        flask_application_instance.taxii_config = config
 
 
 def connect_to_backend(config_info):

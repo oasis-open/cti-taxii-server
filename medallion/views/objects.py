@@ -1,3 +1,5 @@
+import re
+
 import flask
 from flask import Blueprint, Response, abort, current_app, request
 
@@ -24,6 +26,51 @@ def collection_exists(api_root, collection_id):
     return False
 
 
+def get_range_request_from_headers(request):
+    if request.headers.get('Range') is not None:
+        matches = re.match(r'items (\d+)-(\d+)$', request.headers.get('Range'))
+        if matches is None:
+            abort(Response('Bad Range header supplied', status=400))
+        start_index = int(matches.group(1))
+        end_index = int(matches.group(2))
+        # check that the requested number of items isn't larger than the maximum support server page size
+        # the +1 and -1 below account for the fact that paging is zero index based.
+        if (end_index - start_index) + 1 > current_app.taxii_config['max_page_size']:
+            end_index = start_index + (current_app.taxii_config['max_page_size'] - 1)
+        return start_index, end_index
+    else:
+        return 0, current_app.taxii_config['max_page_size'] - 1
+
+
+def get_response_status_and_headers(start_index, total_count, objects):
+    # If the requested range is outside the size of the result set, return a HTTP 416
+    if start_index >= total_count and total_count > 0:
+        headers = {
+            'Accept-Ranges': 'items',
+            'Content-Range': 'items */{}'.format(total_count)
+        }
+        abort(Response(status=416, headers=headers))
+
+    # If no range request was supplied, and we can return the whole result set in one go, then do so.
+    if request.headers.get('Range') is None and total_count < current_app.taxii_config['max_page_size']:
+        status = 200
+        headers = {'Accept-Ranges': 'items'}
+    else:
+        # The minus one below is due to the fact that the range is zero based
+        status = 206
+        # This check is required as if the number of objects returned is zero, subtracting one would give us
+        # an end index of -1
+        if len(objects) == 0:
+            end_index = start_index
+        else:
+            end_index = start_index + (len(objects) - 1)
+        headers = {
+            'Accept-Ranges': 'items',
+            'Content-Range': 'items {}-{}/{}'.format(start_index, end_index, total_count)
+        }
+    return status, headers
+
+
 @mod.route("/<string:api_root>/collections/<string:id_>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, id_):
@@ -34,11 +81,16 @@ def get_or_add_objects(api_root, id_):
 
     if request.method == "GET":
         if permission_to_read(api_root, id_):
-            objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"))
+            start_index, end_index = get_range_request_from_headers(request)
+            total_count, objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"),
+                                                                             start_index, end_index)
+
+            status, headers = get_response_status_and_headers(start_index, total_count, objects['objects'])
             if objects:
                 return Response(response=flask.json.dumps(objects),
-                                status=200,
-                                mimetype=MEDIA_TYPE_STIX_V20)
+                                status=status,
+                                mimetype=MEDIA_TYPE_STIX_V20,
+                                headers=headers)
             else:
                 abort(404)
         else:

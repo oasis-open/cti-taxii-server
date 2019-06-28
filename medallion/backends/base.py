@@ -16,7 +16,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_collections(self, api_root):
+    def get_collections(self, api_root, start_index, end_index):
         """
         Fill:
 
@@ -27,9 +27,13 @@ class Backend(object):
 
             api_root (str): the name of the api_root.
 
+            start_index (int): the index within the query results to start returning results from
+
+            end_index (int): the last index within the query include in the result set
+
         Returns:
 
-            metadata for all collections at this api root
+            tuple containing the total count, and metadata for all collections at this api root
 
         """
         raise NotImplementedError()
@@ -54,7 +58,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, start_index, end_index):
         """
         Fill:
 
@@ -71,9 +75,13 @@ class Backend(object):
 
             allowed_filters (list):  STIX properties which are allowed in the filter for this endpoint
 
+            start_index (int): the index within the query results to start returning results from
+
+            end_index (int): the last index within the query include in the result set
+
         Returns:
 
-            metadata for the objects
+            tuple containing the total count of matching objects, and a collection of metadata for the objects
 
         """
         raise NotImplementedError()
@@ -117,7 +125,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, start_index, end_index):
         """
         Fill:
 
@@ -129,13 +137,20 @@ class Backend(object):
 
             collection_id (str): the id of the collection
 
-            filter_args (str):  query string from URL containing filter args
+            filter_args (str):  query string from URL containing filter args, plus start index and page
+                                size to support pagination.
 
             allowed_filters (list):  STIX properties which are allowed in the filter for this endpoint
 
+            start_index (int): the index within the query results to start returning results from
+
+            end_index (int): the last index within the query include in the result set
+
         Returns:
 
-            data from the collection that satisfies the filter
+            tuple containing the total count of matching objects, and a collection of objects containing
+            the data from the collection that satisfies the filter
+
 
         """
         raise NotImplementedError()
