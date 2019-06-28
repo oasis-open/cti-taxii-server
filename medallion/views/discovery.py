@@ -1,10 +1,10 @@
-import flask
-from flask import Blueprint, Response, abort, current_app
+from flask import Blueprint, Response, current_app, json
 
 from medallion import auth
+from medallion.exceptions import ProcessingError
 from medallion.views import MEDIA_TYPE_TAXII_V20
 
-mod = Blueprint('discovery', __name__)
+mod = Blueprint("discovery", __name__)
 
 
 @mod.route("/taxii/", methods=["GET"])
@@ -15,7 +15,13 @@ def get_server_discovery():
     # depending upon the credentials.
     server_discovery = current_app.medallion_backend.server_discovery()
 
-    return Response(response=flask.json.dumps(server_discovery), status=200, mimetype=MEDIA_TYPE_TAXII_V20)
+    if server_discovery:
+        return Response(
+            response=json.dumps(server_discovery),
+            status=200,
+            mimetype=MEDIA_TYPE_TAXII_V20,
+        )
+    raise ProcessingError("Server discovery information not available", 404)
 
 
 @mod.route("/<string:api_root>/", methods=["GET"])
@@ -25,8 +31,12 @@ def get_api_root_information(api_root):
     root_info = current_app.medallion_backend.get_api_root_information(api_root)
 
     if root_info:
-        return Response(response=flask.json.dumps(root_info), status=200, mimetype=MEDIA_TYPE_TAXII_V20)
-    abort(404)
+        return Response(
+            response=json.dumps(root_info),
+            status=200,
+            mimetype=MEDIA_TYPE_TAXII_V20,
+        )
+    raise ProcessingError("API root '{}' information not found".format(api_root), 404)
 
 
 @mod.route("/<string:api_root>/status/<string:id_>/", methods=["GET"])
@@ -36,5 +46,9 @@ def get_status(api_root, id_):
     status = current_app.medallion_backend.get_status(api_root, id_)
 
     if status:
-        return Response(response=flask.json.dumps(status), status=200, mimetype=MEDIA_TYPE_TAXII_V20)
-    abort(404)
+        return Response(
+            response=json.dumps(status),
+            status=200,
+            mimetype=MEDIA_TYPE_TAXII_V20,
+        )
+    raise ProcessingError("Status '{}' not found".format(id_), 404)
