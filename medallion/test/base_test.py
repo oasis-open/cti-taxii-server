@@ -66,7 +66,7 @@ class TaxiiTest(unittest.TestCase):
         self.app.testing = True
         register_blueprints(self.app)
         if self.type == "mongo":
-            reset_db()
+            reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config
         elif self.type == "memory":
             self.memory_config["backend"]["filename"] = self.DATA_FILE

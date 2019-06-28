@@ -6,8 +6,8 @@ from medallion.test.generic_initialize_mongodb import (add_api_root,
 from medallion.utils.common import convert_to_stix_datetime
 
 
-def reset_db():
-    client = connect_to_client()
+def reset_db(url="mongodb://root:example@localhost:27017/"):
+    client = connect_to_client(url)
     client.drop_database("discovery_database")
     db = build_new_mongo_databases_and_collection(client)
 
