@@ -69,8 +69,8 @@ def reset_db():
             "media_types": [
                 "application/vnd.oasis.stix+json; version=2.0"
             ],
-            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
-            '_type': 'indicator'
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_type": "indicator"
         },
         {
             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
@@ -81,8 +81,8 @@ def reset_db():
             "media_types": [
                 "application/vnd.oasis.stix+json; version=2.0"
             ],
-            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
-            '_type': 'malware'
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_type": "malware"
         },
         {
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
@@ -93,8 +93,8 @@ def reset_db():
             "media_types": [
                 "application/vnd.oasis.stix+json; version=2.0"
             ],
-            '_collection_id': '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
-            '_type': 'relationship'
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_type": "relationship"
         },
         {
             "date_added": convert_to_stix_datetime("2017-01-20T00:00:00.000Z"),
@@ -119,7 +119,7 @@ def reset_db():
                 "application/vnd.oasis.stix+json; version=2.0"
             ],
             "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
-            '_type': 'indicator'
+            "_type": "indicator"
         },
         {
             "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
@@ -131,7 +131,7 @@ def reset_db():
                 "application/vnd.oasis.stix+json; version=2.0"
             ],
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            '_type': 'indicator'
+            "_type": "indicator"
         }])
 
     api_root_db["collections"].insert_one({
@@ -182,10 +182,10 @@ def reset_db():
             ],
             "modified": "2017-01-27T13:49:53.935Z",
             "name": "Malicious site hosting downloader",
-                    "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
-                    "type": "indicator",
-                    "valid_from": "2016-11-03T12:30:59.000Z",
-                    "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
+            "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
+            "type": "indicator",
+            "valid_from": "2016-11-03T12:30:59.000Z",
+            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
         },
         {
             "created": "2016-11-03T12:30:59.000Z",
@@ -196,10 +196,10 @@ def reset_db():
             ],
             "modified": "2016-11-03T12:30:59.000Z",
             "name": "Malicious site hosting downloader",
-                    "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
-                    "type": "indicator",
-                    "valid_from": "2017-01-27T13:49:53.935382Z",
-                    "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
+            "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
+            "type": "indicator",
+            "valid_from": "2017-01-27T13:49:53.935382Z",
+            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63"
         },
         {
             "created": "2017-01-27T13:49:53.997Z",
@@ -210,8 +210,8 @@ def reset_db():
             ],
             "modified": "2017-01-27T13:49:53.997Z",
             "name": "Poison Ivy",
-                    "type": "malware",
-                    "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+            "type": "malware",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         },
         {
             "created": "2014-05-08T09:00:00.000Z",
@@ -221,10 +221,10 @@ def reset_db():
             ],
             "modified": "2014-05-08T09:00:00.000Z",
             "name": "File hash for Poison Ivy variant",
-                    "pattern": "[file:hashes.'SHA-256' = 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c']",
-                    "type": "indicator",
-                    "valid_from": "2014-05-08T09:00:00.000000Z",
-                    "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+            "pattern": "[file:hashes.'SHA-256' = 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c']",
+            "type": "indicator",
+            "valid_from": "2014-05-08T09:00:00.000000Z",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         },
         {
             "created": "2014-05-08T09:00:00.000Z",
@@ -234,17 +234,17 @@ def reset_db():
             "source_ref": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
             "target_ref": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
             "type": "relationship",
-                    "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         },
         {
             "type": "marking-definition",
-                    "_collection_id": '91a7b528-80eb-42ed-a74d-c6fbd5a26116',
-                    "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
-                    "created": "2017-01-20T00:00:00.000Z",
-                    "definition_type": "tlp",
-                    "definition": {
-                        "tlp": "green"
-                    }
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+            "created": "2017-01-20T00:00:00.000Z",
+            "definition_type": "tlp",
+            "definition": {
+                "tlp": "green"
+            }
         },
         {
             "created": "2016-11-03T12:30:59.000Z",
@@ -255,10 +255,10 @@ def reset_db():
             ],
             "modified": "2016-11-03T12:30:59.000Z",
             "name": "Malicious site hosting downloader",
-                    "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
-                    "type": "indicator",
-                    "valid_from": "2017-01-27T13:49:53.935382Z",
-                    "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+            "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
+            "type": "indicator",
+            "valid_from": "2017-01-27T13:49:53.935382Z",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         }])
 
     client.drop_database("api2")
@@ -268,13 +268,15 @@ def reset_db():
                                description="A repo for general STIX data.",
                                max_content_length=9765625)
 
-    dateIdx = IndexModel([("date_added", ASCENDING)])
-    idIdx = IndexModel([("id", ASCENDING)])
-    colIdIdx = IndexModel([("_collection_id", ASCENDING)])
-    colIdDateIdx = IndexModel([("_collection_id", ASCENDING), ('date_added', ASCENDING)])
-    typeIdx = IndexModel([("_type", ASCENDING)])
-    api_root_db["manifests"].create_indexes([dateIdx, idIdx, colIdIdx, colIdDateIdx, typeIdx])
-    api_root_db["objects"].create_indexes([idIdx])
+    date_index = IndexModel([("date_added", ASCENDING)])
+    id_index = IndexModel([("id", ASCENDING)])
+    collection_index = IndexModel([("_collection_id", ASCENDING)])
+    collection_and_date_index = IndexModel([("_collection_id", ASCENDING), ("date_added", ASCENDING)])
+    type_index = IndexModel([("_type", ASCENDING)])
+    api_root_db["manifests"].create_indexes(
+        [date_index, id_index, collection_index, collection_and_date_index, type_index]
+    )
+    api_root_db["objects"].create_indexes([id_index])
 
 
 def wipe_mongodb_server():

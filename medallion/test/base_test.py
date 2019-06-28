@@ -2,8 +2,8 @@ import base64
 import os
 import unittest
 
-from medallion import (application_instance, init_backend, register_blueprints,
-                       set_taxii_config, set_users_config)
+from medallion import (application_instance, register_blueprints,
+                       set_config)
 from medallion.test.data.initialize_mongodb import reset_db
 
 
@@ -68,15 +68,15 @@ class TaxiiTest(unittest.TestCase):
             reset_db()
             self.configuration = self.mongodb_config
         else:
-            self.memory_config['backend']['filename'] = self.DATA_FILE
+            self.memory_config["backend"]["filename"] = self.DATA_FILE
             self.configuration = self.memory_config
-        init_backend(self.app, self.configuration["backend"])
-        set_users_config(self.app, self.configuration["users"])
-        set_taxii_config(self.app, self.configuration["taxii"])
+        set_config(self.app, "backend", self.configuration)
+        set_config(self.app, "users", self.configuration)
+        set_config(self.app, "taxii", self.configuration)
         self.client = application_instance.test_client()
-        encoded_auth = 'Basic ' + \
+        encoded_auth = "Basic " + \
             base64.b64encode(b"admin:Password0").decode("ascii")
-        self.auth = {'Authorization': encoded_auth}
+        self.auth = {"Authorization": encoded_auth}
 
     def tearDown(self):
         self.app_context.pop()

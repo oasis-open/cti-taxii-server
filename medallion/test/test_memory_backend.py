@@ -6,7 +6,7 @@ import uuid
 
 import six
 
-from medallion import init_backend, test
+from medallion import set_config, test
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
@@ -372,7 +372,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             test_config = self.configuration["backend"]
             test_config["filename"] = f.name
 
-            init_backend(self.app, test_config)
+            set_config(self.app, "backend", test_config)
 
             r_get = self.client.get(
                 test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
