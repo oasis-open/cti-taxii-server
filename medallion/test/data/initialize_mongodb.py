@@ -1,8 +1,7 @@
 from pymongo import ASCENDING, IndexModel
 
-from medallion.test.generic_initialize_mongodb import (add_api_root,
-                                                       build_new_mongo_databases_and_collection,
-                                                       connect_to_client)
+from medallion.test.generic_initialize_mongodb import (
+    add_api_root, build_new_mongo_databases_and_collection, connect_to_client)
 from medallion.utils.common import convert_to_stix_datetime
 
 
