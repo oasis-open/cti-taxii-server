@@ -1,12 +1,11 @@
 import copy
 import json
 
+from medallion.backends.base import Backend
 from medallion.exceptions import ProcessingError
 from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.common import (create_bundle, format_datetime,
-                                    generate_status, get_timestamp, iterpath)
-
-from .base import Backend
+from medallion.utils.common import (create_bundle, generate_status,
+                                    iterpath)
 
 
 class MemoryBackend(Backend):
@@ -36,7 +35,7 @@ class MemoryBackend(Backend):
     def server_discovery(self):
         return self._get("/discovery")
 
-    def _update_manifest(self, new_obj, api_root, collection_id):
+    def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_info = self._get(api_root)
         collections = api_info.get("collections", [])
 
@@ -46,18 +45,16 @@ class MemoryBackend(Backend):
                     if new_obj["id"] == entry["id"]:
                         if "modified" in new_obj:
                             entry["versions"].append(new_obj["modified"])
+                            entry["versions"] = sorted(entry["versions"], reverse=True)
                         # If the new_obj is there, and it has no modified
                         # property, then it is immutable, and there is nothing
                         # to do.
                         break
                 else:
-                    if "modified" in new_obj:
-                        version = new_obj["modified"]
-                    else:
-                        version = new_obj["created"]
+                    version = new_obj.get("modified", new_obj["created"])
                     collection["manifest"].append(
                         {"id": new_obj["id"],
-                         "date_added": format_datetime(get_timestamp()),
+                         "date_added": request_time,
                          "versions": [version],
                          "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
                     )  # media_types hardcoded for now...
@@ -69,16 +66,16 @@ class MemoryBackend(Backend):
             return None, None  # must return None so 404 is raised
 
         api_info = self._get(api_root)
-        result = copy.deepcopy(api_info.get("collections", []))
+        collections = copy.deepcopy(api_info.get("collections", []))
+        count = len(collections)
 
-        count = len(result)
-        result = dict(collections=result[start_index:end_index])
+        result = collections[start_index:end_index]
         # Remove data that is not part of the response.
-        for collection in result["collections"]:
+        for collection in result:
             collection.pop("manifest", None)
             collection.pop("responses", None)
             collection.pop("objects", None)
-        return count, result["collections"]
+        return count, result
 
     def get_collection(self, api_root, id_):
         if api_root not in self.data:
@@ -175,7 +172,7 @@ class MemoryBackend(Backend):
                             for obj in collection["objects"]:
                                 id_and_version_already_present = False
 
-                                if new_obj['id'] == obj['id']:
+                                if new_obj["id"] == obj["id"]:
                                     if "modified" in new_obj:
                                         if new_obj["modified"] == obj["modified"]:
                                             id_and_version_already_present = True
@@ -184,14 +181,14 @@ class MemoryBackend(Backend):
                                         id_and_version_already_present = True
                             if not id_and_version_already_present:
                                 collection["objects"].append(new_obj)
-                                self._update_manifest(new_obj, api_root, collection["id"])
+                                self._update_manifest(new_obj, api_root, collection["id"], request_time)
                                 successes.append(new_obj["id"])
                                 succeeded += 1
                             else:
                                 failures.append({"id": new_obj["id"], "message": "Unable to process object"})
                                 failed += 1
                     except Exception as e:
-                        raise ProcessingError("While processing supplied content, an error occured", e)
+                        raise ProcessingError("While processing supplied content, an error occured", 422, e)
 
             status = generate_status(request_time, "complete", succeeded,
                                      failed, pending, successes_ids=successes,

@@ -1,27 +1,26 @@
 import logging
 
-from pymongo import MongoClient
+from pymongo import ASCENDING, MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
+from medallion.backends.base import Backend
 from medallion.exceptions import MongoBackendError, ProcessingError
 from medallion.filters.mongodb_filter import MongoDBFilter
 from medallion.utils.common import (create_bundle, format_datetime,
                                     generate_status, get_timestamp)
-
-from .base import Backend
 
 # Module-level logger
 log = logging.getLogger(__name__)
 
 
 def catch_mongodb_error(func):
-    """catch mongodb availability error"""
+    """Catch mongodb availability error"""
 
     def api_wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except (ConnectionFailure, ServerSelectionTimeoutError) as err:
-            raise MongoBackendError("Unable to connect to MongoDB", err)
+        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
+            raise MongoBackendError("Unable to connect to MongoDB", 500, e)
 
     return api_wrapper
 
@@ -33,8 +32,6 @@ class MongoBackend(Backend):
     def __init__(self, uri=None, **kwargs):
         try:
             self.client = MongoClient(uri)
-            # The ismaster command is cheap and does not require auth.
-            self.client.admin.command("ismaster")
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 
@@ -74,18 +71,16 @@ class MongoBackend(Backend):
                 "from": "api_root_info",
                 "localField": "api_roots",
                 "foreignField": "_name",
-                "as": "roots"
+                "as": "_roots"
             }
         }, {
-            "$project": {
-                "_id": 0,
-                "title": 1,
-                "description": 1,
-                "contact": 1,
-                "api_roots": "$roots._url"
+            "$addFields": {
+                "api_roots": "$_roots._url"
             }
         }]
         info = list(collection.aggregate(pipeline))[0]
+        info.pop("_roots", None)
+        info.pop("_id", None)
         return info
 
     @catch_mongodb_error
@@ -97,9 +92,12 @@ class MongoBackend(Backend):
         collection_info = api_root_db["collections"]
         count = collection_info.count()
 
-        pipeline = [{'$match': {}}, {'$sort': {'_id': 1}}]
-        pipeline.append({"$skip": start_index})
-        pipeline.append({"$limit": (end_index - start_index) + 1})
+        pipeline = [
+            {"$match": {}},
+            {"$sort": {"_id": ASCENDING}},
+            {"$skip": start_index},
+            {"$limit": (end_index - start_index) + 1},
+        ]
         collections = list(collection_info.aggregate(pipeline))
         for c in collections:
             if c:
@@ -138,7 +136,7 @@ class MongoBackend(Backend):
                     obj.pop("_collection_id", None)
                     obj.pop("_type", None)
                     # format date_added which is an ISODate object
-                    obj['date_added'] = format_datetime(obj['date_added'])
+                    obj["date_added"] = format_datetime(obj["date_added"])
         return total, objects_found
 
     @catch_mongodb_error
@@ -212,7 +210,7 @@ class MongoBackend(Backend):
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
-            raise ProcessingError("While processing supplied content, an error occured", e)
+            raise ProcessingError("While processing supplied content, an error occured", 422, e)
 
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)
