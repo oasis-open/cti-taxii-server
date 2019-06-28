@@ -49,7 +49,7 @@ class TaxiiTest(unittest.TestCase):
         "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "uri": "mongodb://travis:test@localhost:27017/",
+            "uri": "mongodb://travis:test@127.0.0.1:27017/",
         },
         "users": {
             "admin": "Password0",

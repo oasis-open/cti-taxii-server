@@ -23,4 +23,4 @@ script:
 after_success:
   - codecov
 before_script:
-  - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["dbAdmin"]});'
+  - mongo admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
