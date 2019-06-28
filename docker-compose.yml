@@ -1,0 +1,30 @@
+# Use root/example as user/password credentials
+# You may need to change the client uri to a format like ~> mongodb://user:pass@host:port/
+# Mongo Express provides a simple lightweight web administrative interface for mongoDB
+version: '3'
+services:
+  medallion:
+    build:
+      context: .
+      dockerfile: docker_utils/Dockerfile
+    command: [sh, -c, "medallion --host 0.0.0.0 docker_config.json"]
+    ports:
+      - 5000:5000
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+    depends_on:
+      - mongo
