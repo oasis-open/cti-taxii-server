@@ -103,8 +103,7 @@ def get_or_add_objects(api_root, id_):
                 total_count, objects = current_app.medallion_backend.get_objects(
                     api_root, id_, request.args, ("id", "type", "version"), start_index, end_index)
 
-                status, headers = get_response_status_and_headers(
-                    start_index, total_count, objects['objects'])
+                status, headers = get_response_status_and_headers(start_index, total_count, objects['objects'])
                 if objects:
                     response = Response(response=flask.json.dumps(objects),
                                         status=status,
