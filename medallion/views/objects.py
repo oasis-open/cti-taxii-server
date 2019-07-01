@@ -11,12 +11,14 @@ mod = Blueprint("objects", __name__)
 
 
 def permission_to_read(api_root, collection_id):
-    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(
+        api_root, collection_id)
     return collection_info["can_read"]
 
 
 def permission_to_write(api_root, collection_id):
-    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(
+        api_root, collection_id)
     return collection_info["can_write"]
 
 
@@ -42,6 +44,27 @@ def get_range_request_from_headers(request):
         return start_index, end_index
     else:
         return 0, current_app.taxii_config['max_page_size'] - 1
+
+
+def get_custom_headers(headers, api_root, id_):
+    try:
+        start_index, end_index = get_range_request_from_headers(request)
+        manifest = current_app.medallion_backend.get_object_manifest(
+            api_root, id_, request.args, ("id", "type", "version"),
+            start_index, end_index)[1]
+        times = []
+    except Exception:
+        manifest = None
+
+    if manifest:
+        for obj in manifest:
+            times.append(str(obj['date_added']))
+        times.sort()
+
+        if len(times) > 0:
+            headers['X-TAXII-Date-Added-First'] = times[0]
+            headers['X-TAXII-Date-Added-Last'] = times[-1]
+    return headers
 
 
 def get_response_status_and_headers(start_index, total_count, objects):
@@ -86,38 +109,18 @@ def get_or_add_objects(api_root, id_):
 
     if request.method == "GET":
         if permission_to_read(api_root, id_):
-            objects = current_app.medallion_backend.get_objects(
-                api_root, id_, request.args, ("id", "type", "version"))
-            try:
-                manifest = current_app.medallion_backend.get_object_manifest(
-                    api_root, id_, request.args)
-                times = []
-            except Exception:
-                manifest = None
-                times = None
+            start_index, end_index = get_range_request_from_headers(request)
+            total_count, objects = current_app.medallion_backend.get_objects(
+                api_root, id_, request.args, ("id", "type", "version"), start_index, end_index)
+
+            status, headers = get_response_status_and_headers(
+                start_index, total_count, objects['objects'])
             if objects:
-                start_index, end_index = get_range_request_from_headers(request)
-                total_count, objects = current_app.medallion_backend.get_objects(
-                    api_root, id_, request.args, ("id", "type", "version"), start_index, end_index)
-
-                status, headers = get_response_status_and_headers(start_index, total_count, objects['objects'])
-                if objects:
-                    response = Response(response=flask.json.dumps(objects),
-                                        status=status,
-                                        mimetype=MEDIA_TYPE_STIX_V20,
-                                        headers=headers)
-                    if times and manifest:
-                        for obj in manifest:
-                            times.append(str(obj['date_added']))
-                        times.sort()
-
-                        if len(times) > 0:
-                            pass
-                            response.headers[
-                                'X-TAXII-Date-Added-First'] = times[0]
-                            response.headers[
-                                'X-TAXII-Date-Added-Last'] = times[-1]
-                    return response
+                headers = get_custom_headers(headers, api_root, id_)
+                return Response(response=flask.json.dumps(objects),
+                                status=status,
+                                mimetype=MEDIA_TYPE_STIX_V20,
+                                headers=headers)
             else:
                 abort(404)
         else:
