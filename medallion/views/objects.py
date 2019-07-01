@@ -35,18 +35,25 @@ def get_or_add_objects(api_root, id_):
     if request.method == "GET":
         if permission_to_read(api_root, id_):
             objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"))
-            manifest = current_app.medallion_backend.get_object_manifest(api_root, id_, request.args, ("id", "type", "version"))
-            times = []
-            for obj in manifest:
-                times.append(str(obj['date_added']))
-            times.sort()
+            try:
+                manifest = current_app.medallion_backend.get_object_manifest(api_root, id_, request.args)
+                times = []
+            except Exception:
+                manifest = None
+                times = None
             if objects:
                 response = Response(response=flask.json.dumps(objects),
                                     status=200,
                                     mimetype=MEDIA_TYPE_STIX_V20)
-                if len(times) > 0:
-                    response.headers['X-TAXII-Date-Added-First'] = times[0]
-                    response.headers['X-TAXII-Date-Added-Last'] = times[-1]
+                if times and manifest:
+                    for obj in manifest:
+                        times.append(str(obj['date_added']))
+                    times.sort()
+
+                    if len(times) > 0:
+                        pass
+                        response.headers['X-TAXII-Date-Added-First'] = times[0]
+                        response.headers['X-TAXII-Date-Added-Last'] = times[-1]
                 return response
             else:
                 abort(404)
