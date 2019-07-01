@@ -11,14 +11,12 @@ mod = Blueprint("objects", __name__)
 
 
 def permission_to_read(api_root, collection_id):
-    collection_info = current_app.medallion_backend.get_collection(
-        api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
     return collection_info["can_read"]
 
 
 def permission_to_write(api_root, collection_id):
-    collection_info = current_app.medallion_backend.get_collection(
-        api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
     return collection_info["can_write"]
 
 
@@ -98,8 +96,7 @@ def get_or_add_objects(api_root, id_):
                 manifest = None
                 times = None
             if objects:
-                start_index, end_index = get_range_request_from_headers(
-                    request)
+                start_index, end_index = get_range_request_from_headers(request)
                 total_count, objects = current_app.medallion_backend.get_objects(
                     api_root, id_, request.args, ("id", "type", "version"), start_index, end_index)
 
