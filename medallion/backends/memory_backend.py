@@ -64,19 +64,21 @@ class MemoryBackend(Backend):
                 # quit once you have found the collection that needed updating
                 break
 
-    def get_collections(self, api_root):
+    def get_collections(self, api_root, start_index, end_index):
         if api_root not in self.data:
-            return None  # must return None so 404 is raised
+            return None, None  # must return None so 404 is raised
 
         api_info = self._get(api_root)
-        result = dict(collections=copy.deepcopy(api_info.get("collections", [])))
+        result = copy.deepcopy(api_info.get("collections", []))
 
+        count = len(result)
+        result = dict(collections=result[start_index:end_index])
         # Remove data that is not part of the response.
         for collection in result["collections"]:
             collection.pop("manifest", None)
             collection.pop("responses", None)
             collection.pop("objects", None)
-        return result["collections"]
+        return count, result["collections"]
 
     def get_collection(self, api_root, id_):
         if api_root not in self.data:
@@ -92,7 +94,7 @@ class MemoryBackend(Backend):
                 collection.pop("objects", None)
                 return collection
 
-    def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, id_, filter_args, allowed_filters, start_index, end_index):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -107,7 +109,10 @@ class MemoryBackend(Backend):
                             allowed_filters,
                             None
                         )
-                    return manifest
+                    count = len(manifest)
+                    result = manifest[start_index:end_index]
+
+                    return count, result
 
     def get_api_root_information(self, api_root):
         if api_root in self.data:
@@ -124,7 +129,7 @@ class MemoryBackend(Backend):
                 if id_ == status["id"]:
                     return status
 
-    def get_objects(self, api_root, id_, filter_args, allowed_filters):
+    def get_objects(self, api_root, id_, filter_args, allowed_filters, start_index, end_index):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -144,7 +149,11 @@ class MemoryBackend(Backend):
                         )
                     else:
                         objs.extend(collection.get("objects", []))
-            return create_bundle(objs)
+
+            count = len(objs)
+            result = objs[start_index:end_index]
+
+            return count, create_bundle(result)
 
     def add_objects(self, api_root, id_, objs, request_time):
         if api_root in self.data:
@@ -182,7 +191,7 @@ class MemoryBackend(Backend):
                                 failures.append({"id": new_obj["id"], "message": "Unable to process object"})
                                 failed += 1
                     except Exception as e:
-                        raise ProcessingError("While processing supplied content, an error occured", e)
+                        raise ProcessingError("While processing supplied content, an error occurred", e)
 
             status = generate_status(request_time, "complete", succeeded,
                                      failed, pending, successes_ids=successes,

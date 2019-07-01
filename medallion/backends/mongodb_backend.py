@@ -60,7 +60,7 @@ class MongoBackend(Backend):
                 {"id": new_obj["id"],
                  "_collection_id": _collection_id,
                  "_type": new_obj["type"],
-                 "date_added": format_datetime(get_timestamp()),
+                 "date_added": get_timestamp(),
                  "versions": [version],
                  "media_types": ["application/vnd.oasis.stix+json; version=2.0"]}
             )  # media_types hardcoded for now...
@@ -89,17 +89,22 @@ class MongoBackend(Backend):
         return info
 
     @catch_mongodb_error
-    def get_collections(self, api_root):
+    def get_collections(self, api_root, start_index, end_index):
         if api_root not in self.client.list_database_names():
-            return None   # must return None, so 404 is raised
+            return None, None   # must return None, so 404 is raised
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        collections = list(collection_info.find({}))
+        count = collection_info.count()
+
+        pipeline = [{'$match': {}}, {'$sort': {'_id': 1}}]
+        pipeline.append({"$skip": start_index})
+        pipeline.append({"$limit": (end_index - start_index) + 1})
+        collections = list(collection_info.aggregate(pipeline))
         for c in collections:
             if c:
                 c.pop("_id", None)
-        return collections
+        return count, collections
 
     @catch_mongodb_error
     def get_collection(self, api_root, id_):
@@ -114,22 +119,27 @@ class MongoBackend(Backend):
         return info
 
     @catch_mongodb_error
-    def get_object_manifest(self, api_root, id_, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, id_, filter_args, allowed_filters, start_index, page_size):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": id_},
-            allowed_filters
+            allowed_filters,
+            start_index,
+            page_size
         )
-        objects_found = full_filter.process_filter(manifest_info,
-                                                   allowed_filters, None)
+        total, objects_found = full_filter.process_filter(manifest_info,
+                                                          allowed_filters, None)
         if objects_found:
             for obj in objects_found:
                 if obj:
                     obj.pop("_id", None)
                     obj.pop("_collection_id", None)
-        return objects_found
+                    obj.pop("_type", None)
+                    # format date_added which is an ISODate object
+                    obj['date_added'] = format_datetime(obj['date_added'])
+        return total, objects_found
 
     @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
@@ -152,17 +162,19 @@ class MongoBackend(Backend):
         return result
 
     @catch_mongodb_error
-    def get_objects(self, api_root, id_, filter_args, allowed_filters):
+    def get_objects(self, api_root, id_, filter_args, allowed_filters, start_index, page_size):
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": id_},
-            allowed_filters
+            allowed_filters,
+            start_index,
+            page_size
         )
         # Note: error handling was not added to following call as mongo will
         # handle (user supplied) filters gracefully if they don't exist
-        objects_found = full_filter.process_filter(
+        total, objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
@@ -171,7 +183,7 @@ class MongoBackend(Backend):
             if obj:
                 obj.pop("_id", None)
                 obj.pop("_collection_id", None)
-        return create_bundle(objects_found)
+        return total, create_bundle(objects_found)
 
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -200,7 +212,7 @@ class MongoBackend(Backend):
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
-            raise ProcessingError("While processing supplied content, an error occured", e)
+            raise ProcessingError("While processing supplied content, an error occurred", e)
 
         status = generate_status(request_time, "complete", succeeded, failed,
                                  pending, successes_ids=successes, failures=failures)
@@ -217,7 +229,7 @@ class MongoBackend(Backend):
             {"_collection_id": id_, "id": object_id},
             allowed_filters
         )
-        objects_found = full_filter.process_filter(
+        count, objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_}
