@@ -1,3 +1,4 @@
+import json
 import re
 
 import flask
@@ -48,17 +49,16 @@ def get_range_request_from_headers(request):
 
 def get_custom_headers(headers, api_root, id_):
     try:
-        start_index, end_index = get_range_request_from_headers(request)
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, request.args, ("id", "type", "version"),
-            start_index, end_index)[1]
+            api_root, id_, request.args, 0, -1)[1]
         times = []
     except Exception:
         manifest = None
-
+    print manifest
     if manifest:
         for obj in manifest:
-            times.append(str(obj['date_added']))
+            if 'date_added' in obj:
+                times.append(str(obj['date_added']))
         times.sort()
 
         if len(times) > 0:

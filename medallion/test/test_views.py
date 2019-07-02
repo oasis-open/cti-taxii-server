@@ -93,7 +93,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         # ------------- END: test collection endpoint ------------- #
         # ------------- BEGIN: test manifests endpoint ------------- #
-        mock_backend.return_value.get_object_manifest.return_value = (10, {'objects': []})
+        mock_backend.return_value.get_object_manifest.return_value = (10, [{'objects': []}])
         r = self.client.get(test.MANIFESTS_EP,
                             headers=self.auth)
 
