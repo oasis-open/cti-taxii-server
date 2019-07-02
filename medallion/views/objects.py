@@ -1,4 +1,3 @@
-import json
 import re
 
 import flask
@@ -54,7 +53,6 @@ def get_custom_headers(headers, api_root, id_):
         times = []
     except Exception:
         manifest = None
-    print manifest
     if manifest:
         for obj in manifest:
             if 'date_added' in obj:
