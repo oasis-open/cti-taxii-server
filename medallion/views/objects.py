@@ -49,9 +49,10 @@ def get_range_request_from_headers(request):
 def get_custom_headers(headers, api_root, id_):
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, request.args, 0, -1)[1]
+            api_root, id_, request.args, ("id",),  0, -1)[1]
         times = []
-    except Exception:
+    except Exception as e:
+        print e
         manifest = None
     if manifest:
         for obj in manifest:
