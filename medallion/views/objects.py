@@ -48,7 +48,7 @@ def get_custom_headers(headers, api_root, id_):
             api_root, id_, request.args, ("id",),  0, -1)[1]
         times = []
     except Exception as e:
-        print e
+        print(e)
         manifest = None
     if manifest:
         for obj in manifest:
