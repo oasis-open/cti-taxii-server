@@ -332,6 +332,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
 
         manifests = self.load_json_response(r_get.data)
+
         assert manifests["objects"][0]["id"] == new_id
         assert any(version == new_bundle["objects"][0]["modified"] for version in manifests["objects"][0]["versions"])
         # ------------- END: get manifest section ------------- #

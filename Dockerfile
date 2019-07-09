@@ -12,7 +12,6 @@ COPY . /taxii
 WORKDIR /taxii
 RUN pip install pymongo
 RUN pip install .
-RUN pip install pymongo
 WORKDIR /var/taxii
 EXPOSE 5000
 

@@ -11,14 +11,12 @@ mod = Blueprint("objects", __name__)
 
 
 def permission_to_read(api_root, collection_id):
-    collection_info = current_app.medallion_backend.get_collection(
-        api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
     return collection_info["can_read"]
 
 
 def permission_to_write(api_root, collection_id):
-    collection_info = current_app.medallion_backend.get_collection(
-        api_root, collection_id)
+    collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
     return collection_info["can_write"]
 
 
@@ -36,11 +34,9 @@ def get_range_request_from_headers(request):
         start_index = int(matches.group(1))
         end_index = int(matches.group(2))
         # check that the requested number of items isn't larger than the maximum support server page size
-        # the +1 and -1 below account for the fact that paging is zero index
-        # based.
+        # the +1 and -1 below account for the fact that paging is zero index based.
         if (end_index - start_index) + 1 > current_app.taxii_config['max_page_size']:
-            end_index = start_index + \
-                (current_app.taxii_config['max_page_size'] - 1)
+            end_index = start_index + (current_app.taxii_config['max_page_size'] - 1)
         return start_index, end_index
     else:
         return 0, current_app.taxii_config['max_page_size'] - 1
@@ -67,8 +63,7 @@ def get_custom_headers(headers, api_root, id_):
 
 
 def get_response_status_and_headers(start_index, total_count, objects):
-    # If the requested range is outside the size of the result set, return a
-    # HTTP 416
+    # If the requested range is outside the size of the result set, return a HTTP 416
     if start_index >= total_count and total_count > 0:
         headers = {
             'Accept-Ranges': 'items',
@@ -76,8 +71,7 @@ def get_response_status_and_headers(start_index, total_count, objects):
         }
         abort(Response(status=416, headers=headers))
 
-    # If no range request was supplied, and we can return the whole result set
-    # in one go, then do so.
+    # If no range request was supplied, and we can return the whole result set in one go, then do so.
     if request.headers.get('Range') is None and total_count < current_app.taxii_config['max_page_size']:
         status = 200
         headers = {'Accept-Ranges': 'items'}
@@ -100,8 +94,7 @@ def get_response_status_and_headers(start_index, total_count, objects):
 @mod.route("/<string:api_root>/collections/<string:id_>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, id_):
-    # TODO: Check if user has access to read or write objects in collection -
-    # right now just check for permissions on the collection.
+    # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
 
     if not collection_exists(api_root, id_):
         abort(404)
@@ -109,8 +102,8 @@ def get_or_add_objects(api_root, id_):
     if request.method == "GET":
         if permission_to_read(api_root, id_):
             start_index, end_index = get_range_request_from_headers(request)
-            total_count, objects = current_app.medallion_backend.get_objects(
-                api_root, id_, request.args, ("id", "type", "version"), start_index, end_index)
+            total_count, objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"),
+                                                                             start_index, end_index)
 
             status, headers = get_response_status_and_headers(
                 start_index, total_count, objects['objects'])
@@ -128,8 +121,7 @@ def get_or_add_objects(api_root, id_):
         if permission_to_write(api_root, id_):
             # Can't I get this from the request itself?
             request_time = common.format_datetime(common.get_timestamp())
-            status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(
-                force=True), request_time)
+            status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(force=True), request_time)
 
             return Response(response=flask.json.dumps(status),
                             status=202,
@@ -141,15 +133,13 @@ def get_or_add_objects(api_root, id_):
 @mod.route("/<string:api_root>/collections/<string:id_>/objects/<string:object_id>/", methods=["GET"])
 @auth.login_required
 def get_object(api_root, id_, object_id):
-    # TODO: Check if user has access to objects in collection - right now just
-    # check for permissions on the collection
+    # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
 
     if not collection_exists(api_root, id_):
         abort(404)
 
     if permission_to_read(api_root, id_):
-        objects = current_app.medallion_backend.get_object(
-            api_root, id_, object_id, request.args, ("version",))
+        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("version",))
         if objects:
             return Response(response=flask.json.dumps(objects),
                             status=200,
