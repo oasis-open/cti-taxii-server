@@ -27,7 +27,7 @@ def get_object_manifest(api_root, id_):
 
     status, headers = get_response_status_and_headers(start_index, total_count, manifest)
     if manifest:
-        headers = get_custom_headers(headers, api_root, id_)
+        headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
         return Response(response=flask.json.dumps({"objects": manifest}),
                         status=status,
                         mimetype=MEDIA_TYPE_TAXII_V20,

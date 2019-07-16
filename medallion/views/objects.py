@@ -42,23 +42,18 @@ def get_range_request_from_headers(request):
         return 0, current_app.taxii_config['max_page_size'] - 1
 
 
-def get_custom_headers(headers, api_root, id_):
+def get_custom_headers(headers, api_root, id_, start, end):
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, request.args, ("id",),  0, -1)[1]
-        times = []
+            api_root, id_, request.args, ("id",),  start, end)[1]
+        if manifest:
+            times = sorted(map(lambda x: x["date_added"], manifest))
+
+            if len(times) > 0:
+                headers['X-TAXII-Date-Added-First'] = times[0]
+                headers['X-TAXII-Date-Added-Last'] = times[-1]
     except Exception as e:
         print(e)
-        manifest = None
-    if manifest:
-        for obj in manifest:
-            if 'date_added' in obj:
-                times.append(str(obj['date_added']))
-        times.sort()
-
-        if len(times) > 0:
-            headers['X-TAXII-Date-Added-First'] = times[0]
-            headers['X-TAXII-Date-Added-Last'] = times[-1]
     return headers
 
 
@@ -105,10 +100,9 @@ def get_or_add_objects(api_root, id_):
             total_count, objects = current_app.medallion_backend.get_objects(api_root, id_, request.args, ("id", "type", "version"),
                                                                              start_index, end_index)
 
-            status, headers = get_response_status_and_headers(
-                start_index, total_count, objects['objects'])
+            status, headers = get_response_status_and_headers(start_index, total_count, objects['objects'])
             if objects:
-                headers = get_custom_headers(headers, api_root, id_)
+                headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
                 return Response(response=flask.json.dumps(objects),
                                 status=status,
                                 mimetype=MEDIA_TYPE_STIX_V20,
