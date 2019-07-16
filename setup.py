@@ -30,8 +30,8 @@ setup(
     url="https://github.com/oasis-open/cti-taxii-server",
     author="OASIS Cyber Threat Intelligence Technical Committee",
     author_email="cti-users@lists.oasis-open.org",
-    maintainer="Greg Back",
-    maintainer_email="gback@mitre.org",
+    maintainer="Emmanuelle Vargas-Gonzalez",
+    maintainer_email="emmanuelle@mitre.org",
     license="BSD",
     classifiers=[
         "Development Status :: 3 - Alpha",
