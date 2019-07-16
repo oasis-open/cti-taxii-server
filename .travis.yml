@@ -22,3 +22,5 @@ script:
   - pre-commit run --all-files
 after_success:
   - codecov
+before_script:
+  - mongo admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'

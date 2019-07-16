@@ -105,7 +105,7 @@ html_sidebars = {
     '**': [
         'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
-    ]
+    ],
 }
 
 
@@ -139,8 +139,10 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'medallion.tex', 'medallion Documentation',
-     'OASIS Open', 'manual'),
+    (
+        master_doc, 'medallion.tex', 'medallion Documentation',
+        'OASIS Open', 'manual',
+    ),
 ]
 
 
@@ -149,8 +151,10 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'medallion', 'medallion Documentation',
-     [author], 1)
+    (
+        master_doc, 'medallion', 'medallion Documentation',
+        [author], 1,
+    ),
 ]
 
 
@@ -160,7 +164,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'medallion', 'medallion Documentation',
-     author, 'medallion', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc, 'medallion', 'medallion Documentation',
+        author, 'medallion', 'One line description of project.',
+        'Miscellaneous',
+    ),
 ]

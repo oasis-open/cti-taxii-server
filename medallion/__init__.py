@@ -1,14 +1,12 @@
 import importlib
-import json
 import logging
 
-import flask
-from flask import Flask, Response, current_app
+from flask import Flask, Response, current_app, json
 from flask_httpauth import HTTPBasicAuth
 
-from medallion.exceptions import BackendError, ProcessingError
-from medallion.version import __version__  # noqa
-from medallion.views import MEDIA_TYPE_TAXII_V20
+from .exceptions import BackendError, ProcessingError
+from .version import __version__  # noqa
+from .views import MEDIA_TYPE_TAXII_V20
 
 # Console Handler for medallion messages
 ch = logging.StreamHandler()
@@ -26,24 +24,23 @@ def load_app(config_file):
     with open(config_file, "r") as f:
         configuration = json.load(f)
 
-    set_users_config(application_instance, configuration["users"])
-    set_taxii_config(application_instance, configuration["taxii"])
-    init_backend(application_instance, configuration["backend"])
+    set_config(application_instance, "users", configuration)
+    set_config(application_instance, "taxii", configuration)
+    set_config(application_instance, "backend", configuration)
     register_blueprints(application_instance)
 
     return application_instance
 
 
-def set_users_config(flask_application_instance, config):
+def set_config(flask_application_instance, prop_name, config):
     with flask_application_instance.app_context():
-        log.debug("Registering medallion users configuration into {}".format(current_app))
-        flask_application_instance.users_backend = config
-
-
-def set_taxii_config(flask_application_instance, config):
-    with flask_application_instance.app_context():
-        log.debug("Registering medallion taxii configuration into {}".format(current_app))
-        flask_application_instance.taxii_config = config
+        log.debug("Registering medallion {} configuration into {}".format(prop_name, current_app))
+        if prop_name == "taxii":
+            flask_application_instance.taxii_config = config[prop_name]
+        elif prop_name == "users":
+            flask_application_instance.users_backend = config[prop_name]
+        elif prop_name == "backend":
+            flask_application_instance.medallion_backend = connect_to_backend(config[prop_name])
 
 
 def connect_to_backend(config_info):
@@ -64,19 +61,6 @@ def connect_to_backend(config_info):
         raise e
 
 
-def init_backend(flask_application_instance, config_info):
-    with flask_application_instance.app_context():
-        log.debug("Registering medallion_backend into {}".format(current_app))
-        current_app.medallion_backend = connect_to_backend(config_info)
-
-
-@auth.get_password
-def get_pwd(username):
-    if username in current_app.users_backend:
-        return current_app.users_backend.get(username)
-    return None
-
-
 def register_blueprints(flask_application_instance):
     from medallion.views import collections
     from medallion.views import discovery
@@ -91,36 +75,51 @@ def register_blueprints(flask_application_instance):
         current_app.register_blueprint(objects.mod)
 
 
+@auth.get_password
+def get_pwd(username):
+    if username in current_app.users_backend:
+        return current_app.users_backend.get(username)
+    return None
+
+
 @application_instance.errorhandler(500)
 def handle_error(error):
-    error = {
-        "title": error.args[0],
-        "http_status": "500"
+    e = {
+        "title": "InternalError",
+        "http_status": "500",
+        "description": str(error.args[0]),
     }
-    return Response(response=flask.json.dumps(error),
-                    status=500,
-                    mimetype=MEDIA_TYPE_TAXII_V20)
+    return Response(
+        response=json.dumps(e),
+        status=500,
+        mimetype=MEDIA_TYPE_TAXII_V20,
+    )
 
 
 @application_instance.errorhandler(ProcessingError)
 def handle_processing_error(error):
     e = {
-        "title": "ProcessingError",
-        "http_status": "422",
-        "description": str(error)
+        "title": str(error.__class__.__name__),
+        "http_status": str(error.status),
+        "description": str(error),
     }
-    return Response(response=flask.json.dumps(e),
-                    status=422,
-                    mimetype=MEDIA_TYPE_TAXII_V20)
+    return Response(
+        response=json.dumps(e),
+        status=error.status,
+        headers=getattr(error, "headers", None),
+        mimetype=MEDIA_TYPE_TAXII_V20,
+    )
 
 
 @application_instance.errorhandler(BackendError)
 def handle_backend_error(error):
     e = {
-        "title": "MongoBackendError",
-        "http_status": "500",
-        "description": str(error)
+        "title": str(error.__class__.__name__),
+        "http_status": str(error.status),
+        "description": str(error),
     }
-    return Response(response=flask.json.dumps(e),
-                    status=500,
-                    mimetype=MEDIA_TYPE_TAXII_V20)
+    return Response(
+        response=json.dumps(e),
+        status=error.status,
+        mimetype=MEDIA_TYPE_TAXII_V20,
+    )

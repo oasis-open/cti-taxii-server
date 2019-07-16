@@ -2,20 +2,23 @@ import datetime as dt
 import uuid
 
 import pytz
-import six
-from six import iteritems
+from six import iteritems, text_type
 
 
 def generate_stix20_id(sdo_type):
-    return "{sdo_type}--{uuid}".format(sdo_type=sdo_type,
-                                       uuid=six.text_type(uuid.uuid4()))
+    return "{sdo_type}--{uuid}".format(
+        sdo_type=sdo_type,
+        uuid=text_type(uuid.uuid4()),
+    )
 
 
 def create_bundle(o):
-    return dict(id=generate_stix20_id("bundle"),
-                objects=o,
-                spec_version="2.0",
-                type="bundle")
+    return {
+        "id": generate_stix20_id("bundle"),
+        "objects": o,
+        "spec_version": "2.0",
+        "type": "bundle",
+    }
 
 
 def get(data, key):
@@ -86,13 +89,13 @@ def format_datetime(dttm):
 
     if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
         # dttm is timezone-naive; assume UTC
-        zoned = pytz.utc.localize(dttm)
+        zoned = pytz.UTC.localize(dttm)
     else:
-        zoned = dttm.astimezone(pytz.utc)
+        zoned = dttm.astimezone(pytz.UTC)
     ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
     if zoned.microsecond > 0:
         ms = zoned.strftime("%f")
-        ts = ts + '.' + ms.rstrip("0")
+        ts = ts + "." + ms.rstrip("0")
     return ts + "Z"
 
 
@@ -103,8 +106,10 @@ def convert_to_stix_datetime(timestamp_string):
         return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
 
 
-def generate_status(request_time, status, succeeded, failed, pending,
-                    successes_ids=None, failures=None, pendings=None):
+def generate_status(
+    request_time, status, succeeded, failed, pending,
+    successes_ids=None, failures=None, pendings=None,
+):
     status = {
         "id": "%s" % uuid.uuid4(),
         "status": status,
@@ -112,7 +117,7 @@ def generate_status(request_time, status, succeeded, failed, pending,
         "total_count": succeeded + failed + pending,
         "success_count": succeeded,
         "failure_count": failed,
-        "pending_count": pending
+        "pending_count": pending,
     }
 
     if successes_ids:

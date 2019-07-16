@@ -1,12 +1,11 @@
-import flask
-from flask import Blueprint, Response, abort, current_app, request
+from flask import Blueprint, Response, current_app, json, request
 
-from medallion import auth
-from medallion.views import MEDIA_TYPE_TAXII_V20
-from medallion.views.objects import (collection_exists, get_custom_headers,
-                                     get_range_request_from_headers,
-                                     get_response_status_and_headers,
-                                     permission_to_read)
+from . import MEDIA_TYPE_TAXII_V20
+from .. import auth
+from ..exceptions import ProcessingError
+from .objects import (collection_exists, get_custom_headers,
+                      get_range_request_from_headers,
+                      get_response_status_and_headers, permission_to_read)
 
 mod = Blueprint("manifest", __name__)
 
@@ -15,21 +14,18 @@ mod = Blueprint("manifest", __name__)
 @auth.login_required
 def get_object_manifest(api_root, id_):
 
-    if not collection_exists(api_root, id_):
-        abort(404)
-
-    if not permission_to_read(api_root, id_):
-        abort(403)
-
-    start_index, end_index = get_range_request_from_headers(request)
-    total_count, manifest = current_app.medallion_backend.get_object_manifest(api_root, id_, request.args, ("id", "type", "version"),
-                                                                              start_index, end_index)
-
-    status, headers = get_response_status_and_headers(start_index, total_count, manifest)
-    if manifest:
-        headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
-        return Response(response=flask.json.dumps({"objects": manifest}),
-                        status=status,
-                        mimetype=MEDIA_TYPE_TAXII_V20,
-                        headers=headers)
-    abort(404)
+    if collection_exists(api_root, id_) and permission_to_read(api_root, id_):
+        start_index, end_index = get_range_request_from_headers()
+        total_count, manifest = current_app.medallion_backend.get_object_manifest(
+            api_root, id_, request.args, ("id", "type", "version"), start_index, end_index,
+        )
+        if manifest:
+            status, headers = get_response_status_and_headers(start_index, total_count, manifest)
+            headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
+            return Response(
+                response=json.dumps({"objects": manifest}),
+                status=status,
+                headers=headers,
+                mimetype=MEDIA_TYPE_TAXII_V20,
+            )
+        raise ProcessingError("Collection '{}' has no manifests available".format(id_), 404)
