@@ -3,7 +3,8 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V20
 from .. import auth
 from ..exceptions import ProcessingError
-from .objects import (collection_exists, get_custom_headers, get_range_request_from_headers,
+from .objects import (collection_exists, get_custom_headers,
+                      get_range_request_from_headers,
                       get_response_status_and_headers, permission_to_read)
 
 mod = Blueprint("manifest", __name__)
