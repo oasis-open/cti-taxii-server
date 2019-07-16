@@ -3,7 +3,7 @@ from flask import Blueprint, Response, abort, current_app, request
 
 from medallion import auth
 from medallion.views import MEDIA_TYPE_TAXII_V20
-from medallion.views.objects import (collection_exists,
+from medallion.views.objects import (collection_exists, get_custom_headers,
                                      get_range_request_from_headers,
                                      get_response_status_and_headers,
                                      permission_to_read)
@@ -27,6 +27,7 @@ def get_object_manifest(api_root, id_):
 
     status, headers = get_response_status_and_headers(start_index, total_count, manifest)
     if manifest:
+        headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
         return Response(response=flask.json.dumps({"objects": manifest}),
                         status=status,
                         mimetype=MEDIA_TYPE_TAXII_V20,
