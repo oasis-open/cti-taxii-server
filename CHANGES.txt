@@ -1,3 +1,17 @@
+Version 0.4.0
+2019-07-16
+- @jamesfitzsimons implemented Pagination support and fixed a couple of MongoDB errors
+- #47, #51 Fix issue when objects returned from MongoBackend would strip some properties out
+- #28 Added support for X-TAXII Custom Headers
+- Added new Docker & Docker Compose configuration:
+- Uses mongo image, mongo-express (lightweight web administrative interface for mongoDB) and the medallion build which is slightly tweaked
+- The following bugs were fixed:
+- The MemoryBackend was manipulating its manifest data. When using match[version] against a manifest resource with multiple versions available. It would get modified permanently
+- Removed MongoBackend $project in pipelines that would cause loss of properties or custom properties
+- Errors produced by the TAXII Server now return JSON that align with Section 3.6 of the spec
+- Simplified some of the code for checking permission or determining if a collection exists
+- The rest are code quality changes and consistency
+
 Version 0.3.1
 2018-10-05
 - Fix packaging problem
