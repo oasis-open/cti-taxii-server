@@ -3,7 +3,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V20
 from .. import auth
 from ..exceptions import ProcessingError
-from .objects import (collection_exists, get_range_request_from_headers,
+from .objects import (collection_exists, get_custom_headers, get_range_request_from_headers,
                       get_response_status_and_headers, permission_to_read)
 
 mod = Blueprint("manifest", __name__)
@@ -18,8 +18,9 @@ def get_object_manifest(api_root, id_):
         total_count, manifest = current_app.medallion_backend.get_object_manifest(
             api_root, id_, request.args, ("id", "type", "version"), start_index, end_index,
         )
-        status, headers = get_response_status_and_headers(start_index, total_count, manifest)
         if manifest:
+            status, headers = get_response_status_and_headers(start_index, total_count, manifest)
+            headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
             return Response(
                 response=json.dumps({"objects": manifest}),
                 status=status,
