@@ -7,7 +7,7 @@ from ..exceptions import ProcessingError
 mod = Blueprint("discovery", __name__)
 
 
-@mod.route("/taxii/", methods=["GET"])
+@mod.route("/taxii2/", methods=["GET"])
 @auth.login_required
 def get_server_discovery():
     # Having access to the discovery method is only related to having
@@ -39,11 +39,11 @@ def get_api_root_information(api_root):
     raise ProcessingError("API root '{}' information not found".format(api_root), 404)
 
 
-@mod.route("/<string:api_root>/status/<string:id_>/", methods=["GET"])
+@mod.route("/<string:api_root>/status/<string:status_id>/", methods=["GET"])
 @auth.login_required
-def get_status(api_root, id_):
+def get_status(api_root, status_id):
     # TODO: Check if user has access to the Status resource.
-    status = current_app.medallion_backend.get_status(api_root, id_)
+    status = current_app.medallion_backend.get_status(api_root, status_id)
 
     if status:
         return Response(
@@ -51,4 +51,4 @@ def get_status(api_root, id_):
             status=200,
             mimetype=MEDIA_TYPE_TAXII_V20,
         )
-    raise ProcessingError("Status '{}' not found".format(id_), 404)
+    raise ProcessingError("Status '{}' not found".format(status_id), 404)

@@ -92,29 +92,29 @@ def get_response_status_and_headers(start_index, total_count, objects):
     return status, headers
 
 
-@mod.route("/<string:api_root>/collections/<string:id_>/objects/", methods=["GET", "POST"])
+@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
-def get_or_add_objects(api_root, id_):
+def get_or_add_objects(api_root, collection_id):
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
     request_time = format_datetime(get_timestamp())  # Can't I get this from the request itself?
-    if collection_exists(api_root, id_):
-        if request.method == "GET" and permission_to_read(api_root, id_):
+    if collection_exists(api_root, collection_id):
+        if request.method == "GET" and permission_to_read(api_root, collection_id):
             start_index, end_index = get_range_request_from_headers()
             total_count, objects = current_app.medallion_backend.get_objects(
-                api_root, id_, request.args, ("id", "type", "version"), start_index, end_index,
+                api_root, collection_id, request.args, ("id", "type", "version"), start_index, end_index,
             )
             if objects:
                 status, headers = get_response_status_and_headers(start_index, total_count, objects["objects"])
-                headers = get_custom_headers(headers, api_root, id_, start_index, end_index)
+                headers = get_custom_headers(headers, api_root, collection_id, start_index, end_index)
                 return Response(
                     response=json.dumps(objects),
                     status=status,
                     headers=headers,
                     mimetype=MEDIA_TYPE_STIX_V20,
                 )
-            raise ProcessingError("Collection '{}' has no objects available".format(id_), 404)
-        elif request.method == "POST" and permission_to_write(api_root, id_):
-            status = current_app.medallion_backend.add_objects(api_root, id_, request.get_json(force=True), request_time)
+            raise ProcessingError("Collection '{}' has no objects available".format(collection_id), 404)
+        elif request.method == "POST" and permission_to_write(api_root, collection_id):
+            status = current_app.medallion_backend.add_objects(api_root, collection_id, request.get_json(force=True), request_time)
             return Response(
                 response=json.dumps(status),
                 status=202,
@@ -122,17 +122,26 @@ def get_or_add_objects(api_root, id_):
             )
 
 
-@mod.route("/<string:api_root>/collections/<string:id_>/objects/<string:object_id>/", methods=["GET"])
+@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET", "DELETE"])
 @auth.login_required
-def get_object(api_root, id_, object_id):
+def get_object(api_root, collection_id, object_id):
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
 
-    if collection_exists(api_root, id_) and permission_to_read(api_root, id_):
-        objects = current_app.medallion_backend.get_object(api_root, id_, object_id, request.args, ("version",))
-        if objects:
-            return Response(
-                response=json.dumps(objects),
-                status=200,
-                mimetype=MEDIA_TYPE_STIX_V20,
-            )
-        raise ProcessingError("Object '{}' not found".format(object_id), 404)
+    if collection_exists(api_root, collection_id):
+        if request.method == "GET" and permission_to_read(api_root, collection_id):
+            objects = current_app.medallion_backend.get_object(api_root, collection_id, object_id, request.args, ("version",))
+            if objects:
+                return Response(
+                    response=json.dumps(objects),
+                    status=200,
+                    mimetype=MEDIA_TYPE_STIX_V20,
+                )
+            raise ProcessingError("Object '{}' not found".format(object_id), 404)
+        elif request.method == "DELETE" and permission_to_write(api_root, collection_id):
+            raise NotImplementedError("We need to complete this portion of the endpoint")
+
+
+@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/versions/", methods=["GET"])
+@auth.login_required
+def get_object_versions(api_root, collection_id, object_id):
+    raise NotImplementedError("We need to complete this endpoint")
