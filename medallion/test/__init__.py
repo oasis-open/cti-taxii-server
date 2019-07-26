@@ -1,5 +1,5 @@
 # Medallion TAXII endpoints
-DISCOVERY_EP = "/taxii/"
+DISCOVERY_EP = "/taxii2/"
 API_ROOT_EP = "/trustgroup1/"  # there are other API roots, but this is the one used in tests
 
 COLLECTIONS_EP = API_ROOT_EP + "collections/"
