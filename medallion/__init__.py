@@ -36,11 +36,24 @@ def set_config(flask_application_instance, prop_name, config):
     with flask_application_instance.app_context():
         log.debug("Registering medallion {} configuration into {}".format(prop_name, current_app))
         if prop_name == "taxii":
-            flask_application_instance.taxii_config = config[prop_name]
+            try: 
+                flask_application_instance.taxii_config = config[prop_name]
+            except KeyError:
+                flask_application_instance.taxxi_config = "{\'max_page_size\': 100}"
         elif prop_name == "users":
-            flask_application_instance.users_backend = config[prop_name]
+            try:
+                flask_application_instance.users_backend = config[prop_name]
+            except KeyError:
+                print("You did not give user information in your config.")
+                print("We are giving you the default user information of:")
+                print("User = user")
+                print("Pass = pass")
+                flask_application_instance.users_backend = "{\'user\': \'pass\'"
         elif prop_name == "backend":
-            flask_application_instance.medallion_backend = connect_to_backend(config[prop_name])
+            try: 
+                flask_application_instance.medallion_backend = connect_to_backend(config[prop_name])
+            except KeyError:
+                flask_application_instance.medallion_backend = "{\'module\': \'medallion.backends.memory_backend\', \'module_class\': \'MemoryBackend\', \'filename\': \'default_data.json\'}"
 
 
 def connect_to_backend(config_info):
