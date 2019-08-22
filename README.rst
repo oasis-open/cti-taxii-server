@@ -73,11 +73,11 @@ Medallion provides a command-line interface to start the TAXII Server::
 To run *medallion*::
 
     $ python medallion/scripts/run.py <config-file>
-    
-If you plan on running and accessing medallion on localhost, be sure to specify 
+
+If you plan on running and accessing medallion on localhost, be sure to specify
 
     $ --port 80
-    
+
 as the taxii client only accesses servers on port 80.
 
 The <config_file> contains:
@@ -145,9 +145,9 @@ Configs may also contain a "taxii" section as well, as shown below:
            "max_page_size": 100
         }
     }
-    
-All TAXII servers require a config, though if any of the sections specified above 
-are missing, they will be filled with default values.  
+
+All TAXII servers require a config, though if any of the sections specified above
+are missing, they will be filled with default values.
 
 We welcome contributions for other back-end plugins.
 
