@@ -1,14 +1,16 @@
-import base64
 import copy
 import json
 import sys
 import unittest
 import uuid
+from base64 import b64encode
 
 import six
 
-from medallion import (application_instance, register_blueprints, set_config,
-                       test)
+from medallion import (create_app, test)
+from medallion.test import config
+from medallion.test.base_test import TaxiiTest
+from medallion.test.data.initialize_mongodb import reset_db
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
 if sys.version_info < (3, 3, 0):
@@ -41,30 +43,17 @@ API_OBJECT = {
 class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
     def setUp(self):
-        self.app = application_instance
-        self.app_context = application_instance.app_context()
+        reset_db()
+        self.configuration = config.mongodb_config()
+        self.configuration['backend']['default_page_size'] = 20
+
+        self.app = create_app(self.configuration)
+
+        self.app_context = self.app.app_context()
         self.app_context.push()
-        self.app.testing = True
-        register_blueprints(self.app)
-        self.configuration = {
-            "backend": {
-                "module": "medallion.backends.mongodb_backend",
-                "module_class": "MongoBackend",
-                "uri": "mongodb://localhost:27017/",
-                "default_page_size": 20,
-            },
-            "users": {
-                "admin": "Password0",
-            },
-            "taxii": {
-                "max_page_size": 20,
-            },
-        }
-        self.client = application_instance.test_client()
-        set_config(self.app, "users", self.configuration)
-        set_config(self.app, "taxii", self.configuration)
-        encoded_auth = 'Basic ' + base64.b64encode(b"admin:Password0").decode("ascii")
-        self.auth = {'Authorization': encoded_auth}
+
+        self.client = self.app.test_client()
+        self.auth = {'Authorization': 'Token abc123'}
 
     def tearDown(self):
         self.app_context.pop()
@@ -182,7 +171,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         }
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 
-        self.assertEqual(r.status_code, 416)
+        self.assertEqual(416, r.status_code)
         self.assertEqual(r.headers.get('Content-Range'), 'items */10')
 
     @mock.patch('medallion.backends.base.Backend')
@@ -202,7 +191,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         }
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 
-        self.assertEqual(r.status_code, 400)
+        self.assertEqual(400, r.status_code)
 
     @mock.patch('medallion.backends.base.Backend')
     def test_content_range_header_empty_response(self, mock_backend):
@@ -219,5 +208,55 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         }
         r = self.client.get(test.GET_OBJECT_EP, headers=headers)
 
-        self.assertEqual(r.status_code, 206)
+        self.assertEqual(206, r.status_code)
         self.assertEqual(r.headers.get('Content-Range'), 'items 0-0/0')
+
+
+class TestAuth(TaxiiTest):
+    type = "memory"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.username, cls.password = "admin", "Password0"
+
+    def test_auth_failure(self):
+        with self.app.test_client() as client:
+            response = client.get('/routes')
+            self.assertEqual(response.status_code, 401)
+
+    def test_login(self):
+        with self.app.test_client() as client:
+            response = client.post(test.LOGIN, method='POST',
+                                   json={'username': self.username,
+                                         'password': self.password})
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('access_token', response.json)
+
+            response = client.get('/routes',
+                                  headers={'Authorization': 'JWT ' + response.json['access_token']})
+            self.assertEqual(response.status_code, 200)
+
+    def test_login_failure(self):
+        with self.app.test_client() as client:
+            response = client.post(test.LOGIN,
+                                   json={'username': self.username + 'x',
+                                         'password': self.password + 'y'})
+            self.assertEqual(response.status_code, 401)
+
+    def test_api_key_auth_failure(self):
+        with self.app.test_client() as client:
+            response = client.get("/routes",
+                                  headers={'Authorization': 'Basic ' + b64encode("user:invalid")})
+            self.assertEqual(response.headers.get('WWW-Authenticate'),
+                             'Basic realm="Authentication Required"')
+
+    def test_basic_auth_failure(self):
+        with self.app.test_client() as client:
+            response = client.get("/routes",
+                                  headers={'Authorization': 'Token xxxxxxx'})
+            self.assertEqual(response.headers.get('WWW-Authenticate'),
+                             'Token realm="Authentication Required"')
+
+
+if __name__ == "__main__":
+    unittest.main()
