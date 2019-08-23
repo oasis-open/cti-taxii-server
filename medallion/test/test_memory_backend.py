@@ -4,8 +4,8 @@ import os.path
 import tempfile
 import uuid
 
-import six
 from flask import current_app
+import six
 
 from medallion import set_config, test
 from medallion.utils import common
