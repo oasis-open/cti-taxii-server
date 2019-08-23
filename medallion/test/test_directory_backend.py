@@ -139,7 +139,8 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
             data=json.dumps(new_bundle),
             headers=post_header,
         )
-        status_response = self.load_json_response(r_post.data)
+
+        self.load_json_response(r_post.data)
         self.assertEqual(r_post.status_code, 202)
         self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
 

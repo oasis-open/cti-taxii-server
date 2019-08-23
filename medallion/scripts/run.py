@@ -2,7 +2,7 @@ import argparse
 import logging
 import textwrap
 
-from medallion import (__version__, create_app)
+from medallion import __version__, create_app
 
 log = logging.getLogger("medallion")
 

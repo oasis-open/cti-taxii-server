@@ -1,14 +1,14 @@
 import argparse
 import datetime
 import json
-import uuid
 import sys
-import six
-
-from werkzeug.security import generate_password_hash
+import uuid
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+import six
+
+from werkzeug.security import generate_password_hash
 
 
 def make_connection(uri):

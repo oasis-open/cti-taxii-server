@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+
 import six
 
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 if __name__ == '__main__':
     password = six.moves.input("password: ")
@@ -13,5 +14,3 @@ if __name__ == '__main__':
         print(password_hash)
     else:
         print("Failure!")
-
-

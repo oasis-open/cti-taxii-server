@@ -1,16 +1,17 @@
+from collections import OrderedDict
+from datetime import datetime, timedelta
 import importlib
 import json
 import logging
 import random
-from collections import OrderedDict
 
-import jwt
-from datetime import datetime, timedelta
 from flask import Flask, Response, current_app, g
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
+
+import jwt
+from medallion.log import default_request_formatter
 from werkzeug.security import check_password_hash
 
-from medallion.log import default_request_formatter
 from .exceptions import BackendError, ProcessingError
 from .version import __version__  # noqa
 from .views import MEDIA_TYPE_TAXII_V20

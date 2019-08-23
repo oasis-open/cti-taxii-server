@@ -30,8 +30,9 @@ class MongoBackend(Backend):
     # access control is handled at the views level
 
     def __init__(self, **kwargs):
+        uri = kwargs.get("uri")
         try:
-            self.client = MongoClient(kwargs.get("uri"))
+            self.client = MongoClient(uri)
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 

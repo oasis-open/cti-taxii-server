@@ -1,13 +1,13 @@
+from base64 import b64encode
 import copy
 import json
 import sys
 import unittest
 import uuid
-from base64 import b64encode
 
 import six
 
-from medallion import (create_app, test)
+from medallion import create_app, test
 from medallion.test import config
 from medallion.test.base_test import TaxiiTest
 from medallion.test.data.initialize_mongodb import reset_db
@@ -246,7 +246,10 @@ class TestAuth(TaxiiTest):
     def test_api_key_auth_failure(self):
         with self.app.test_client() as client:
             response = client.get("/routes",
-                                  headers={'Authorization': 'Basic ' + b64encode("user:invalid")})
+                                  headers={
+                                      'Authorization':
+                                          'Basic '.encode('utf-8') + b64encode("user:invalid".encode('utf-8'))
+                                  })
             self.assertEqual(response.headers.get('WWW-Authenticate'),
                              'Basic realm="Authentication Required"')
 

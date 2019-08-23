@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from medallion import (create_app)
+from medallion import create_app
 from medallion.test import config as test_configs
 from medallion.test.data.initialize_mongodb import reset_db
 

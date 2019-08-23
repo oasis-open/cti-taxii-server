@@ -41,8 +41,7 @@ def directory_config():
     return _base_config({
         "module": "medallion.backends.directory_backend",
         "module_class": "DirectoryBackend",
-        # "path": "./test/directory/",  # Local
-        "path": "./medallion/test/directory/",  # Travis CI
+        "path": "./medallion/test/directory/",
         "discovery": {
             "title": "Indicators from the directory backend",
             "description": "Indicators from the directory backend",
