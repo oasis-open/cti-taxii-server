@@ -6,6 +6,7 @@ import uuid
 
 import six
 
+from flask import current_app
 from medallion import set_config, test
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
@@ -22,6 +23,9 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             response = response.decode()
         io = six.StringIO(response)
         return json.load(io)
+
+    def test_taxii_config_value(self):
+        assert current_app.taxii_config != None
 
     def test_server_discovery(self):
         r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
