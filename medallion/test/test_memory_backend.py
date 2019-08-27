@@ -1,10 +1,10 @@
 import copy
+from flask import current_app
 import json
 import os.path
 import tempfile
 import uuid
 
-from flask import current_app
 import six
 
 from medallion import set_config, test
