@@ -1,5 +1,4 @@
 import copy
-from flask import current_app
 import json
 import os.path
 import tempfile
@@ -7,6 +6,7 @@ import uuid
 
 import six
 
+from flask import current_app
 from medallion import set_config, test
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
