@@ -25,7 +25,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         return json.load(io)
 
     def test_taxii_config_value(self):
-        assert if current_app.taxii_config is not None
+        assert current_app.taxii_config is not None
 
     def test_server_discovery(self):
         r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
