@@ -48,12 +48,13 @@ def set_config(flask_application_instance, prop_name, config):
                 print("We are giving you the default user information of:")
                 print("User = user")
                 print("Pass = pass")
-                flask_application_instance.users_backend = { "user": "pass" }
+                flask_application_instance.users_backend = {"user": "pass"}
         elif prop_name == "backend":
             try:
                 flask_application_instance.medallion_backend = connect_to_backend(config[prop_name])
             except KeyError:
-                flask_application_instance.medallion_backend = connect_to_backend({'module': 'medallion.backends.memory_backend', 'module_class': 'MemoryBackend', 'filename': 'default_data.json'})
+                back = {'module': 'medallion.backends.memory_backend', 'module_class': 'MemoryBackend', 'filename': 'default_data.json'}
+                flask_application_instance.medallion_backend = connect_to_backend(back)
 
 
 def connect_to_backend(config_info):
