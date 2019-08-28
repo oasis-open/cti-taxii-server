@@ -25,7 +25,7 @@ class TestTAXIIWithNoTAXIISection(TaxiiTest):
         return json.load(io)
 
     def test_taxii_config_value_taxii(self):
-        assert current_app.taxii_config is not None
+        assert current_app.taxii_config['max_page_size'] == 100
 
 
 class TestTAXIIWithNoAuthSection(TaxiiTest):
@@ -39,8 +39,7 @@ class TestTAXIIWithNoAuthSection(TaxiiTest):
         return json.load(io)
 
     def test_default_userpass_auth(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
-        assert r.status_code == 200
+        assert current_app.users_backend.get("user") == "pass"
 
 
 class TestTAXIIWithNoBackendSection(TaxiiTest):
@@ -54,12 +53,7 @@ class TestTAXIIWithNoBackendSection(TaxiiTest):
         return json.load(io)
 
     def test_server_discovery_backend(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
-
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
-        server_info = self.load_json_response(r.data)
-        assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+        assert current_app.medallion_backend.data == {}
 
 
 class TestTAXIIWithNoConfig(TaxiiTest):
@@ -73,19 +67,13 @@ class TestTAXIIWithNoConfig(TaxiiTest):
         return json.load(io)
 
     def test_default_userpass_config(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
-        assert r.status_code == 200
+        assert current_app.users_backend.get("user") == "pass"
 
-    def test_server_discovery_config(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
-
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
-        server_info = self.load_json_response(r.data)
-        assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+    def test_server_discovery_backend(self):
+        assert current_app.medallion_backend.data == {}
 
     def test_taxii_config_value_config(self):
-        assert current_app.taxii_config is not None
+        assert current_app.taxii_config['max_page_size'] == 100
 
 
 class TestTAXIIServerWithMemoryBackend(TaxiiTest):
