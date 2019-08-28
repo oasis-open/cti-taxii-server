@@ -14,6 +14,80 @@ from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 from .base_test import TaxiiTest
 
 
+class TestTAXIIWithNoTAXIISection(TaxiiTest):
+    type = "no_taxii"
+
+    @staticmethod
+    def load_json_response(response):
+        if isinstance(response, bytes):
+            response = response.decode()
+        io = six.StringIO(response)
+        return json.load(io)
+
+    def test_taxii_config_value_taxii(self):
+        assert current_app.taxii_config is not None
+
+
+class TestTAXIIWithNoAuthSection(TaxiiTest):
+    type = "no_auth"
+
+    @staticmethod
+    def load_json_response(response):
+        if isinstance(response, bytes):
+            response = response.decode()
+        io = six.StringIO(response)
+        return json.load(io)
+
+    def test_default_userpass_auth(self):
+        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+        assert r.status_code == 200
+
+
+class TestTAXIIWithNoBackendSection(TaxiiTest):
+    type = "no_backend"
+
+    @staticmethod
+    def load_json_response(response):
+        if isinstance(response, bytes):
+            response = response.decode()
+        io = six.StringIO(response)
+        return json.load(io)
+
+    def test_server_discovery_backend(self):
+        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
+        server_info = self.load_json_response(r.data)
+        assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+
+
+class TestTAXIIWithNoConfig(TaxiiTest):
+    type = "memory_no_config"
+
+    @staticmethod
+    def load_json_response(response):
+        if isinstance(response, bytes):
+            response = response.decode()
+        io = six.StringIO(response)
+        return json.load(io)
+
+    def test_default_userpass_config(self):
+        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+        assert r.status_code == 200
+
+    def test_server_discovery_config(self):
+        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
+        server_info = self.load_json_response(r.data)
+        assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+
+    def test_taxii_config_value_config(self):
+        assert current_app.taxii_config is not None
+
+
 class TestTAXIIServerWithMemoryBackend(TaxiiTest):
     type = "memory"
 
@@ -23,9 +97,6 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             response = response.decode()
         io = six.StringIO(response)
         return json.load(io)
-
-    def test_taxii_config_value(self):
-        assert current_app.taxii_config is not None
 
     def test_server_discovery(self):
         r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
