@@ -33,19 +33,29 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "total_count": 4,
             "success_count": 1,
             "successes": [
-                "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
+                {
+                    "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
+                    "version": "2014-05-08T09:00:00.000Z",
+                }
             ],
             "failure_count": 1,
             "failures": [
                 {
                     "id": "malware--664fa29d-bf65-4f28-a667-bdb76f29ec98",
+                    "version": "2015-05-08T09:00:00.000Z",
                     "message": "Unable to process object",
                 },
             ],
             "pending_count": 2,
             "pendings": [
-                "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
-                "relationship--045585ad-a22f-4333-af33-bfd503a683b5",
+                {
+                    "id": "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
+                    "version": "2016-08-08T09:00:00.000Z",
+                },
+                {
+                    "id": "relationship--045585ad-a22f-4333-af33-bfd503a683b5",
+                    "version": "2016-06-08T09:00:00.000Z",
+                }
             ],
         },
         {
@@ -65,74 +75,57 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
     api_root_db["manifests"].insert_many([
         {
             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-            "date_added": convert_to_stix_datetime("2016-11-01T03:04:05Z"),
-            "versions": [
-                "2014-05-08T09:00:00.000Z",
-            ],
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0",
-            ],
+            "date_added": convert_to_stix_datetime("2016-11-01T03:04:05.000Z"),
+            "version": "2014-05-08T09:00:00.000Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
         {
             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
             "date_added": convert_to_stix_datetime("2017-01-27T13:49:53.997Z"),
-            "versions": [
-                "2017-01-27T13:49:53.997Z",
-            ],
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0",
-            ],
+            "version": "2017-01-27T13:49:53.997Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "malware",
         },
         {
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
             "date_added": convert_to_stix_datetime("2014-05-08T09:00:00.000Z"),
-            "versions": [
-                "2014-05-08T09:00:00.000Z",
-            ],
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0",
-            ],
+            "version": "2014-05-08T09:00:00.000Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "relationship",
         },
         {
-            "date_added": convert_to_stix_datetime("2017-01-20T00:00:00.000Z"),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0",
-            ],
-            "versions": [
-                "2017-01-20T00:00:00.000Z",
-            ],
+            "date_added": convert_to_stix_datetime("2017-01-20T00:00:00.000Z"),
+            "version": "2017-01-20T00:00:00.000Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "marking-definition",
         },
         {
             "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-            "date_added": convert_to_stix_datetime("2016-12-27T13:49:53Z"),
-            "versions": [
-                "2016-11-03T12:30:59.000Z",
-                "2017-01-27T13:49:53.935Z",
-            ],
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0",
-            ],
+            "date_added": convert_to_stix_datetime("2016-12-31T13:49:53.935Z"),
+            "version": "2017-01-27T13:49:53.935Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
+            "_type": "indicator",
+        },
+        {
+            "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+            "date_added": convert_to_stix_datetime("2016-12-27T13:49:59.000Z"),
+            "version": "2016-11-03T12:30:59.000Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
             "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
             "_type": "indicator",
         },
         {
             "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
             "date_added": convert_to_stix_datetime("2016-11-03T12:30:59.000Z"),
-            "versions": [
-                "2016-11-03T12:30:59.000Z",
-            ],
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0",
-            ],
+            "version": "2016-11-03T12:30:59.000Z",
+            "media_type": "application/vnd.oasis.stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
@@ -144,7 +137,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": True,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.0",
+            "application/vnd.oasis.stix+json; version=2.1",
         ],
     })
 
@@ -155,7 +148,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": True,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.0",
+            "application/vnd.oasis.stix+json; version=2.1",
         ],
     })
 
@@ -166,7 +159,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": False,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.0",
+            "application/vnd.oasis.stix+json; version=2.1",
         ],
     })
 
@@ -177,7 +170,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": False,
         "can_write": False,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.0",
+            "application/vnd.oasis.stix+json; version=2.1",
         ],
     })
 
@@ -185,7 +178,8 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         {
             "created": "2016-11-03T12:30:59.000Z",
             "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-            "labels": [
+            "spec_version": "2.1",
+            "indicator_types": [
                 "url-watchlist",
             ],
             "modified": "2017-01-27T13:49:53.935Z",
@@ -198,8 +192,9 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         {
             "created": "2016-11-03T12:30:59.000Z",
             "description": "Accessing this url will infect your machine with malware.",
+            "spec_version": "2.1",
             "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-            "labels": [
+            "indicator_types": [
                 "url-watchlist",
             ],
             "modified": "2016-11-03T12:30:59.000Z",
@@ -213,7 +208,8 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "created": "2017-01-27T13:49:53.997Z",
             "description": "Poison Ivy",
             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
-            "labels": [
+            "spec_version": "2.1",
+            "malware_types": [
                 "remote-access-trojan",
             ],
             "modified": "2017-01-27T13:49:53.997Z",
@@ -223,8 +219,9 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "created": "2014-05-08T09:00:00.000Z",
+            "spec_version": "2.1",
             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-            "labels": [
+            "indicator_types": [
                 "file-hash-watchlist",
             ],
             "modified": "2014-05-08T09:00:00.000Z",
@@ -236,6 +233,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "created": "2014-05-08T09:00:00.000Z",
+            "spec_version": "2.1",
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
             "modified": "2014-05-08T09:00:00.000Z",
             "relationship_type": "indicates",
@@ -246,19 +244,21 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "type": "marking-definition",
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "spec_version": "2.1",
             "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
             "created": "2017-01-20T00:00:00.000Z",
             "definition_type": "tlp",
             "definition": {
                 "tlp": "green",
             },
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
             "created": "2016-11-03T12:30:59.000Z",
+            "spec_version": "2.1",
             "description": "Accessing this url will infect your machine with malware.",
             "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
-            "labels": [
+            "indicator_types": [
                 "url-watchlist",
             ],
             "modified": "2016-11-03T12:30:59.000Z",
