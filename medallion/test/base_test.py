@@ -31,6 +31,39 @@ class TaxiiTest(unittest.TestCase):
         "type": "bundle",
     }
 
+    no_config = {}
+
+    config_no_taxii = {
+        "backend": {
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "filename": DATA_FILE,
+        },
+        "users": {
+            "admin": "Password0",
+        },
+    }
+
+    config_no_auth = {
+        "backend": {
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "filename": DATA_FILE,
+        },
+        "taxii": {
+            "max_page_size": 20,
+        },
+    }
+
+    config_no_backend = {
+        "users": {
+            "admin": "Password0",
+        },
+        "taxii": {
+            "max_page_size": 20,
+        },
+    }
+
     memory_config = {
         "backend": {
             "module": "medallion.backends.memory_backend",
@@ -69,16 +102,27 @@ class TaxiiTest(unittest.TestCase):
             reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config
         elif self.type == "memory":
-            self.memory_config["backend"]["filename"] = self.DATA_FILE
             self.configuration = self.memory_config
+        elif self.type == "memory_no_config":
+            self.configuration = self.no_config
+        elif self.type == "no_taxii":
+            self.configuration = self.config_no_taxii
+        elif self.type == "no_auth":
+            self.configuration = self.config_no_auth
+        elif self.type == "no_backend":
+            self.configuration = self.config_no_backend
         else:
             raise RuntimeError("Unknown backend!")
         set_config(self.app, "backend", self.configuration)
         set_config(self.app, "users", self.configuration)
         set_config(self.app, "taxii", self.configuration)
         self.client = application_instance.test_client()
-        encoded_auth = "Basic " + \
-            base64.b64encode(b"admin:Password0").decode("ascii")
+        if self.type == "memory_no_config" or self.type == "no_auth":
+            encoded_auth = "Basic " + \
+                base64.b64encode(b"user:pass").decode("ascii")
+        else:
+            encoded_auth = "Basic " + \
+                base64.b64encode(b"admin:Password0").decode("ascii")
         self.auth = {"Authorization": encoded_auth}
 
     def tearDown(self):
