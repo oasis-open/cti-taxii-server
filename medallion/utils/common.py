@@ -21,6 +21,14 @@ def create_bundle(o):
     }
 
 
+def create_resource(resource_name, o):
+    return {resource_name: o}
+
+
+def determine_version(new_obj, request_time):
+    return new_obj.get("modified", new_obj.get("created", format_datetime(request_time)))
+
+
 def get(data, key):
     for ancestors, item in iterpath(data):
         if key in ancestors:
@@ -108,10 +116,10 @@ def convert_to_stix_datetime(timestamp_string):
 
 def generate_status(
     request_time, status, succeeded, failed, pending,
-    successes_ids=None, failures=None, pendings=None,
+    successes=None, failures=None, pendings=None,
 ):
     status = {
-        "id": "%s" % uuid.uuid4(),
+        "id": str(uuid.uuid4()),
         "status": status,
         "request_timestamp": request_time,
         "total_count": succeeded + failed + pending,
@@ -120,11 +128,23 @@ def generate_status(
         "pending_count": pending,
     }
 
-    if successes_ids:
-        status["successes"] = successes_ids
+    if successes:
+        status["successes"] = successes
     if failures:
         status["failures"] = failures
     if pendings:
         status["pendings"] = pendings
 
     return status
+
+
+def generate_status_details(id, version, message=None):
+    status_details = {
+        "id": id,
+        "version": version
+    }
+
+    if message:
+        status_details["message"] = message
+
+    return status_details
