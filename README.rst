@@ -74,11 +74,9 @@ To run *medallion*::
 
     $ python medallion/scripts/run.py <config-file>
 
-If you plan on running and accessing medallion on localhost, be sure to specify
+Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example::
 
-    $ --port 80
-
-as the taxii client only accesses servers on port 80.
+    $ medallion --port 80 config_file.json
 
 The <config_file> contains:
 
