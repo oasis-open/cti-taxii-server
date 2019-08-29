@@ -17,26 +17,12 @@ from .base_test import TaxiiTest
 class TestTAXIIWithNoTAXIISection(TaxiiTest):
     type = "no_taxii"
 
-    @staticmethod
-    def load_json_response(response):
-        if isinstance(response, bytes):
-            response = response.decode()
-        io = six.StringIO(response)
-        return json.load(io)
-
     def test_taxii_config_value_taxii(self):
         assert current_app.taxii_config['max_page_size'] == 100
 
 
 class TestTAXIIWithNoAuthSection(TaxiiTest):
     type = "no_auth"
-
-    @staticmethod
-    def load_json_response(response):
-        if isinstance(response, bytes):
-            response = response.decode()
-        io = six.StringIO(response)
-        return json.load(io)
 
     def test_default_userpass_auth(self):
         assert current_app.users_backend.get("user") == "pass"
@@ -45,26 +31,12 @@ class TestTAXIIWithNoAuthSection(TaxiiTest):
 class TestTAXIIWithNoBackendSection(TaxiiTest):
     type = "no_backend"
 
-    @staticmethod
-    def load_json_response(response):
-        if isinstance(response, bytes):
-            response = response.decode()
-        io = six.StringIO(response)
-        return json.load(io)
-
     def test_server_discovery_backend(self):
         assert current_app.medallion_backend.data == {}
 
 
 class TestTAXIIWithNoConfig(TaxiiTest):
     type = "memory_no_config"
-
-    @staticmethod
-    def load_json_response(response):
-        if isinstance(response, bytes):
-            response = response.decode()
-        io = six.StringIO(response)
-        return json.load(io)
 
     def test_default_userpass_config(self):
         assert current_app.users_backend.get("user") == "pass"

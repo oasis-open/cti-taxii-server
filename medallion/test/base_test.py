@@ -102,15 +102,15 @@ class TaxiiTest(unittest.TestCase):
             reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config
         elif self.type == "memory":
-            self.memory_config["backend"]["filename"] = self.DATA_FILE
+            # self.memory_config["backend"]["filename"] = self.DATA_FILE
             self.configuration = self.memory_config
         elif self.type == "memory_no_config":
             self.configuration = self.no_config
         elif self.type == "no_taxii":
-            self.config_no_taxii["backend"]["filename"] = self.DATA_FILE
+            # self.config_no_taxii["backend"]["filename"] = self.DATA_FILE
             self.configuration = self.config_no_taxii
         elif self.type == "no_auth":
-            self.config_no_auth["backend"]["filename"] = self.DATA_FILE
+            # self.config_no_auth["backend"]["filename"] = self.DATA_FILE
             self.configuration = self.config_no_auth
         elif self.type == "no_backend":
             self.configuration = self.config_no_backend
