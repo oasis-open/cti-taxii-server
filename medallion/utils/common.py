@@ -21,8 +21,8 @@ def create_bundle(o):
     }
 
 
-def create_resource(resource_name, o):
-    return {resource_name: o}
+def create_resource(resource_name, o, more=False):
+    return {resource_name: o, "more": more}
 
 
 def determine_version(new_obj, request_time):

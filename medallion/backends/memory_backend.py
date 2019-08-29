@@ -3,7 +3,7 @@ import json
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import create_bundle, generate_status, iterpath
+from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details, iterpath
 from .base import Backend
 
 
@@ -37,48 +37,41 @@ class MemoryBackend(Backend):
     def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_info = self._get(api_root)
         collections = api_info.get("collections", [])
+        media_type_fmt = "application/vnd.oasis.stix+json; version={}"
 
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
-                for entry in collection["manifest"]:
-                    if new_obj["id"] == entry["id"]:
-                        if "modified" in new_obj:
-                            entry["versions"].append(new_obj["modified"])
-                            entry["versions"] = sorted(entry["versions"], reverse=True)
-                        # If the new_obj is there, and it has no modified
-                        # property, then it is immutable, and there is nothing
-                        # to do.
-                        break
-                else:
-                    version = new_obj.get("modified", new_obj["created"])
-                    collection["manifest"].append(
-                        {
-                            "id": new_obj["id"],
-                            "date_added": request_time,
-                            "versions": [version],
-                            "media_types": ["application/vnd.oasis.stix+json; version=2.0"],
-                        },
-                    )  # media_types hardcoded for now...
+                version = determine_version(new_obj, request_time)
+                request_time = format_datetime(request_time)
+                media_type = media_type_fmt.format(new_obj.get("spec_version", "2.0"))
+
+                # version is a single value now, therefore a new manifest is always created
+                collection["manifest"].append(
+                    {
+                        "id": new_obj["id"],
+                        "date_added": request_time,
+                        "version": version,
+                        "media_type": media_type,
+                    },
+                )
                 # quit once you have found the collection that needed updating
                 break
 
-    def get_collections(self, api_root, start_index, end_index):
+    def get_collections(self, api_root):
         if api_root not in self.data:
             return None, None  # must return None so 404 is raised
 
         api_info = self._get(api_root)
         collections = copy.deepcopy(api_info.get("collections", []))
-        count = len(collections)
 
-        result = collections[start_index:end_index]
         # Remove data that is not part of the response.
-        for collection in result:
+        for collection in collections:
             collection.pop("manifest", None)
             collection.pop("responses", None)
             collection.pop("objects", None)
-        return count, result
+        return create_resource("collections", collections)
 
-    def get_collection(self, api_root, id_):
+    def get_collection(self, api_root, collection_id):
         if api_root not in self.data:
             return None  # must return None so 404 is raised
 
@@ -86,19 +79,19 @@ class MemoryBackend(Backend):
         collections = copy.deepcopy(api_info.get("collections", []))
 
         for collection in collections:
-            if "id" in collection and id_ == collection["id"]:
+            if "id" in collection and collection_id == collection["id"]:
                 collection.pop("manifest", None)
                 collection.pop("responses", None)
                 collection.pop("objects", None)
                 return collection
 
-    def get_object_manifest(self, api_root, id_, filter_args, allowed_filters, start_index, end_index):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
             for collection in collections:
-                if "id" in collection and id_ == collection["id"]:
+                if "id" in collection and collection_id == collection["id"]:
                     manifest = collection.get("manifest", [])
                     if filter_args:
                         full_filter = BasicFilter(filter_args)
@@ -107,10 +100,7 @@ class MemoryBackend(Backend):
                             allowed_filters,
                             None,
                         )
-                    count = len(manifest)
-                    result = manifest[start_index:end_index]
-
-                    return count, result
+                    return create_resource("objects", manifest)
 
     def get_api_root_information(self, api_root):
         if api_root in self.data:
@@ -119,22 +109,22 @@ class MemoryBackend(Backend):
             if "information" in api_info:
                 return api_info["information"]
 
-    def get_status(self, api_root, id_):
+    def get_status(self, api_root, status_id):
         if api_root in self.data:
             api_info = self._get(api_root)
 
             for status in api_info.get("status", []):
-                if id_ == status["id"]:
+                if status_id == status["id"]:
                     return status
 
-    def get_objects(self, api_root, id_, filter_args, allowed_filters, start_index, end_index):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
             objs = []
             for collection in collections:
-                if "id" in collection and id_ == collection["id"]:
+                if "id" in collection and collection_id == collection["id"]:
 
                     if filter_args:
                         full_filter = BasicFilter(filter_args)
@@ -148,12 +138,9 @@ class MemoryBackend(Backend):
                     else:
                         objs.extend(collection.get("objects", []))
 
-            count = len(objs)
-            result = objs[start_index:end_index]
+            return create_resource("objects", objs)
 
-            return count, create_bundle(result)
-
-    def add_objects(self, api_root, id_, objs, request_time):
+    def add_objects(self, api_root, collection_id, objs, request_time):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -164,7 +151,7 @@ class MemoryBackend(Backend):
             failures = []
 
             for collection in collections:
-                if "id" in collection and id_ == collection["id"]:
+                if "id" in collection and collection_id == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
                     try:
@@ -183,30 +170,37 @@ class MemoryBackend(Backend):
                             if not id_and_version_already_present:
                                 collection["objects"].append(new_obj)
                                 self._update_manifest(new_obj, api_root, collection["id"], request_time)
-                                successes.append(new_obj["id"])
+                                status_details = generate_status_details(
+                                    new_obj["id"], determine_version(new_obj, request_time)
+                                )
+                                successes.append(status_details)
                                 succeeded += 1
                             else:
-                                failures.append({"id": new_obj["id"], "message": "Unable to process object"})
+                                status_details = generate_status_details(
+                                    new_obj["id"], determine_version(new_obj, request_time),
+                                    message="Unable to process object",
+                                )
+                                failures.append(status_details)
                                 failed += 1
                     except Exception as e:
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
                 request_time, "complete", succeeded,
-                failed, pending, successes_ids=successes,
+                failed, pending, successes=successes,
                 failures=failures,
             )
             api_info["status"].append(status)
             return status
 
-    def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
             objs = []
             for collection in collections:
-                if "id" in collection and id_ == collection["id"]:
+                if "id" in collection and collection_id == collection["id"]:
                     for obj in collection.get("objects", []):
                         if object_id == obj["id"]:
                             objs.append(obj)
@@ -217,4 +211,26 @@ class MemoryBackend(Backend):
                         allowed_filters,
                         collection.get("manifest", []),
                     )
-            return create_bundle(objs)
+            return create_resource("objects", objs)
+
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+        if api_root in self.data:
+            api_info = self._get(api_root)
+            collections = api_info.get("collections", [])
+
+            objs = []
+            for collection in collections:
+                if "id" in collection and collection_id == collection["id"]:
+                    all_manifests = collection.get("manifest", [])
+                    for manifest in all_manifests:
+                        if object_id == manifest["id"]:
+                            objs.append(manifest)
+                    if filter_args:
+                        full_filter = BasicFilter(filter_args)
+                        objs = full_filter.process_filter(
+                            objs,
+                            allowed_filters,
+                            None,
+                        )
+                    objs = sorted(map(lambda x: x["version"], objs), reverse=True)
+                    return create_resource("versions", objs)
