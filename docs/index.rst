@@ -15,7 +15,7 @@ Welcome to medallion's documentation!
    compatibility
    custom_backend
    mongodb_schema
-
+   contributing
 
 
 Indices and tables

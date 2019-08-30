@@ -6,7 +6,7 @@ How to create your custom Backend
 
 To create a custom Backend compatible with medallion you need to subclass ``medallion.backends.base.Backend``. This object provides the basic skeleton used to handle each of the endpoint requests.
 
-For further examples of on how to build a custom backend look under the `\medallion\backends\` directory.
+For further examples of on how to build a custom backend look under the ``\medallion\backends\`` directory.
 
 How to load your custom Backend
 -------------------------------
@@ -45,7 +45,7 @@ Another way to provide a custom backend using flask proxy could be,
 How to use a different authentication library
 ---------------------------------------------
 
-If you need or prefer a library different from ``Flask-HTTPAuth``, you can override it by modifying the ``auth`` global to your preference. Now, if you want to keep changes at a minimum throughout the library. You can wrap the behavior inside another class, but remember all changes need to be performed before the call to ``run()`. For example,
+If you need or prefer a library different from ``Flask-HTTPAuth``, you can override it by modifying the ``auth`` global to your preference. Now, if you want to keep changes at a minimum throughout the library. You can wrap the behavior inside another class, but remember all changes need to be performed before the call to ``run()``. For example,
 
 .. code:: python
 
