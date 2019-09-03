@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import six
-
 from werkzeug.security import check_password_hash, generate_password_hash
 
 if __name__ == '__main__':

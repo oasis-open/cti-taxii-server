@@ -74,6 +74,10 @@ To run *medallion*::
 
     $ python medallion/scripts/run.py <config-file>
 
+Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example::
+
+    $ medallion --port 80 config_file.json
+
 The <config_file> contains:
 
 - configuration information for the backend STIX 2.0 data plugin
@@ -159,6 +163,16 @@ Here is an example:
         }
     }
 
+If JWT authorization is used, a secret key is required in the config:
+
+.. code:: json
+
+    {
+        "flask": {
+            "SECRET_KEY": "CHANGE_ME"
+        }
+    }
+
 A script for generating user passwords is included
 `generate_user_password.py <https:medallion/scripts/generate_user_password.py>`_
 
@@ -166,6 +180,19 @@ The authorization is enabled using the python package
 `flask_httpauth <https://flask-httpauth.readthedocs.io>`_.
 Authorization could be enhanced by changing the method "decorated" using
 @auth.get_password in medallion/__init__.py
+
+Configs may also contain a "taxii" section as well, as shown below:
+
+.. code:: python
+
+    {
+        "taxii": {
+           "max_page_size": 100
+        }
+    }
+
+All TAXII servers require a config, though if any of the sections specified above
+are missing, they will be filled with default values.
 
 The backend for authorization can also be configured in the <config-file>:
 

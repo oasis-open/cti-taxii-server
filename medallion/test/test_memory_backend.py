@@ -4,13 +4,48 @@ import os.path
 import tempfile
 import uuid
 
+from flask import current_app
 import six
 
-from medallion import init_backend, test
+from medallion import set_backend_config, test, verify_basic_auth
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
 from .base_test import TaxiiTest
+
+
+class TestTAXIIWithNoTAXIISection(TaxiiTest):
+    type = "no_taxii"
+
+    def test_taxii_config_value_taxii(self):
+        assert current_app.taxii_config['max_page_size'] == 100
+
+
+class TestTAXIIWithNoAuthSection(TaxiiTest):
+    type = "no_auth"
+
+    def test_default_userpass_auth(self):
+        assert verify_basic_auth("admin", "Password0")
+
+
+class TestTAXIIWithNoBackendSection(TaxiiTest):
+    type = "no_backend"
+
+    def test_server_discovery_backend(self):
+        assert current_app.medallion_backend.data == {}
+
+
+class TestTAXIIWithNoConfig(TaxiiTest):
+    type = "memory_no_config"
+
+    def test_default_userpass_config(self):
+        assert verify_basic_auth("admin", "Password0")
+
+    def test_server_discovery_backend(self):
+        assert current_app.medallion_backend.data == {}
+
+    def test_taxii_config_value_config(self):
+        assert current_app.taxii_config['max_page_size'] == 100
 
 
 class TestTAXIIServerWithMemoryBackend(TaxiiTest):
@@ -371,7 +406,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             configuration = copy.deepcopy(self.configuration)
             configuration["backend"]["filename"] = f.name
 
-            init_backend(self.app, configuration["backend"])
+            set_backend_config(self.app, configuration["backend"])
 
             r_get = self.client.get(
                 test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,

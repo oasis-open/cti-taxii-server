@@ -7,12 +7,11 @@ import random
 
 from flask import Flask, Response, current_app, g
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
-
 import jwt
-from medallion.log import default_request_formatter
 from werkzeug.security import check_password_hash
 
 from .exceptions import BackendError, ProcessingError
+from .log import default_request_formatter
 from .version import __version__  # noqa
 from .views import MEDIA_TYPE_TAXII_V20
 
@@ -28,6 +27,25 @@ jwt_auth = HTTPTokenAuth(scheme='JWT')
 basic_auth = HTTPBasicAuth()
 token_auth = HTTPTokenAuth(scheme='Token')
 auth = MultiAuth(None)
+
+DEFAULT_TAXII = {'max_page_size': 100}
+
+DEFAULT_AUTH = {
+    "module": "medallion.backends.auth_memory_backend",
+    "module_class": "AuthMemoryBackend",
+    "users": {
+        "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344"
+    },
+    "api_keys": {
+        "123456": "admin",
+    }
+}
+
+DEFAULT_BACKEND = {
+    "module": "medallion.backends.memory_backend",
+    "module_class": "MemoryBackend",
+    "filename": "./medallion/test/data/memory_backend_no_data.json"
+}
 
 
 def set_multi_auth_config(main_auth, *additional_auth):
@@ -72,7 +90,7 @@ def connect_to_backend(config_info):
         raise e
 
 
-def init_backend(flask_application_instance, config_info):
+def set_backend_config(flask_application_instance, config_info):
     with flask_application_instance.app_context():
         log.debug("Registering medallion_backend into {}".format(current_app))
         current_app.medallion_backend = connect_to_backend(config_info)
@@ -147,13 +165,11 @@ def jwt_encode(username):
         'exp': exp,
         'user': username
     }
-    secret = current_app.config['SECRET_KEY']
-    return jwt.encode(payload, secret, algorithm='HS256')
+    return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
 
 def jwt_decode(token):
-    secret = current_app.config['SECRET_KEY']
-    return jwt.decode(token, secret, algorithms=['HS256'])
+    return jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
 
 
 @jwt_auth.verify_token
@@ -211,7 +227,7 @@ def create_app(cfg):
         with open(cfg, "r") as f:
             configuration = json.load(f)
 
-    app.config.from_mapping(**configuration['flask'])
+    app.config.from_mapping(**configuration.get('flask', {}))
 
     app.logger = logging.getLogger('medallion-app')
     app.logger.setLevel(logging.INFO)
@@ -228,9 +244,23 @@ def create_app(cfg):
 
     set_multi_auth_config(*configuration.get('multi-auth', ('basic',)))
 
-    set_auth_config(app, configuration["auth"])
-    set_taxii_config(app, configuration["taxii"])
-    init_backend(app, configuration["backend"])
+    set_auth_config(app, configuration.get("auth", DEFAULT_AUTH))
+
+    if "auth" not in configuration:
+        log.warning("You did not give user information in your config.")
+        log.warning("We are giving you the default user information of:")
+        log.warning("  User = admin")
+        log.warning("  Pass = Password0")
+
+    set_taxii_config(app, configuration.get("taxii", DEFAULT_TAXII))
+
+    set_backend_config(app, configuration.get("backend", DEFAULT_BACKEND))
+
+    if "backend" not in configuration:
+        log.warning("You did not give backend information in your config.")
+        log.warning("We are giving medallion the default settings,")
+        log.warning("which includes a data file of 'data_for_memory_config.json'.")
+        log.warning("This file is included in the 'example_configs' directory.")
 
     register_blueprints(app)
     register_error_handlers(app)

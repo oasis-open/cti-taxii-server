@@ -7,7 +7,6 @@ import uuid
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import six
-
 from werkzeug.security import generate_password_hash
 
 

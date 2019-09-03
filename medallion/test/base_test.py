@@ -34,6 +34,12 @@ class TaxiiTest(unittest.TestCase):
     directory_config = test_configs.directory_config()
     mongodb_config = test_configs.mongodb_config()
 
+    no_config = {}
+
+    config_no_taxii = {k: v for k, v in memory_config.items() if k != "taxii"}
+    config_no_auth = {k: v for k, v in memory_config.items() if k != "auth"}
+    config_no_backend = {k: v for k, v in memory_config.items() if k != "backend"}
+
     def setUp(self):
         if self.type == "mongo":
             reset_db()
@@ -43,6 +49,14 @@ class TaxiiTest(unittest.TestCase):
             self.configuration = self.memory_config
         elif self.type == "directory":
             self.configuration = self.directory_config
+        elif self.type == "memory_no_config":
+            self.configuration = self.no_config
+        elif self.type == "no_taxii":
+            self.configuration = self.config_no_taxii
+        elif self.type == "no_auth":
+            self.configuration = self.config_no_auth
+        elif self.type == "no_backend":
+            self.configuration = self.config_no_backend
         else:
             raise RuntimeError("Unknown backend!")
 
