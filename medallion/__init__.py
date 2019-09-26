@@ -6,7 +6,7 @@ from flask_httpauth import HTTPBasicAuth
 
 from .exceptions import BackendError, ProcessingError
 from .version import __version__  # noqa
-from .views import MEDIA_TYPE_TAXII_V20
+from .views import MEDIA_TYPE_TAXII_V21
 
 # Console Handler for medallion messages
 ch = logging.StreamHandler()
@@ -110,7 +110,7 @@ def handle_error(error):
     return Response(
         response=json.dumps(e),
         status=500,
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )
 
 
@@ -125,7 +125,7 @@ def handle_processing_error(error):
         response=json.dumps(e),
         status=error.status,
         headers=getattr(error, "headers", None),
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )
 
 
@@ -139,5 +139,5 @@ def handle_backend_error(error):
     return Response(
         response=json.dumps(e),
         status=error.status,
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )

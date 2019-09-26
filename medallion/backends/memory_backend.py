@@ -42,9 +42,18 @@ class MemoryBackend(Backend):
             if "id" in collection and collection_id == collection["id"]:
                 for entry in collection["manifest"]:
                     if new_obj["id"] == entry["id"]:
-                        if "modified" in new_obj:
-                            entry["versions"].append(new_obj["modified"])
-                            entry["versions"] = sorted(entry["versions"], reverse=True)
+                        version = new_obj.get("modified", new_obj["created"])
+                        collection["manifest"].append(
+                            {
+                                "id": new_obj["id"],
+                                "date_added": request_time,
+                                "version": version,
+                                "media_types": ["application/vnd.oasis.stix+json; version=2.1"],
+                            },
+                        )
+                        """if "modified" in new_obj:
+                            entry["version"].append(new_obj["modified"])
+                            entry["version"] = sorted(entry["version"], reverse=True)"""
                         # If the new_obj is there, and it has no modified
                         # property, then it is immutable, and there is nothing
                         # to do.
@@ -55,8 +64,8 @@ class MemoryBackend(Backend):
                         {
                             "id": new_obj["id"],
                             "date_added": request_time,
-                            "versions": [version],
-                            "media_types": ["application/vnd.oasis.stix+json; version=2.0"],
+                            "version": version,
+                            "media_types": ["application/vnd.oasis.stix+json; version=2.1"],
                         },
                     )  # media_types hardcoded for now...
                 # quit once you have found the collection that needed updating

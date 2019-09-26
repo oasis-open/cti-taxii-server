@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
 from .objects import (collection_exists, get_custom_headers,
@@ -26,6 +26,6 @@ def get_object_manifest(api_root, id_):
                 response=json.dumps({"objects": manifest}),
                 status=status,
                 headers=headers,
-                mimetype=MEDIA_TYPE_TAXII_V20,
+                mimetype=MEDIA_TYPE_TAXII_V21,
             )
         raise ProcessingError("Collection '{}' has no manifests available".format(id_), 404)

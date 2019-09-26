@@ -2,7 +2,7 @@ import re
 
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_STIX_V21, MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
 from ..utils.common import format_datetime, get_timestamp
@@ -110,7 +110,7 @@ def get_or_add_objects(api_root, id_):
                     response=json.dumps(objects),
                     status=status,
                     headers=headers,
-                    mimetype=MEDIA_TYPE_STIX_V20,
+                    mimetype=MEDIA_TYPE_STIX_V21,
                 )
             raise ProcessingError("Collection '{}' has no objects available".format(id_), 404)
         elif request.method == "POST" and permission_to_write(api_root, id_):
@@ -118,7 +118,7 @@ def get_or_add_objects(api_root, id_):
             return Response(
                 response=json.dumps(status),
                 status=202,
-                mimetype=MEDIA_TYPE_TAXII_V20,
+                mimetype=MEDIA_TYPE_TAXII_V21,
             )
 
 
@@ -133,6 +133,6 @@ def get_object(api_root, id_, object_id):
             return Response(
                 response=json.dumps(objects),
                 status=200,
-                mimetype=MEDIA_TYPE_STIX_V20,
+                mimetype=MEDIA_TYPE_STIX_V21,
             )
         raise ProcessingError("Object '{}' not found".format(object_id), 404)

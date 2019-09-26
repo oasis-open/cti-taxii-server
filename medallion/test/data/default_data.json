@@ -12,10 +12,10 @@
     },
     "api1": {
         "information": {
-            "title": "General STIX 2.0 Collections",
+            "title": "General STIX 2.1 Collections",
             "description": "A repo for general STIX data.",
             "versions": [
-                "taxii-2.0"
+                "application/vnd.oasis.stix+json; version=2.1"
             ],
             "max_content_length": 9765625
         },
@@ -26,10 +26,10 @@
     },
     "api2": {
         "information": {
-            "title": "STIX 2.0 Indicator Collections",
+            "title": "STIX 2.1 Indicator Collections",
             "description": "A repo for general STIX data.",
             "versions": [
-                "taxii-2.0"
+                "application/vnd.oasis.stix+json; version=2.1"
             ],
             "max_content_length": 9765625
         },
@@ -43,13 +43,13 @@
             "title": "Malware Research Group",
             "description": "A trust group setup for malware researchers",
             "versions": [
-                "taxii-2.0"
+                "application/vnd.oasis.stix+json; version=2.1"
             ],
             "max_content_length": 9765625
         },
         "status": [
             {
-                "id": "2d086da7-4bdc-4f91-900e-d77486753710",
+                "id": "2d186da7-4bdc-4f91-900e-d77486753710",
                 "status": "pending",
                 "request_timestamp": "2016-11-02T12:34:34.12345Z",
                 "total_count": 4,
@@ -94,7 +94,7 @@
                 "can_read": true,
                 "can_write": true,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.0"
+                    "application/vnd.oasis.stix+json; version=2.1"
                 ],
                 "objects": [
                     {
@@ -134,21 +134,17 @@
                     {
                         "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
                         "date_added": "2016-11-01T03:04:05Z",
-                        "versions": [
-                            "2014-05-08T09:00:00.000Z"
-                        ],
+                        "version": "2014-05-08T09:00:00.000Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.0"
+                            "application/vnd.oasis.stix+json; version=2.1"
                         ]
                     },
                     {
                         "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
                         "date_added": "2017-01-27T13:49:53.997Z",
-                        "versions": [
-                            "2017-01-27T13:49:53.997Z"
-                        ],
+                        "version": "2017-01-27T13:49:53.997Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.0"
+                            "application/vnd.oasis.stix+json; version=2.1"
                         ]
                     }
                 ]
@@ -160,7 +156,7 @@
                 "can_read": true,
                 "can_write": false,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.0"
+                    "application/vnd.oasis.stix+json; version=2.1"
                 ],
                 "objects": [
                     {
@@ -175,10 +171,10 @@
                         "type": "indicator",
                         "valid_from": "2016-11-03T12:30:59.000Z"
                     },
-					{
+		    {
                         "created": "2016-11-03T12:30:59.000Z",
                         "description": "Accessing this url will infect your machine with malware.",
-						"id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+			"id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
                         "labels": [
                             "url-watchlist"
                         ],
@@ -193,12 +189,17 @@
                     {
                         "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
                         "date_added": "2016-12-27T13:49:53Z",
-                        "versions": [
-                            "2016-11-03T12:30:59.000Z",
-                            "2017-01-27T13:49:53.935Z"
-                        ],
+                        "version": "2016-11-03T12:30:59.000Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.0"
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
+                    },
+		    {
+                        "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+                        "date_added": "2016-12-27T13:49:53Z",
+                        "version": "2017-01-27T13:49:53.935Z",
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
                         ]
                     }
                 ]
@@ -210,7 +211,7 @@
                 "can_read":false,
                 "can_write": false,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.0"
+                    "application/vnd.oasis.stix+json; version=2.1"
                 ],
                 "objects": [
                     {
@@ -225,18 +226,36 @@
                         "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
                         "type": "indicator",
                         "valid_from": "2017-01-27T13:49:53.935382Z"
+                    },
+		    {
+                        "created": "2016-11-03T12:30:59.000Z",
+                        "description": "Accessing this url will infect your machine with malware.",
+                        "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+                        "labels": [
+                            "url-watchlist"
+                        ],
+                        "modified": "2017-01-27T13:49:53.935Z",
+                        "name": "Malicious site hosting downloader",
+                        "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
+                        "type": "indicator",
+                        "valid_from": "2017-01-27T13:49:53.935382Z"
                     }
                 ],
                 "manifest": [
                     {
                         "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
                         "date_added": "2016-12-27T13:49:53Z",
-                        "versions": [
-                            "2016-11-03T12:30:59.000Z",
-                            "2017-01-27T13:49:53.935Z"
-                        ],
+                        "version": "2016-11-03T12:30:59.000Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.0"
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
+                    },
+		    {
+                        "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+                        "date_added": "2016-12-27T13:49:53Z",
+                        "version": "2017-01-27T13:49:53.935Z",
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
                         ]
                     }
                 ]

@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
 from .objects import (get_range_request_from_headers,
@@ -21,7 +21,7 @@ def get_collections(api_root):
             response=json.dumps({"collections": result}),
             status=status,
             headers=headers,
-            mimetype=MEDIA_TYPE_TAXII_V20,
+            mimetype=MEDIA_TYPE_TAXII_V21,
         )
     raise ProcessingError("No collections found", 404)
 
@@ -35,6 +35,6 @@ def get_collection(api_root, id_):
         return Response(
             response=json.dumps(collection),
             status=200,
-            mimetype=MEDIA_TYPE_TAXII_V20,
+            mimetype=MEDIA_TYPE_TAXII_V21,
         )
     raise ProcessingError("Collection '{}' not found".format(id_), 404)
