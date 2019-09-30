@@ -274,7 +274,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
     api_root_db = add_api_root(
         client,
         url="http://localhost:5000/api2/",
-        title="STIX 2.0 Indicator Collections",
+        title="STIX 2.1 Indicator Collections",
         description="A repo for general STIX data.",
         max_content_length=9765625,
     )

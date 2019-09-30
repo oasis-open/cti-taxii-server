@@ -53,7 +53,7 @@ def add_api_root(client, url=None, title=None, description=None, versions=None, 
 
     """
     if not versions:
-        versions = ["taxii-2.0"]
+        versions = ["taxii-2.1"]
     db = client["discovery_database"]
     url_parts = url.split("/")
     name = url_parts[-2]

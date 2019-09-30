@@ -12,10 +12,10 @@
     },
     "api1": {
         "information": {
-            "title": "General STIX 2.0 Collections",
+            "title": "General STIX 2.1 Collections",
             "description": "A repo for general STIX data.",
             "versions": [
-                "taxii-2.0"
+                "application/vnd.oasis.stix+json; version=2.1"
             ],
             "max_content_length": 9765625
         },
@@ -26,10 +26,10 @@
     },
     "api2": {
         "information": {
-            "title": "STIX 2.0 Indicator Collections",
+            "title": "STIX 2.1 Indicator Collections",
             "description": "A repo for general STIX data.",
             "versions": [
-                "taxii-2.0"
+                "application/vnd.oasis.stix+json; version=2.1"
             ],
             "max_content_length": 9765625
         },
@@ -43,41 +43,31 @@
             "title": "Malware Research Group",
             "description": "A trust group setup for malware researchers",
             "versions": [
-                "taxii-2.0"
+                "application/vnd.oasis.stix+json; version=2.1"
             ],
             "max_content_length": 9765625
         },
         "status": [
             {
-                "id": "2d086da7-4bdc-4f91-900e-d77486753710",
+                "id": "2d186da7-4bdc-4f91-900e-d77486753710",
                 "status": "pending",
                 "request_timestamp": "2016-11-02T12:34:34.12345Z",
                 "total_count": 4,
                 "success_count": 1,
                 "successes": [
-                    {
-                        "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-                        "version": "2014-05-08T09:00:00.000Z"
-                    }
+                    "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade"
                 ],
                 "failure_count": 1,
                 "failures": [
                     {
                         "id": "malware--664fa29d-bf65-4f28-a667-bdb76f29ec98",
-                        "version": "2015-05-08T09:00:00.000Z",
                         "message": "Unable to process object"
                     }
                 ],
                 "pending_count": 2,
                 "pendings": [
-                    {
-                        "id": "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
-                        "version": "2016-08-08T09:00:00.000Z"
-                    },
-                    {
-                        "id": "relationship--045585ad-a22f-4333-af33-bfd503a683b5",
-                        "version": "2016-06-08T09:00:00.000Z"
-                    }
+                    "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
+                    "relationship--045585ad-a22f-4333-af33-bfd503a683b5"
                 ]
             },
             {
@@ -111,7 +101,6 @@
                         "created": "2017-01-27T13:49:53.997Z",
                         "description": "Poison Ivy",
                         "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
-                        "spec_version": "2.1",
                         "labels": [
                             "remote-access-trojan"
                         ],
@@ -122,7 +111,6 @@
                     {
                         "created": "2014-05-08T09:00:00.000Z",
                         "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-                        "spec_version": "2.1",
                         "labels": [
                             "file-hash-watchlist"
                         ],
@@ -135,7 +123,6 @@
                     {
                         "created": "2014-05-08T09:00:00.000Z",
                         "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
-                        "spec_version": "2.1",
                         "modified": "2014-05-08T09:00:00.000Z",
                         "relationship_type": "indicates",
                         "source_ref": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
@@ -148,13 +135,17 @@
                         "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
                         "date_added": "2016-11-01T03:04:05Z",
                         "version": "2014-05-08T09:00:00.000Z",
-                        "media_type": "application/vnd.oasis.stix+json; version=2.1"
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
                     },
                     {
                         "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
-                        "date_added": "2017-01-28T13:49:53.997Z",
+                        "date_added": "2017-01-27T13:49:53.997Z",
                         "version": "2017-01-27T13:49:53.997Z",
-                        "media_type": "application/vnd.oasis.stix+json; version=2.1"
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
                     }
                 ]
             },
@@ -171,8 +162,7 @@
                     {
                         "created": "2016-11-03T12:30:59.000Z",
                         "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-                        "spec_version": "2.1",
-                        "indicator_types": [
+                        "labels": [
                             "url-watchlist"
                         ],
                         "modified": "2017-01-27T13:49:53.935Z",
@@ -181,12 +171,11 @@
                         "type": "indicator",
                         "valid_from": "2016-11-03T12:30:59.000Z"
                     },
-					{
+		    {
                         "created": "2016-11-03T12:30:59.000Z",
                         "description": "Accessing this url will infect your machine with malware.",
-						"id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-                        "spec_version": "2.1",
-                        "indicator_types": [
+			"id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+                        "labels": [
                             "url-watchlist"
                         ],
                         "modified": "2016-11-03T12:30:59.000Z",
@@ -201,20 +190,24 @@
                         "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
                         "date_added": "2016-12-27T13:49:53Z",
                         "version": "2016-11-03T12:30:59.000Z",
-                        "media_type": "application/vnd.oasis.stix+json; version=2.1"
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
                     },
-                    {
+		    {
                         "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-                        "date_added": "2017-12-31T13:49:53Z",
+                        "date_added": "2016-12-27T13:49:53Z",
                         "version": "2017-01-27T13:49:53.935Z",
-                        "media_type": "application/vnd.oasis.stix+json; version=2.1"
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
                     }
                 ]
             },
             {
                 "id": "64993447-4d7e-4f70-b94d-d7f33742ee63",
                 "title": "Secret Indicators",
-                "description": "Non accessible",
+                "description": "Non accessilble",
                 "can_read":false,
                 "can_write": false,
                 "media_types": [
@@ -225,11 +218,23 @@
                         "created": "2016-11-03T12:30:59.000Z",
                         "description": "Accessing this url will infect your machine with malware.",
                         "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
-                        "spec_version": "2.1",
-                        "indicator_types": [
+                        "labels": [
                             "url-watchlist"
                         ],
                         "modified": "2016-11-03T12:30:59.000Z",
+                        "name": "Malicious site hosting downloader",
+                        "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
+                        "type": "indicator",
+                        "valid_from": "2017-01-27T13:49:53.935382Z"
+                    },
+		    {
+                        "created": "2016-11-03T12:30:59.000Z",
+                        "description": "Accessing this url will infect your machine with malware.",
+                        "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+                        "labels": [
+                            "url-watchlist"
+                        ],
+                        "modified": "2017-01-27T13:49:53.935Z",
                         "name": "Malicious site hosting downloader",
                         "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
                         "type": "indicator",
@@ -241,13 +246,17 @@
                         "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
                         "date_added": "2016-12-27T13:49:53Z",
                         "version": "2016-11-03T12:30:59.000Z",
-                        "media_type": "application/vnd.oasis.stix+json; version=2.1"
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
                     },
-                    {
+		    {
                         "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
-                        "date_added": "2017-02-25T13:49:53Z",
+                        "date_added": "2016-12-27T13:49:53Z",
                         "version": "2017-01-27T13:49:53.935Z",
-                        "media_type": "application/vnd.oasis.stix+json; version=2.1"
+                        "media_types": [
+                            "application/vnd.oasis.stix+json; version=2.1"
+                        ]
                     }
                 ]
             }

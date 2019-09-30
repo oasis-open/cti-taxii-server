@@ -59,7 +59,7 @@ class MemoryBackend(Backend):
 
     def get_collections(self, api_root):
         if api_root not in self.data:
-            return None, None  # must return None so 404 is raised
+            return None  # must return None so 404 is raised
 
         api_info = self._get(api_root)
         collections = copy.deepcopy(api_info.get("collections", []))
@@ -141,6 +141,7 @@ class MemoryBackend(Backend):
             return create_resource("objects", objs)
 
     def add_objects(self, api_root, collection_id, objs, request_time):
+        print(request_time)
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -186,7 +187,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                request_time, "complete", succeeded,
+                format_datetime(request_time), "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )
