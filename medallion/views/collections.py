@@ -26,15 +26,15 @@ def get_collections(api_root):
     raise ProcessingError("No collections found", 404)
 
 
-@mod.route("/<string:api_root>/collections/<string:id_>/", methods=["GET"])
+@mod.route("/<string:api_root>/collections/<string:collection_id>/", methods=["GET"])
 @auth.login_required
-def get_collection(api_root, id_):
+def get_collection(api_root, collection_id):
     # TODO: Check if user has access to the collection's metadata - unrelated to can_read, can_write attributes
-    collection = current_app.medallion_backend.get_collection(api_root, id_)
+    collection = current_app.medallion_backend.get_collection(api_root, collection_id)
     if collection:
         return Response(
             response=json.dumps(collection),
             status=200,
             mimetype=MEDIA_TYPE_TAXII_V21,
         )
-    raise ProcessingError("Collection '{}' not found".format(id_), 404)
+    raise ProcessingError("Collection '{}' not found".format(collection_id), 404)
