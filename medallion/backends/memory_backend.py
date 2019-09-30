@@ -3,7 +3,9 @@ import json
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details, iterpath
+from ..utils.common import (create_resource, determine_version,
+                            format_datetime, generate_status,
+                            generate_status_details, iterpath)
 from .base import Backend
 
 
