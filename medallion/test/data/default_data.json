@@ -15,7 +15,7 @@
             "title": "General STIX 2.1 Collections",
             "description": "A repo for general STIX data.",
             "versions": [
-                "application/vnd.oasis.stix+json; version=2.1"
+                "application/taxii+json;version=2.1"
             ],
             "max_content_length": 9765625
         },
@@ -29,7 +29,7 @@
             "title": "STIX 2.1 Indicator Collections",
             "description": "A repo for general STIX data.",
             "versions": [
-                "application/vnd.oasis.stix+json; version=2.1"
+                "application/taxii+json;version=2.1"
             ],
             "max_content_length": 9765625
         },
@@ -43,19 +43,19 @@
             "title": "Malware Research Group",
             "description": "A trust group setup for malware researchers",
             "versions": [
-                "application/vnd.oasis.stix+json; version=2.1"
+                "application/taxii+json;version=2.1"
             ],
             "max_content_length": 9765625
         },
         "status": [
             {
-                "id": "2d186da7-4bdc-4f91-900e-d77486753710",
+                "id": "2d086da7-4bdc-4f91-900e-d77486753710",
                 "status": "pending",
                 "request_timestamp": "2016-11-02T12:34:34.12345Z",
                 "total_count": 4,
                 "success_count": 1,
                 "successes": [
-                    "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade"
+                    "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade"
                 ],
                 "failure_count": 1,
                 "failures": [
@@ -72,17 +72,17 @@
             },
             {
                 "id": "2d086da7-4bdc-4f91-900e-f4566be4b780",
-				"status": "pending",
-				"request_timestamp": "2016-11-02T12:34:34.12345Z",
+		"status": "pending",
+		"request_timestamp": "2016-11-02T12:34:34.12345Z",
                 "total_objects": 2,
-				"success_count": 0,
-				"successes": [
+		"success_count": 0,
+		"successes": [
                 ],
-				"failure_count": 0,
-				"failures": [
+		"failure_count": 0,
+		"failures": [
                 ],
-				"pending_count": 0,
-				"pendings": [
+		"pending_count": 0,
+		"pendings": [
                 ]
             }
         ],
@@ -94,7 +94,7 @@
                 "can_read": true,
                 "can_write": true,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.1"
+                    "application/taxii+json;version=2.1"
                 ],
                 "objects": [
                     {
@@ -136,7 +136,7 @@
                         "date_added": "2016-11-01T03:04:05Z",
                         "version": "2014-05-08T09:00:00.000Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.1"
+                            "application/taxii+json;version=2.1"
                         ]
                     },
                     {
@@ -144,7 +144,7 @@
                         "date_added": "2017-01-27T13:49:53.997Z",
                         "version": "2017-01-27T13:49:53.997Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.1"
+                            "application/taxii+json;version=2.1"
                         ]
                     }
                 ]
@@ -156,7 +156,7 @@
                 "can_read": true,
                 "can_write": false,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.1"
+                    "application/taxii+json;version=2.1"
                 ],
                 "objects": [
                     {
@@ -191,7 +191,7 @@
                         "date_added": "2016-12-27T13:49:53Z",
                         "version": "2016-11-03T12:30:59.000Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.1"
+                            "application/taxii+json;version=2.1"
                         ]
                     },
 		    {
@@ -199,7 +199,7 @@
                         "date_added": "2016-12-27T13:49:53Z",
                         "version": "2017-01-27T13:49:53.935Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.1"
+                            "application/taxii+json;version=2.1"
                         ]
                     }
                 ]
@@ -211,7 +211,7 @@
                 "can_read":false,
                 "can_write": false,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.1"
+                    "application/taxii+json;version=2.1"
                 ],
                 "objects": [
                     {
@@ -247,7 +247,7 @@
                         "date_added": "2016-12-27T13:49:53Z",
                         "version": "2016-11-03T12:30:59.000Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.1"
+                            "application/taxii+json;version=2.1"
                         ]
                     },
 		    {
@@ -255,7 +255,7 @@
                         "date_added": "2016-12-27T13:49:53Z",
                         "version": "2017-01-27T13:49:53.935Z",
                         "media_types": [
-                            "application/vnd.oasis.stix+json; version=2.1"
+                            "application/taxii+json;version=2.1"
                         ]
                     }
                 ]

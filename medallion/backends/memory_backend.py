@@ -143,7 +143,6 @@ class MemoryBackend(Backend):
             return create_resource("objects", objs)
 
     def add_objects(self, api_root, collection_id, objs, request_time):
-        print(request_time)
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
