@@ -15,6 +15,22 @@ def find_att(obj):
         pass
 
 
+def check_for_dupes(final_match, obj, obj_att):
+    if final_match:
+        fail = False
+        for z in final_match:
+            if obj["id"] == z["id"] and obj_att in z and obj[obj_att] == z[obj_att]:
+                # found a dupe
+                fail = True
+                break
+        # if a duplicate is not found, add it
+        if not fail:
+            final_match.append(obj)
+    # list is empty, no dupes
+    else:
+        final_match.append(obj)
+
+
 class BasicFilter(object):
 
     def __init__(self, filter_args):
@@ -60,12 +76,11 @@ class BasicFilter(object):
     # this could be put together into one for loop
     # is the ordering of the results important?
     def filter_by_version(data, version):
-        match_objects = []
+        final_match = []
+
         # return most recent object versions unless otherwise specified
         if version is None:
             version = "last"
-        if "first" not in version and "last" not in version:
-            version = version + ",last"
         version_indicators = version.split(",")
 
         if "all" in version_indicators:
@@ -78,33 +93,55 @@ class BasicFilter(object):
             for obj in data:
                 obj_att = find_att(obj)
                 if obj[obj_att] in actual_dates:
-                    match_objects.append(obj)
-        else:
-            match_objects = copy.deepcopy(data)
+                    check_for_dupes(final_match, obj, obj_att)
 
-        if "first" in version_indicators and match_objects:
-            for obj in match_objects:
+        if "first" in version_indicators:
+            # iterate through each object
+            for obj in data:
+                fail = False
                 obj_att = find_att(obj)
                 obj_time = convert_to_stix_datetime(obj[obj_att])
-                for compare in match_objects:
+                # compare to every other object
+                for compare in data:
                     comp_att = find_att(compare)
                     comp_time = convert_to_stix_datetime(compare[comp_att])
-                    if compare is not obj and compare["id"] == obj["id"] and comp_time <= obj_time:
-                        match_objects.remove(obj)
-                        break
+                    # if theres another version, compare
+                    if compare is not obj and compare["id"] == obj["id"]:
+                        # if its older, it still has a chance to be the first
+                        if obj_time <= comp_time:
+                            pass
+                        # if not, it's definitely not the first
+                        else:
+                            fail = True
+                            break
+                # if it made it through without failing, check for dupes
+                if not fail:
+                    check_for_dupes(final_match, obj, obj_att)
 
-        if match_objects and "last" in version_indicators:
-            for obj in match_objects:
+        if "last" in version_indicators:
+            # iterate through each object
+            for obj in data:
+                fail = False
                 obj_att = find_att(obj)
                 obj_time = convert_to_stix_datetime(obj[obj_att])
-                for compare in match_objects:
+                # compare to every other object
+                for compare in data:
                     comp_att = find_att(compare)
                     comp_time = convert_to_stix_datetime(compare[comp_att])
-                    if compare is not obj and compare["id"] == obj["id"] and comp_time >= obj_time:
-                        match_objects.remove(obj)
-                        break
+                    # if theres another version, compare
+                    if compare is not obj and compare["id"] == obj["id"]:
+                        # if its younger, it still has a chance to be the latest
+                        if obj_time >= comp_time:
+                            pass
+                        # if not, it's definitely not the last
+                        else:
+                            fail = True
+                            break
+                # if it made it through without failing, check for dupes
+                if not fail:
+                    check_for_dupes(final_match, obj, obj_att)
 
-        return match_objects
+        return final_match
 
     @staticmethod
     def filter_by_type(data, type_):
