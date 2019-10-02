@@ -102,7 +102,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         collections_metadata = self.load_json_response(r.data)
-        assert collections_metadata["media_types"][0] == "application/vnd.oasis.stix+json; version=2.1"
+        assert collections_metadata["media_types"][0] == "application/taxii+json;version=2.1"
 
     def test_get_collection_not_existent(self):
         r = self.client.get(
@@ -368,7 +368,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         manifests = self.load_json_response(r_get.data)
 
         assert manifests["objects"][0]["id"] == new_id
-        assert any(version == new_bundle["objects"][0]["modified"] for version in manifests["objects"][0]["versions"])
+        assert manifests["objects"][0]["version"] == new_bundle["objects"][0]["modified"]
         # ------------- END: get manifest section ------------- #
 
     def test_added_after_filtering(self):

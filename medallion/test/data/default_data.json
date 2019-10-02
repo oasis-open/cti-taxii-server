@@ -55,19 +55,29 @@
                 "total_count": 4,
                 "success_count": 1,
                 "successes": [
-                    "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade"
-                ],
+		  {
+                    "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
+		    "version": "2018-05-27T12:02:41.312Z"
+		  }
+		],
                 "failure_count": 1,
                 "failures": [
-                    {
-                        "id": "malware--664fa29d-bf65-4f28-a667-bdb76f29ec98",
-                        "message": "Unable to process object"
-                    }
+                  {
+                    "id": "malware--664fa29d-bf65-4f28-a667-bdb76f29ec98",
+		    "version": "2018-05-28T14:03:42:.543Z",
+                    "message": "Unable to process object"
+                  }
                 ],
                 "pending_count": 2,
                 "pendings": [
-                    "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
-                    "relationship--045585ad-a22f-4333-af33-bfd503a683b5"
+		  {
+                    "id": "indicator--252c7c11-daf2-42bd-843b-be65edca9f61",
+		    "version": "2018-05-18T20:16:21.148Z"
+		  },
+		  {
+                    "id": "relationship--045585ad-a22f-4333-af33-bfd503a683b5",
+		    "version": "2018-05-15T10:13:32.579Z"
+		  }
                 ]
             },
             {
