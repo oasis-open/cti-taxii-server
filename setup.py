@@ -68,6 +68,7 @@ setup(
         ],
         "docs": [
             "sphinx",
+            "sphinx-prompt",
         ],
         "mongo": [
             "pymongo",
