@@ -1,5 +1,6 @@
 import bisect
 import copy
+import operator
 
 from ..utils.common import convert_to_stix_datetime
 
@@ -44,6 +45,25 @@ def check_for_dupes(final_match, final_track, res):
             final_match.insert(pos, obj)
 
 
+def check_version(data, relate):
+    id_track = []
+    res = []
+    # O(n)?
+    for obj in data:
+        pos = bisect.bisect_left(id_track, obj["id"])
+        if not res or pos >= len(id_track) or id_track[pos] != obj["id"]:
+            id_track.insert(pos, obj["id"])
+            res.insert(pos, obj)
+        else:
+            obj_att = find_att(obj)
+            obj_time = convert_to_stix_datetime(obj[obj_att])
+            comp_att = find_att(res[pos])
+            comp_time = convert_to_stix_datetime(res[pos][comp_att])
+            if relate(obj_time, comp_time):
+                res[pos] = obj
+    return res
+
+
 class BasicFilter(object):
 
     def __init__(self, filter_args):
@@ -86,8 +106,6 @@ class BasicFilter(object):
         return new_results
 
     @staticmethod
-    # this could be put together into one for loop
-    # is the ordering of the results important?
     def filter_by_version(data, version):
         # final_match is a sorted list of objects
         final_match = []
@@ -103,66 +121,30 @@ class BasicFilter(object):
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [x for x in version_indicators if x != "first" and x != "last"]
+        actual_dates = [convert_to_stix_datetime(x) for x in version_indicators if x != "first" and x != "last"]
         # if a specific version is given, filter for objects with that value
         if actual_dates:
             id_track = []
             res = []
             for obj in data:
                 obj_att = find_att(obj)
-                if obj[obj_att] in actual_dates:
+                obj_time = convert_to_stix_datetime(obj[obj_att])
+                if obj_time in actual_dates:
                     pos = bisect.bisect_left(id_track, obj["id"])
-                    if not res or pos > len(id_track) - 1:
-                        id_track.append(obj["id"])
-                        res.append(obj)
-                        continue
-                    if id_track[pos] != obj["id"]:
-                        bisect.insort_left(id_track, obj["id"])
+                    if not res or pos > len(id_track) - 1 or id_track[pos] != obj["id"]:
+                        id_track.insert(pos, obj["id"])
                         res.insert(pos, obj)
             final_match = res
             final_track = id_track
 
         if "first" in version_indicators:
-            id_track = []
             res = []
-            # O(n)?
-            for obj in data:
-                pos = bisect.bisect_left(id_track, obj["id"])
-                if not res or pos > len(id_track) - 1:
-                    id_track.append(obj["id"])
-                    res.append(obj)
-                    continue
-                if id_track[pos] != obj["id"]:
-                    bisect.insort_left(id_track, obj["id"])
-                    res.insert(pos, obj)
-                else:
-                    obj_att = find_att(obj)
-                    obj_time = convert_to_stix_datetime(obj[obj_att])
-                    comp_att = find_att(res[pos])
-                    comp_time = convert_to_stix_datetime(res[pos][comp_att])
-                    if obj_time < comp_time:
-                        res[pos] = obj
+            res = check_version(data, operator.lt)
             check_for_dupes(final_match, final_track, res)
 
         if "last" in version_indicators:
-            id_track = []
             res = []
-            for obj in data:
-                pos = bisect.bisect_left(id_track, obj["id"])
-                if not res or pos > len(id_track) - 1:
-                    id_track.append(obj["id"])
-                    res.append(obj)
-                    continue
-                if id_track[pos] != obj["id"]:
-                    bisect.insort_left(id_track, obj["id"])
-                    res.insert(pos, obj)
-                else:
-                    obj_att = find_att(obj)
-                    obj_time = convert_to_stix_datetime(obj[obj_att])
-                    comp_att = find_att(res[pos])
-                    comp_time = convert_to_stix_datetime(res[pos][comp_att])
-                    if obj_time > comp_time:
-                        res[pos] = obj
+            res = check_version(data, operator.gt)
             check_for_dupes(final_match, final_track, res)
 
         return final_match
