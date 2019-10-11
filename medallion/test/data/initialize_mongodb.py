@@ -77,7 +77,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
             "date_added": convert_to_stix_datetime("2016-11-01T03:04:05.000Z"),
             "version": "2014-05-08T09:00:00.000Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "media_type": "application/stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
@@ -85,7 +85,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
             "date_added": convert_to_stix_datetime("2017-01-27T13:49:53.997Z"),
             "version": "2017-01-27T13:49:53.997Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "media_type": "application/stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "malware",
         },
@@ -93,7 +93,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
             "date_added": convert_to_stix_datetime("2014-05-08T09:00:00.000Z"),
             "version": "2014-05-08T09:00:00.000Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "media_type": "application/stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "relationship",
         },
@@ -101,31 +101,31 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
             "date_added": convert_to_stix_datetime("2017-01-20T00:00:00.000Z"),
             "version": "2017-01-20T00:00:00.000Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "media_type": "application/stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "marking-definition",
         },
         {
-            "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-            "date_added": convert_to_stix_datetime("2016-12-31T13:49:53.935Z"),
+            "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+            "date_added": convert_to_stix_datetime("2017-12-31T13:49:53.935Z"),
             "version": "2017-01-27T13:49:53.935Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
-            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
-            "_type": "indicator",
-        },
-        {
-            "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-            "date_added": convert_to_stix_datetime("2016-12-27T13:49:59.000Z"),
-            "version": "2016-11-03T12:30:59.000Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
-            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
+            "media_type": "application/stix+json; version=2.1",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
         {
             "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
-            "date_added": convert_to_stix_datetime("2016-11-03T12:30:59.000Z"),
+            "date_added": convert_to_stix_datetime("2016-12-27T13:49:59.000Z"),
+            "version": "2016-12-25T12:30:59.444Z",
+            "media_type": "application/stix+json; version=2.1",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_type": "indicator",
+        },
+        {
+            "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
+            "date_added": convert_to_stix_datetime("2016-11-03T12:30:59.001Z"),
             "version": "2016-11-03T12:30:59.000Z",
-            "media_type": "application/vnd.oasis.stix+json; version=2.1",
+            "media_type": "application/stix+json; version=2.1",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
@@ -137,7 +137,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": True,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.1",
+            "application/stix+json; version=2.1",
         ],
     })
 
@@ -148,7 +148,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": True,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.1",
+            "application/stix+json; version=2.1",
         ],
     })
 
@@ -159,7 +159,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": False,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.1",
+            "application/stix+json; version=2.1",
         ],
     })
 
@@ -170,39 +170,40 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": False,
         "can_write": False,
         "media_types": [
-            "application/vnd.oasis.stix+json; version=2.1",
+            "application/stix+json; version=2.1",
         ],
     })
 
     api_root_db["objects"].insert_many([
         {
             "created": "2016-11-03T12:30:59.000Z",
-            "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+            "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
             "spec_version": "2.1",
             "indicator_types": [
                 "url-watchlist",
             ],
             "modified": "2017-01-27T13:49:53.935Z",
             "name": "Malicious site hosting downloader",
+            "description": "Accessing this url will infect your machine with malware. This is the last updated indicator",
             "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
             "type": "indicator",
             "valid_from": "2016-11-03T12:30:59.000Z",
-            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
             "created": "2016-11-03T12:30:59.000Z",
-            "description": "Accessing this url will infect your machine with malware.",
+            "description": "Accessing this url will infect your machine with malware. Updated indicator",
             "spec_version": "2.1",
-            "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+            "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
             "indicator_types": [
                 "url-watchlist",
             ],
-            "modified": "2016-11-03T12:30:59.000Z",
+            "modified": "2016-12-25T12:30:59.444Z",
             "name": "Malicious site hosting downloader",
             "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
             "type": "indicator",
             "valid_from": "2017-01-27T13:49:53.935382Z",
-            "_collection_id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
             "created": "2017-01-27T13:49:53.997Z",
