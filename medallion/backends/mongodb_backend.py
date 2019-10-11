@@ -170,7 +170,7 @@ class MongoBackend(Backend):
         # Note: error handling was not added to following call as mongo will
         # handle (user supplied) filters gracefully if they don't exist
         objects_found = full_filter.process_filter(
-            objects,
+            objects_info,
             allowed_filters,
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
@@ -178,6 +178,7 @@ class MongoBackend(Backend):
             if obj:
                 obj.pop("_id", None)
                 obj.pop("_collection_id", None)
+                obj.pop("_date_added", None)
         return create_resource("objects", objects_found)
 
     @catch_mongodb_error
@@ -195,26 +196,33 @@ class MongoBackend(Backend):
                 mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
                 if "modified" in new_obj:
                     mongo_query["modified"] = new_obj["modified"]
-                existing_entry = objects.find_one(mongo_query)
+                existing_entry = objects_info.find_one(mongo_query)
+                obj_version = determine_version(new_obj, request_time)
                 if existing_entry:
                     status_detail = generate_status_details(
-                        new_obj["id"], determine_version(new_obj, request_time),
-                        message="Unable to process object",
+                        new_obj["id"], obj_version,
+                        message="Unable to process object because an identical entry already exists in collection '{}'.".format(collection_id),
                     )
                     failures.append(status_detail)
                     failed += 1
                 else:
                     new_obj.update({"_collection_id": collection_id})
-                    objects.insert_one(new_obj)
+                    if not all(prop in new_obj for prop in ("modified", "created")):
+                        new_obj["_date_added"] = obj_version  # Special case for un-versioned objects
+                    objects_info.insert_one(new_obj)
                     self._update_manifest(new_obj, api_root, collection_id, request_time)
-                    status_detail = generate_status_details(new_obj["id"], determine_version(new_obj, request_time))
+                    status_detail = generate_status_details(
+                        new_obj["id"], obj_version,
+                        message="Successfully added object to collection '{}'.".format(collection_id)
+                    )
                     successes.append(status_detail)
                     succeeded += 1
         except Exception as e:
+            log.exception(e)
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            request_time, "complete", succeeded, failed,
+            format_datetime(request_time), "complete", succeeded, failed,
             pending, successes=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)
@@ -240,6 +248,7 @@ class MongoBackend(Backend):
                 if obj:
                     obj.pop("_id", None)
                     obj.pop("_collection_id", None)
+                    obj.pop("_date_added", None)
         return create_resource("objects", objects_found)
 
     @catch_mongodb_error
