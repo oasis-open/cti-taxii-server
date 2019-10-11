@@ -67,7 +67,7 @@ class MongoBackend(Backend):
     @catch_mongodb_error
     def server_discovery(self):
         discovery_db = self.client["discovery_database"]
-        collection = discovery_db["discovery_information"]
+        discovery_info = discovery_db["discovery_information"]
         pipeline = [
             {
                 "$lookup": {
@@ -83,7 +83,7 @@ class MongoBackend(Backend):
                 },
             },
         ]
-        info = list(collection.aggregate(pipeline))[0]
+        info = list(discovery_info.aggregate(pipeline))[0]
         info.pop("_roots", None)
         info.pop("_id", None)
         return info
@@ -120,7 +120,7 @@ class MongoBackend(Backend):
         manifest_info = api_root_db["manifests"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"$_collection_id": collection_id},
+            {"_collection_id": {"$eq": collection_id}},
             allowed_filters,
         )
         objects_found = full_filter.process_filter(
@@ -161,10 +161,10 @@ class MongoBackend(Backend):
     @catch_mongodb_error
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
-        objects = api_root_db["objects"]
+        objects_info = api_root_db["objects"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"$_collection_id": collection_id},
+            {"_collection_id": {"$eq": collection_id}},
             allowed_filters,
         )
         # Note: error handling was not added to following call as mongo will
@@ -172,7 +172,7 @@ class MongoBackend(Backend):
         objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
+            {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
         for obj in objects_found:
             if obj:
@@ -183,7 +183,7 @@ class MongoBackend(Backend):
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
         api_root_db = self.client[api_root]
-        objects = api_root_db["objects"]
+        objects_info = api_root_db["objects"]
         failed = 0
         succeeded = 0
         pending = 0
@@ -224,16 +224,16 @@ class MongoBackend(Backend):
     @catch_mongodb_error
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
-        objects = api_root_db["objects"]
+        objects_info = api_root_db["objects"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"$_collection_id": collection_id, "$id": object_id},
+            {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
             allowed_filters,
         )
         objects_found = full_filter.process_filter(
-            objects,
+            objects_info,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
+            {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
         if objects_found:
             for obj in objects_found:
@@ -245,17 +245,19 @@ class MongoBackend(Backend):
     @catch_mongodb_error
     def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
-        objects = api_root_db["objects"]
+        objects_info = api_root_db["objects"]
+        manifest_info = api_root_db["manifests"]
 
+        # Currently it will delete the object and the matching manifest from the backend
         full_filter = MongoDBFilter(
             filter_args,
-            {"$_collection_id": collection_id, "$id": object_id},
+            {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
             allowed_filters,
         )
         objects_found = full_filter.process_filter(
-            objects,
+            objects_info,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
+            {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
         if objects_found:
             for obj in objects_found:
@@ -271,13 +273,13 @@ class MongoBackend(Backend):
 
         full_filter = MongoDBFilter(
             filter_args,
-            {"$_collection_id": collection_id, "$id": object_id},
+            {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
             allowed_filters,
         )
-        objects_found = full_filter.process_filter(
+        manifests_found = full_filter.process_filter(
             manifest_info,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
+            {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        objects_found = sorted(map(lambda x: x["version"], objects_found), reverse=True)
-        return create_resource("versions", objects_found)
+        manifests_found = list(map(lambda x: x["version"], manifests_found))
+        return create_resource("versions", manifests_found)
