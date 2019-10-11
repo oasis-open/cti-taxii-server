@@ -14,7 +14,10 @@ class MedallionError(Exception):
         self.root_exception = root_exception
 
     def __str__(self):
-        return "{0.message}. Root exception: {0.root_exception}".format(self)
+        if self.root_exception is not None:
+            return "{0.message}. Root exception: {0.root_exception}".format(self)
+        else:
+            return "{0.message}.".format(self)
 
 
 class ProcessingError(MedallionError):
