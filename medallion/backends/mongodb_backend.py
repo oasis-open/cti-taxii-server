@@ -271,7 +271,13 @@ class MongoBackend(Backend):
         if objects_found:
             for obj in objects_found:
                 if obj:
-                    objects.delete_one({"_id": obj.pop("_id", None)})
+                    objects_info.delete_one(
+                        {"_id": obj.get("_id", None)}
+                    )
+                    obj_version = obj.get("modified", obj.get("created", obj.get("_date_added")))
+                    manifest_info.delete_one(
+                        {"_collection_id": collection_id, "id": object_id, "version": obj_version}
+                    )
         else:
             raise ProcessingError("Object '{}' not found".format(object_id), 404)
 
