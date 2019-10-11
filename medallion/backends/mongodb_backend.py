@@ -38,9 +38,10 @@ class MongoBackend(Backend):
     def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        media_type_fmt = "application/vnd.oasis.stix+json; version={}"
+        collection_info = api_root_db["collections"]
+        media_type_fmt = "application/stix+json; version={}"
 
-        version = determine_version(new_obj, request_time)
+        obj_version = determine_version(new_obj, request_time)
         media_type = media_type_fmt.format(new_obj.get("spec_version", "2.0"))
 
         # version is a single value now, therefore a new manifest is created always
@@ -48,12 +49,20 @@ class MongoBackend(Backend):
             {
                 "id": new_obj["id"],
                 "date_added": request_time,
-                "version": version,
+                "version": obj_version,
                 "media_type": media_type,
                 "_collection_id": collection_id,
                 "_type": new_obj["type"],
             },
         )
+
+        # update media_types in collection if a new one is present.
+        info = collection_info.find_one({"id": collection_id})
+        if media_type not in info["media_types"]:
+            collection_info.update_one(
+                {"id": collection_id},
+                {"$set": {"media_types": info["media_types"] + [media_type]}}
+            )
 
     @catch_mongodb_error
     def server_discovery(self):
