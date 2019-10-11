@@ -1,15 +1,15 @@
+import pymongo
+
 from ..utils.common import convert_to_stix_datetime
 from .basic_filter import BasicFilter
 
 
 class MongoDBFilter(BasicFilter):
 
-    def __init__(self, filter_args, basic_filter, allowed, start_index=0, end_index=None):
+    def __init__(self, filter_args, basic_filter, allowed):
         super(MongoDBFilter, self).__init__(filter_args)
         self.basic_filter = basic_filter
         self.full_query = self._query_parameters(allowed)
-        self.start_index = start_index
-        self.end_index = end_index
 
     def _query_parameters(self, allowed):
         parameters = self.basic_filter
@@ -18,16 +18,24 @@ class MongoDBFilter(BasicFilter):
             if match_type and "type" in allowed:
                 types_ = match_type.split(",")
                 if len(types_) == 1:
-                    parameters["_type"] = types_[0]
+                    parameters["_type"] = {"$eq": types_[0]}
                 else:
                     parameters["_type"] = {"$in": types_}
             match_id = self.filter_args.get("match[id]")
             if match_id and "id" in allowed:
                 ids_ = match_id.split(",")
                 if len(ids_) == 1:
-                    parameters["id"] = ids_[0]
+                    parameters["id"] = {"$eq": ids_[0]}
                 else:
                     parameters["id"] = {"$in": ids_}
+            match_spec_version = self.filter_args.get("match[spec_version]")
+            if match_spec_version and "spec_version" in allowed:
+                spec_versions = match_spec_version.split(",")
+                media_fmt = "application/stix+json; version={}"
+                if len(spec_versions) == 1:
+                    parameters["media_type"] = {"$eq": media_fmt.format(spec_versions[0])}
+                else:
+                    parameters["media_type"] = {"$in": [media_fmt.format(x) for x in spec_versions]}
         return parameters
 
     def process_filter(self, data, allowed, manifest_info):
