@@ -43,7 +43,7 @@ class MongoBackend(Backend):
         media_type_fmt = "application/vnd.oasis.stix+json; version={}"
 
         version = determine_version(new_obj, request_time)
-        media_type = media_type_fmt.format(new_obj.get("spec_version", "2.0"))
+        media_type = media_type_fmt.format(new_obj.get("spec_version", "2.1"))
 
         # version is a single value now, therefore a new manifest is created always
         manifest_info.insert_one(

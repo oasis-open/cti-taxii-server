@@ -21,28 +21,25 @@ def check_for_dupes(final_match, final_track, res):
     for obj in res:
         found = 0
         pos = bisect.bisect_left(final_track, obj["id"])
-        if not final_match or pos > len(final_track) - 1:
-            final_track.append(obj["id"])
-            final_match.append(obj)
-            continue
-        if final_track[pos] != obj["id"]:
-            bisect.insort_left(final_track, obj["id"])
-            final_match.insert(pos, obj)
-            continue
-        obj_att = find_att(obj)
-        obj_time = convert_to_stix_datetime(obj[obj_att])
-        final_att = find_att(final_match[pos])
-        final_time = convert_to_stix_datetime(final_match[pos][final_att])
-        r = bisect.bisect_right(final_track, obj["id"])
-        for i in range(pos, r):
-            if final_time == obj_time:
-                found = 1
-                break
-        if found == 1:
-            continue
-        else:
+        if not final_match or pos > len(final_track) - 1 or final_track[pos] != obj["id"]:
             final_track.insert(pos, obj["id"])
             final_match.insert(pos, obj)
+        else:
+            obj_att = find_att(obj)
+            obj_time = convert_to_stix_datetime(obj[obj_att])
+            while pos != len(final_track) and obj["id"] == final_track[pos]:
+                final_att = find_att(final_match[pos])
+                final_time = convert_to_stix_datetime(final_match[pos][final_att])
+                if final_time == obj_time:
+                    found = 1
+                    break
+                else:
+                    pos = pos + 1
+            if found == 1:
+                continue
+            else:
+                final_track.insert(pos, obj["id"])
+                final_match.insert(pos, obj)
 
 
 def check_version(data, relate):
@@ -138,12 +135,10 @@ class BasicFilter(object):
             final_track = id_track
 
         if "first" in version_indicators:
-            res = []
             res = check_version(data, operator.lt)
             check_for_dupes(final_match, final_track, res)
 
         if "last" in version_indicators:
-            res = []
             res = check_version(data, operator.gt)
             check_for_dupes(final_match, final_track, res)
 
