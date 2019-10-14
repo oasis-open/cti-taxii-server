@@ -80,7 +80,6 @@ def get_and_enforce_limit(api_root, id_, objects):
             # if len(times) > 0:
             headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
             # headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
-
     except Exception as e:
         log.exception(e)
     return headers
