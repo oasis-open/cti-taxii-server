@@ -9,7 +9,7 @@ import six
 
 from medallion import (application_instance, register_blueprints, set_config,
                        test)
-from medallion.views import MEDIA_TYPE_STIX_V21, MEDIA_TYPE_TAXII_V21
+from medallion.views import MEDIA_TYPE_TAXII_V21
 
 if sys.version_info < (3, 3, 0):
     import mock
@@ -112,7 +112,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         )
 
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V21)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         self.assertIsNotNone(r.headers.get('Accept-Ranges', None))
 
         # ------------- END: test objects endpoint ------------- #
@@ -139,7 +139,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         r = self.client.get(test.GET_OBJECT_EP, headers=self.auth)
 
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V21)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         self.assertIsNotNone(r.headers.get('Accept-Ranges', None))
 
         # ------------- END: test small result set ------------- #
@@ -157,7 +157,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V21)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         self.assertIsNotNone(r.headers.get('Accept-Ranges', None))
         self.assertIsNotNone(r.headers.get('Content-Range', None))
         self.assertEqual(r.headers.get('Content-Range'), 'items 0-{}/100'.format(page_size - 1))
