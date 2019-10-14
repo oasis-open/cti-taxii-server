@@ -17,8 +17,6 @@ except ImportError:
     raise ImportError("'pymongo' package is required to use this module.")
 
 
-
-
 def make_connection(uri):
     try:
         client = MongoClient(uri)
