@@ -5,7 +5,7 @@ import pytz
 from six import iteritems, text_type
 
 
-def generate_stix20_id(sdo_type):
+def generate_stix21_id(sdo_type):
     return "{sdo_type}--{uuid}".format(
         sdo_type=sdo_type,
         uuid=text_type(uuid.uuid4()),
@@ -14,9 +14,9 @@ def generate_stix20_id(sdo_type):
 
 def create_bundle(o):
     return {
-        "id": generate_stix20_id("bundle"),
+        "id": generate_stix21_id("bundle"),
         "objects": o,
-        "spec_version": "2.0",
+        "spec_version": "2.1",
         "type": "bundle",
     }
 
