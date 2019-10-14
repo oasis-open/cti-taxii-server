@@ -3,11 +3,10 @@ import json
 import os
 import uuid
 
+from medallion.backends.taxii.base import Backend
 from medallion.exceptions import ProcessingError
 from medallion.filters.basic_filter import BasicFilter
 from medallion.utils.common import create_bundle, generate_status
-
-from .base import Backend
 
 
 class DirectoryBackend(Backend):

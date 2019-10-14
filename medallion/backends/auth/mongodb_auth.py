@@ -1,9 +1,13 @@
 import logging
 
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
+from medallion.backends.auth.base import AuthBackend
 
-from medallion.backends.auth_base import AuthBackend
+try:
+    from pymongo import MongoClient
+    from pymongo.errors import ConnectionFailure
+except ImportError:
+    raise ImportError("'pymongo' package is required to use this module.")
+
 
 # Module-level logger
 log = logging.getLogger(__name__)

@@ -1,7 +1,8 @@
-from medallion.backends.auth_base import AuthBackend
+from medallion.backends.auth.base import AuthBackend
 
 
 class AuthMemoryBackend(AuthBackend):
+
     def __init__(self, users, **kwargs):
         self.users = users
         self.api_keys = kwargs.get("api_keys", {})

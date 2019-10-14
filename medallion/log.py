@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import json
 import logging
 
@@ -54,7 +55,3 @@ def json_request_formatter():
             "trace_id": "%(trace_id)s"
         })
     )
-
-
-if __name__ == '__main__':
-    pass

@@ -1,6 +1,6 @@
 {
   "backend": {
-    "module": "medallion.backends.directory_backend",
+    "module": "medallion.backends.taxii.directory_backend",
     "module_class": "DirectoryBackend",
     "path": "./example_configs/directory/",
     "discovery": {
@@ -32,7 +32,7 @@
     "max_page_size": 100
   },
   "auth": {
-    "module": "medallion.backends.auth_mongodb_backend",
+    "module": "medallion.backends.auth.mongo_auth",
     "module_class": "AuthMongodbBackend",
     "uri": "mongodb://root:example@localhost:27017/",
     "db_name": "auth"

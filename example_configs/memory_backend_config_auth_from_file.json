@@ -1,6 +1,6 @@
 {
   "backend": {
-    "module": "medallion.backends.memory_backend",
+    "module": "medallion.backends.taxii.memory_backend",
     "module_class": "MemoryBackend",
     "filename": "./example_configs/data_for_memory_config.json"
   },
@@ -8,7 +8,7 @@
     "max_page_size": 100
   },
   "auth": {
-    "module": "medallion.backends.auth_memory_backend",
+    "module": "medallion.backends.auth.memory_auth",
     "module_class": "AuthMemoryBackend",
     "users": {
       "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",

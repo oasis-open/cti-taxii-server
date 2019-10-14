@@ -1,13 +1,22 @@
+#!/usr/bin/env python
+
 import argparse
-import datetime
 import json
 import sys
 import uuid
 
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
 import six
 from werkzeug.security import generate_password_hash
+
+from medallion.utils.common import format_datetime, get_timestamp
+
+try:
+    from pymongo import MongoClient
+    from pymongo.errors import ConnectionFailure
+except ImportError:
+    raise ImportError("'pymongo' package is required to use this module.")
+
+
 
 
 def make_connection(uri):
@@ -25,24 +34,24 @@ def add_auth_data_from_file(client, data):
     # Insert the new user.
     db = client['auth']
     users = db['users']
-
-    data['user']['created'] = '{:%Y-%m-%dT%H:%M:%S}'.format(datetime.datetime.utcnow())
-
-    users.insert_one(data['user'])
-
     api_keys = db['api_keys']
 
-    data['api_key']['created'] = '{:%Y-%m-%dT%H:%M:%S}'.format(datetime.datetime.utcnow())
+    timestamp = get_timestamp()
 
+    data['user']['created'] = format_datetime(timestamp)
+    data['api_key']['created'] = format_datetime(timestamp)
+
+    users.insert_one(data['user'])
     api_keys.insert_one(data['api_key'])
 
 
 def add_api_key_for_user(client, email):
     api_key = str(uuid.uuid4()).replace('-', '')
+    timestamp = get_timestamp()
     api_key_obj = {
         "_id": api_key,
         "user_id": email,
-        "created": '{:%Y-%m-%dT%H:%M:%S}'.format(datetime.datetime.utcnow()),
+        "created": format_datetime(timestamp),
         "last_used_at": "",
         "last_used_from": ""
     }
@@ -72,7 +81,7 @@ def add_user(client, user):
 def main():
     uri = "mongodb://root:example@localhost:27017/"
 
-    parser = argparse.ArgumentParser('%prog [OPTIONS]', description='Auth DB Utils')
+    parser = argparse.ArgumentParser('medallion mongo-authdb script  [OPTIONS]', description='Auth DB Utils')
 
     group = parser.add_mutually_exclusive_group()
 
@@ -105,13 +114,15 @@ def main():
 
         password_hash = generate_password_hash(password1)
 
+        timestamp = get_timestamp()
+
         user = {
             "_id": email,
             "password": password_hash,
             "company_name": company_name,
             "contact_name": contact_name,
-            "created": '{:%Y-%m-%dT%H:%M:%S}'.format(datetime.datetime.utcnow()),
-            "updated": ""
+            "created": format_datetime(timestamp),
+            "updated": format_datetime(timestamp),
         }
 
         add_user(client, user)

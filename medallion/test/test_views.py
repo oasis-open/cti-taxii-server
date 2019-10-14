@@ -65,7 +65,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         io = six.StringIO(response)
         return json.load(io)
 
-    @mock.patch('medallion.backends.base.Backend')
+    @mock.patch('medallion.backends.taxii.base.Backend')
     def test_responses_include_range_headers(self, mock_backend):
         """ This test confirms that the expected endpoints are returning the Accept-Ranges
         HTTP header as per section 3.4 of the specification """
@@ -106,7 +106,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         # ------------- END: test objects endpoint ------------- #
 
-    @mock.patch('medallion.backends.base.Backend')
+    @mock.patch('medallion.backends.taxii.base.Backend')
     def test_response_status_headers_for_large_responses(self, mock_backend):
         """ This test confirms that the expected endpoints are returning the Accept-Ranges and
         Content-Range headers as well as a HTTP 206 for large responses. Refer section 3.4.3
@@ -154,7 +154,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         # ------------- END: test large result set ------------- #
 
-    @mock.patch('medallion.backends.base.Backend')
+    @mock.patch('medallion.backends.taxii.base.Backend')
     def test_bad_range_request(self, mock_backend):
         """ This test should return a HTTP 416 for a range request that cannot be satisfied. Refer 3.4.2 in
         the TAXII specification. """
@@ -174,7 +174,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         self.assertEqual(416, r.status_code)
         self.assertEqual(r.headers.get('Content-Range'), 'items */10')
 
-    @mock.patch('medallion.backends.base.Backend')
+    @mock.patch('medallion.backends.taxii.base.Backend')
     def test_invalid_range_request(self, mock_backend):
         """ This test should return a HTTP 400 with a message that the request contains a malformed
         range request header. """
@@ -193,7 +193,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         self.assertEqual(400, r.status_code)
 
-    @mock.patch('medallion.backends.base.Backend')
+    @mock.patch('medallion.backends.taxii.base.Backend')
     def test_content_range_header_empty_response(self, mock_backend):
         """ This test checks that the Content-Range header is correctly formed for queries that return
         an empty (zero record) response. """

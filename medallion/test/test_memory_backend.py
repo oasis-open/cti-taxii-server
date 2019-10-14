@@ -8,10 +8,9 @@ from flask import current_app
 import six
 
 from medallion import set_backend_config, test, verify_basic_auth
+from medallion.test.base_test import TaxiiTest
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
-
-from .base_test import TaxiiTest
 
 
 class TestTAXIIWithNoTAXIISection(TaxiiTest):

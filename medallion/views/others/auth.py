@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from flask import Blueprint, abort, current_app, jsonify, request
 from werkzeug.security import check_password_hash
 
@@ -14,7 +12,6 @@ def login():
     if not auth_info:
         abort(400)
     username, password = auth_info['username'], auth_info['password']
-
     password_hash = current_app.auth_backend.get_password_hash(username)
 
     if not password_hash or not check_password_hash(password_hash, password):
@@ -35,7 +32,3 @@ def routes():
         }
         for rule in current_app.url_map.iter_rules()
     ])
-
-
-if __name__ == '__main__':
-    pass

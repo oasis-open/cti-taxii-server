@@ -31,7 +31,7 @@ auth = MultiAuth(None)
 DEFAULT_TAXII = {'max_page_size': 100}
 
 DEFAULT_AUTH = {
-    "module": "medallion.backends.auth_memory_backend",
+    "module": "medallion.backends.auth.memory_auth",
     "module_class": "AuthMemoryBackend",
     "users": {
         "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344"
@@ -42,7 +42,7 @@ DEFAULT_AUTH = {
 }
 
 DEFAULT_BACKEND = {
-    "module": "medallion.backends.memory_backend",
+    "module": "medallion.backends.taxii.memory_backend",
     "module_class": "MemoryBackend",
     "filename": "./medallion/test/data/memory_backend_no_data.json"
 }
@@ -101,8 +101,8 @@ def register_blueprints(app):
     from medallion.views import discovery
     from medallion.views import manifest
     from medallion.views import objects
-    from medallion.views.auth import auth_bp
-    from medallion.views.healthcheck import healthecheck_bp
+    from medallion.views.others.auth import auth_bp
+    from medallion.views.others.healthcheck import healthecheck_bp
 
     log.debug("Registering medallion blueprints into {}".format(app))
     app.register_blueprint(collections.mod)

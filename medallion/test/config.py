@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-
 def _base_config(backend, auth):
     return {
         'flask': {
@@ -18,11 +15,11 @@ def _base_config(backend, auth):
 
 def memory_config(data_file):
     return _base_config({
-        "module": "medallion.backends.memory_backend",
+        "module": "medallion.backends.taxii.memory_backend",
         "module_class": "MemoryBackend",
         "filename": data_file
     }, {
-        "module": "medallion.backends.auth_memory_backend",
+        "module": "medallion.backends.auth.memory_auth",
         "module_class": "AuthMemoryBackend",
         "users": {
             "admin": "pbkdf2:sha256:150000$xaVt57AC$6edb6149e820fed48495f21bcf98bcc8663cd413bbd97b91d72c671f8f445bea",
@@ -39,7 +36,7 @@ def memory_config(data_file):
 
 def directory_config():
     return _base_config({
-        "module": "medallion.backends.directory_backend",
+        "module": "medallion.backends.taxii.directory_backend",
         "module_class": "DirectoryBackend",
         "path": "./medallion/test/directory/",
         "discovery": {
@@ -67,7 +64,7 @@ def directory_config():
             ]
         }
     }, {
-        "module": "medallion.backends.auth_memory_backend",
+        "module": "medallion.backends.auth.memory_auth",
         "module_class": "AuthMemoryBackend",
         "users": {
             "admin": "pbkdf2:sha256:150000$xaVt57AC$6edb6149e820fed48495f21bcf98bcc8663cd413bbd97b91d72c671f8f445bea",
@@ -84,11 +81,11 @@ def directory_config():
 
 def mongodb_config():
     return _base_config({
-        "module": "medallion.backends.mongodb_backend",
+        "module": "medallion.backends.taxii.mongodb_backend",
         "module_class": "MongoBackend",
         "uri": "mongodb://root:example@localhost:27017/"
     }, {
-        "module": "medallion.backends.auth_memory_backend",
+        "module": "medallion.backends.auth.memory_auth",
         "module_class": "AuthMemoryBackend",
         "users": {
             "admin": "pbkdf2:sha256:150000$xaVt57AC$6edb6149e820fed48495f21bcf98bcc8663cd413bbd97b91d72c671f8f445bea",
@@ -101,7 +98,3 @@ def mongodb_config():
             "abcdef": "user1"
         }
     })
-
-
-if __name__ == '__main__':
-    pass

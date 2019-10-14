@@ -1,10 +1,10 @@
 import copy
 import json
 
-from ..exceptions import ProcessingError
-from ..filters.basic_filter import BasicFilter
-from ..utils.common import create_bundle, generate_status, iterpath
-from .base import Backend
+from medallion.backends.taxii.base import Backend
+from medallion.exceptions import ProcessingError
+from medallion.filters.basic_filter import BasicFilter
+from medallion.utils.common import create_bundle, generate_status, iterpath
 
 
 class MemoryBackend(Backend):

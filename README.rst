@@ -101,10 +101,11 @@ To use the Directory backend plugin, include the following in the <config-file>:
 .. code:: json
 
     {
-         "backend": {
+        "backend": {
             "module": "medallion.backends.directory_backend",
             "module_class": "DirectoryBackend",
-            "path": "<path to directory>",
+            "path": "<path to directory>"
+        }
     }
 
 The directory backend config also contains information for certain requests to the TAXII 2.0 server.
@@ -141,14 +142,16 @@ Here is an example:
 
 .. code:: json
 
-    "users": {
-      "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
-      "user1": "pbkdf2:sha256:150000$TVpGAgEI$dd391524abb0d9107ff5949ef512c150523c388cfa6490d8556d604f90de329e",
-      "user2": "pbkdf2:sha256:150000$CUo7l9Vz$3ff2da22dcb84c9ba64e2df4d1ee9f7061c1da4f8506618f53457f615178e3f3"
-    },
-    "api_keys": {
-      "123456": "admin",
-      "abcdef": "user1"
+    {
+        "users": {
+            "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
+            "user1": "pbkdf2:sha256:150000$TVpGAgEI$dd391524abb0d9107ff5949ef512c150523c388cfa6490d8556d604f90de329e",
+            "user2": "pbkdf2:sha256:150000$CUo7l9Vz$3ff2da22dcb84c9ba64e2df4d1ee9f7061c1da4f8506618f53457f615178e3f3"
+        },
+        "api_keys": {
+            "123456": "admin",
+            "abcdef": "user1"
+        }
     }
 
 *Note: the plaintext passwords for the above example are:*
@@ -200,46 +203,48 @@ To use the Memory Authorization backend plugin, include the following in the <co
 
 .. code:: json
 
-  "auth": {
-    "module": "medallion.backends.auth_memory_backend",
-    "module_class": "AuthMemoryBackend",
-    "users": {
-    },
-    "api_keys": {
+    {
+        "auth": {
+            "module": "medallion.backends.auth_memory_backend",
+            "module_class": "AuthMemoryBackend",
+            "users": {},
+            "api_keys": {}
+        }
     }
-  }
 
 To use the Mongo DB Authorization backend plugin, include the following in the <config-file>:
 
 .. code:: json
 
-  "auth": {
-    "module": "medallion.backends.auth_mongodb_backend",
-    "module_class": "AuthMongodbBackend",
-    "uri": "mongodb://root:example@localhost:27017/",
-    "db_name": "auth"
-  }
+    {
+        "auth": {
+            "module": "medallion.backends.auth_mongodb_backend",
+            "module_class": "AuthMongodbBackend",
+            "uri": "mongodb://root:example@localhost:27017/",
+            "db_name": "auth"
+        }
+    }
 
 The structure expected by the mongo db authorization backend code is:
 
 .. code:: json
 
     {
-      "user": {
-        "_id": "user@example.com",
-        "password": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
-        "company_name": "Example Organization",
-        "contact_name": "User",
-        "created": "",
-        "updated": ""
-      },
-      "api_key": {
-        "_id": "<api_key>",
-        "user_id": "user@example.com",
-        "created": "",
-        "last_used_at": "",
-        "last_used_from": ""
-      }
+        "user": {
+            "_id": "user@example.com",
+            "password": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
+            "company_name": "Example Organization",
+            "contact_name": "User",
+            "created": "",
+            "updated": ""
+        },
+        "api_key": {
+            "_id": "<api_key>",
+            "user_id": "user@example.com",
+            "created": "",
+            "last_used_at": "",
+            "last_used_from": ""
+        }
     }
 
 A script for adding users and api-keys is included `auth_db_utils.py <https:medallion/scripts/auth_db_utils.py>`_
@@ -250,8 +255,8 @@ Multiple authorization are supported by *medallion* at the same time and can be 
 
     {
         "multi-auth": [
-           "basic",
-           "api_key"
+            "basic",
+            "api_key"
         ]
     }
 
