@@ -1,7 +1,7 @@
 import copy
 import datetime as dt
 
-from ..utils.common import convert_to_stix_datetime
+from medallion.utils.common import convert_to_stix_datetime
 
 
 class BasicFilter(object):

@@ -1,17 +1,18 @@
 import copy
 import json
 
-from ..exceptions import ProcessingError
-from ..filters.basic_filter import BasicFilter
-from ..utils.common import create_bundle, generate_status, iterpath
-from .base import Backend
+from medallion.backends.taxii.base import Backend
+from medallion.exceptions import ProcessingError
+from medallion.filters.basic_filter import BasicFilter
+from medallion.utils.common import create_bundle, generate_status, iterpath
 
 
 class MemoryBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, filename=None, **kwargs):
+    def __init__(self, **kwargs):
+        filename = kwargs.get("filename")
         if filename:
             self.load_data_from_file(filename)
         else:

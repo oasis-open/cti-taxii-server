@@ -80,46 +80,83 @@ Make sure medallion is using the same port that your TAXII client will be connec
 
 The <config_file> contains:
 
-- configuration information for the backend plugin
+- configuration information for the backend STIX 2.0 data plugin
+- configuration information for the backend authorization plugin
 - a simple user name/password dictionary
 
-To use the Memory back-end plug, include the following in the <config-file>:
+To use the Memory backend plugin, include the following in the <config-file>:
 
-.. code:: python
+.. code:: json
 
     {
         "backend": {
             "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
-            "filename": <path to json file with initial data>
+            "filename": "<path to json file with initial data>"
         }
     }
 
-To use the Mongo DB back-end plug, include the following in the <config-file>:
+To use the Directory backend plugin, include the following in the <config-file>:
 
-.. code:: python
+.. code:: json
+
+    {
+        "backend": {
+            "module": "medallion.backends.directory_backend",
+            "module_class": "DirectoryBackend",
+            "path": "<path to directory>"
+        }
+    }
+
+The directory backend config also contains information for certain requests to the TAXII 2.0 server.
+A complete config can be seen in this `example <https:/example_configs/directory_backend_config_auth_from_file.json>`_
+
+The directory backend uses the path pointed to by the path config as its root. Each directory within becomes a TAXII 2.0
+api root. STIX 2.0 bundles as JSON files can be placed within the root, and the contents of each file will be aggregated
+into a single collection.
+
+The directory backend caches the contents of the files in memory and is best suited for frequent reads and
+infrequent writes.
+
+To use the Mongo DB backend plugin, include the following in the <config-file>:
+
+.. code:: json
 
     {
          "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "uri": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+            "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
          }
     }
 
 *Note: A Mongo DB should be available at some URL when using the Mongo DB back-end*
 
-A description of the Mongo DB structure expected by the mongo db backend code is
-described in `the documentation
-<https://medallion.readthedocs.io/en/latest/mongodb_schema.html>`_.
+A description of the Mongo DB structure expected by the mongo db STIX 2.0 data backend code is described in
+`the documentation <https://medallion.readthedocs.io/en/latest/mongodb_schema.html>`_.
 
-As required by the TAXII specification, *medallion* supports HTTP Basic
-authorization.  However, the user names and passwords are currently stored in
-the <config_file> in plain text.
+As required by the TAXII specification, *medallion* supports HTTP Basic authorization. In addition, *medallion* supports
+API Token authorization and JWT authorization. When stored in the <config-file>, passwords are encrypted.
 
 Here is an example:
 
-.. code:: python
+.. code:: json
+
+    {
+        "users": {
+            "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
+            "user1": "pbkdf2:sha256:150000$TVpGAgEI$dd391524abb0d9107ff5949ef512c150523c388cfa6490d8556d604f90de329e",
+            "user2": "pbkdf2:sha256:150000$CUo7l9Vz$3ff2da22dcb84c9ba64e2df4d1ee9f7061c1da4f8506618f53457f615178e3f3"
+        },
+        "api_keys": {
+            "123456": "admin",
+            "abcdef": "user1"
+        }
+    }
+
+*Note: the plaintext passwords for the above example are:*
+
+.. code:: json
 
     {
         "users": {
@@ -128,6 +165,19 @@ Here is an example:
            "user2": "Password2"
         }
     }
+
+If JWT authorization is used, a secret key is required in the config:
+
+.. code:: json
+
+    {
+        "flask": {
+            "SECRET_KEY": "CHANGE_ME"
+        }
+    }
+
+A script for generating user passwords is included
+`generate_user_password.py <https:medallion/scripts/generate_user_password.py>`_
 
 The authorization is enabled using the python package
 `flask_httpauth <https://flask-httpauth.readthedocs.io>`_.
@@ -146,6 +196,71 @@ Configs may also contain a "taxii" section as well, as shown below:
 
 All TAXII servers require a config, though if any of the sections specified above
 are missing, they will be filled with default values.
+
+The backend for authorization can also be configured in the <config-file>:
+
+To use the Memory Authorization backend plugin, include the following in the <config-file>:
+
+.. code:: json
+
+    {
+        "auth": {
+            "module": "medallion.backends.auth_memory_backend",
+            "module_class": "AuthMemoryBackend",
+            "users": {},
+            "api_keys": {}
+        }
+    }
+
+To use the Mongo DB Authorization backend plugin, include the following in the <config-file>:
+
+.. code:: json
+
+    {
+        "auth": {
+            "module": "medallion.backends.auth_mongodb_backend",
+            "module_class": "AuthMongodbBackend",
+            "uri": "mongodb://root:example@localhost:27017/",
+            "db_name": "auth"
+        }
+    }
+
+The structure expected by the mongo db authorization backend code is:
+
+.. code:: json
+
+    {
+        "user": {
+            "_id": "user@example.com",
+            "password": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
+            "company_name": "Example Organization",
+            "contact_name": "User",
+            "created": "",
+            "updated": ""
+        },
+        "api_key": {
+            "_id": "<api_key>",
+            "user_id": "user@example.com",
+            "created": "",
+            "last_used_at": "",
+            "last_used_from": ""
+        }
+    }
+
+A script for adding users and api-keys is included `auth_db_utils.py <https:medallion/scripts/auth_db_utils.py>`_
+
+Multiple authorization are supported by *medallion* at the same time and can be added to the <config-file>:
+
+.. code:: json
+
+    {
+        "multi-auth": [
+            "basic",
+            "api_key"
+        ]
+    }
+
+Additional configurations can be seen in `example_configs <https:/example_configs>`_
 
 We welcome contributions for other back-end plugins.
 

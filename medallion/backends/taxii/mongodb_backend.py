@@ -1,13 +1,17 @@
 import logging
 
-from pymongo import ASCENDING, MongoClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from medallion.backends.taxii.base import Backend
+from medallion.exceptions import MongoBackendError, ProcessingError
+from medallion.filters.mongodb_filter import MongoDBFilter
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, get_timestamp)
 
-from ..exceptions import MongoBackendError, ProcessingError
-from ..filters.mongodb_filter import MongoDBFilter
-from ..utils.common import (create_bundle, format_datetime, generate_status,
-                            get_timestamp)
-from .base import Backend
+try:
+    from pymongo import ASCENDING, MongoClient
+    from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+except ImportError:
+    raise ImportError("'pymongo' package is required to use this module.")
+
 
 # Module-level logger
 log = logging.getLogger(__name__)
@@ -29,7 +33,8 @@ class MongoBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, uri=None, **kwargs):
+    def __init__(self, **kwargs):
+        uri = kwargs.get("uri")
         try:
             self.client = MongoClient(uri)
         except ConnectionFailure:

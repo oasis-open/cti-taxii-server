@@ -53,10 +53,13 @@ setup(
         "Flask-HTTPAuth",
         "pytz",
         "six",
+        "pyjwt",
     ],
     entry_points={
         "console_scripts": [
             "medallion = medallion.scripts.run:main",
+            "medallion-generate-user-pass = medallion.scripts.generate_user_password:main",
+            "medallion-mongo-db-utils = medallion.scripts.auth_db_utils:main",
         ],
     },
     extras_require={

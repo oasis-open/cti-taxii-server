@@ -5,11 +5,10 @@ import uuid
 import six
 
 from medallion import test
+from medallion.test.base_test import TaxiiTest
 from medallion.test.generic_initialize_mongodb import connect_to_client
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
-
-from .base_test import TaxiiTest
 
 
 class TestTAXIIServerWithMongoDBBackend(TaxiiTest):

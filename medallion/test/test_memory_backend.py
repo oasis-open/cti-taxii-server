@@ -7,11 +7,10 @@ import uuid
 from flask import current_app
 import six
 
-from medallion import set_config, test
+from medallion import set_backend_config, test, verify_basic_auth
+from medallion.test.base_test import TaxiiTest
 from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
-
-from .base_test import TaxiiTest
 
 
 class TestTAXIIWithNoTAXIISection(TaxiiTest):
@@ -25,7 +24,7 @@ class TestTAXIIWithNoAuthSection(TaxiiTest):
     type = "no_auth"
 
     def test_default_userpass_auth(self):
-        assert current_app.users_backend.get("user") == "pass"
+        assert verify_basic_auth("admin", "Password0")
 
 
 class TestTAXIIWithNoBackendSection(TaxiiTest):
@@ -39,7 +38,7 @@ class TestTAXIIWithNoConfig(TaxiiTest):
     type = "memory_no_config"
 
     def test_default_userpass_config(self):
-        assert current_app.users_backend.get("user") == "pass"
+        assert verify_basic_auth("admin", "Password0")
 
     def test_server_discovery_backend(self):
         assert current_app.medallion_backend.data == {}
@@ -406,7 +405,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             configuration = copy.deepcopy(self.configuration)
             configuration["backend"]["filename"] = f.name
 
-            set_config(self.app, "backend", configuration)
+            set_backend_config(self.app, configuration["backend"])
 
             r_get = self.client.get(
                 test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
