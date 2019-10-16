@@ -187,10 +187,10 @@
                         "type": "indicator",
                         "valid_from": "2016-11-03T12:30:59.000Z"
                     },
-		    {
+		                {
                         "created": "2016-11-03T12:30:59.000Z",
                         "description": "Accessing this url will infect your machine with malware.",
-			"id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
+						            "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
                         "spec_version": "2.1",
                         "indicator_types": [
                             "url-watchlist"

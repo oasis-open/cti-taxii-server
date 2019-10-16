@@ -5,9 +5,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
-from ..utils.common import (create_resource, determine_version,
-                            format_datetime, generate_status,
-                            generate_status_details)
+from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details
 from .base import Backend
 
 # Module-level logger

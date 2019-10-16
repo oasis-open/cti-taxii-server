@@ -3,9 +3,7 @@ import json
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import (create_resource, determine_version,
-                            format_datetime, generate_status,
-                            generate_status_details, iterpath)
+from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details, iterpath
 from .base import Backend
 
 
@@ -40,13 +38,11 @@ class MemoryBackend(Backend):
         api_info = self._get(api_root)
         collections = api_info.get("collections", [])
         media_type_fmt = "application/taxii+json; version={}"
-
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
                 request_time = format_datetime(request_time)
                 media_type = media_type_fmt.format(new_obj.get("spec_version", "2.1"))
-
                 # version is a single value now, therefore a new manifest is always created
                 collection["manifest"].append(
                     {
