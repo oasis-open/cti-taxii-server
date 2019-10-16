@@ -15,13 +15,11 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_collections(self, api_root, start_index, end_index):
+    def get_collections(self, api_root):
         """
         Fill:
             Implement the get_collections TAXII endpoint by obtaining the collection metadata
             for this api_root
-            start_index (int): the index within the query results to start returning results from	
-            end_index (int): the last index within the query include in the result set
 
         Args:
             api_root (str): the name of the api_root.
