@@ -15,11 +15,13 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_collections(self, api_root):
+    def get_collections(self, api_root, start_index, end_index):
         """
         Fill:
             Implement the get_collections TAXII endpoint by obtaining the collection metadata
             for this api_root
+            start_index (int): the index within the query results to start returning results from	
+            end_index (int): the last index within the query include in the result set
 
         Args:
             api_root (str): the name of the api_root.
@@ -46,7 +48,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, start_index, end_index):
         """
         Fill:
             Implement the get_object_manifest TAXII endpoint by obtaining the metadata
@@ -57,6 +59,8 @@ class Backend(object):
             collection_id (str): the id of the collection
             filter_args (str): query string from URL containing filter args
             allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            start_index (int): the index within the query results to start returning results from	
+            end_index (int): the last index within the query include in the result set
 
         Returns:
             tuple containing the total count of matching objects, and a collection of metadata for the objects
@@ -96,7 +100,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, start_index, end_index):
         """
         Fill:
             Implement the get_objects TAXII endpoint by obtaining the data from a collection
@@ -107,6 +111,8 @@ class Backend(object):
             filter_args (str): query string from URL containing filter args, plus start index and page
                                 size to support pagination.
             allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            start_index (int): the index within the query results to start returning results from	
+            end_index (int): the last index within the query include in the result set
 
         Returns:
             tuple containing the total count of matching objects, and a collection of objects containing
