@@ -5,7 +5,7 @@ import pytz
 from six import iteritems, text_type
 
 
-def generate_stix20_id(sdo_type):
+def generate_stix21_id(sdo_type):
     return "{sdo_type}--{uuid}".format(
         sdo_type=sdo_type,
         uuid=text_type(uuid.uuid4()),
@@ -14,11 +14,19 @@ def generate_stix20_id(sdo_type):
 
 def create_bundle(o):
     return {
-        "id": generate_stix20_id("bundle"),
+        "id": generate_stix21_id("bundle"),
         "objects": o,
-        "spec_version": "2.0",
+        "spec_version": "2.1",
         "type": "bundle",
     }
+
+
+def create_resource(resource_name, o, more=False):
+    return {resource_name: o, "more": more}
+
+
+def determine_version(new_obj, request_time):
+    return new_obj.get("modified", new_obj.get("created", format_datetime(request_time)))
 
 
 def get(data, key):
@@ -108,10 +116,10 @@ def convert_to_stix_datetime(timestamp_string):
 
 def generate_status(
     request_time, status, succeeded, failed, pending,
-    successes_ids=None, failures=None, pendings=None,
+    successes=None, failures=None, pendings=None,
 ):
     status = {
-        "id": "%s" % uuid.uuid4(),
+        "id": str(uuid.uuid4()),
         "status": status,
         "request_timestamp": request_time,
         "total_count": succeeded + failed + pending,
@@ -120,11 +128,23 @@ def generate_status(
         "pending_count": pending,
     }
 
-    if successes_ids:
-        status["successes"] = successes_ids
+    if successes:
+        status["successes"] = successes
     if failures:
         status["failures"] = failures
     if pendings:
         status["pendings"] = pendings
 
     return status
+
+
+def generate_status_details(id, version, message=None):
+    status_details = {
+        "id": id,
+        "version": version
+    }
+
+    if message:
+        status_details["message"] = message
+
+    return status_details

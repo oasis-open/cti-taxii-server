@@ -27,7 +27,7 @@ class TaxiiTest(unittest.TestCase):
                 "valid_from": "2017-01-27T13:49:53.935382Z",
             },
         ],
-        "spec_version": "2.0",
+        "spec_version": "2.1",
         "type": "bundle",
     }
 
