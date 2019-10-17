@@ -4,11 +4,20 @@
     "module_class": "MongoBackend",
     "uri": "mongodb://root:example@mongo:27017/"
   },
-  "users": {
-    "admin": "Password0",
-    "user1": "Password1",
-    "user2": "Password2"
+  "auth": {
+    "module": "medallion.backends.auth.mongodb_auth",
+    "module_class": "AuthMongodbBackend",
+    "uri": "mongodb://root:example@localhost:27017/",
+    "db_name": "auth"
   },
+  "users": {
+    "admin": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344",
+    "user1": "pbkdf2:sha256:150000$TVpGAgEI$dd391524abb0d9107ff5949ef512c150523c388cfa6490d8556d604f90de329e",
+    "user2": "pbkdf2:sha256:150000$CUo7l9Vz$3ff2da22dcb84c9ba64e2df4d1ee9f7061c1da4f8506618f53457f615178e3f3"
+  },
+  "multi-auth": [
+    "basic"
+  ],
   "taxii": {
     "max_page_size": 100
   }
