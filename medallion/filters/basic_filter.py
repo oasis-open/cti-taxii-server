@@ -128,9 +128,8 @@ class BasicFilter(object):
                 obj_time = convert_to_stix_datetime(obj[obj_att])
                 if obj_time in actual_dates:
                     pos = bisect.bisect_left(id_track, obj["id"])
-                    if not res or pos > len(id_track) - 1 or id_track[pos] != obj["id"]:
-                        id_track.insert(pos, obj["id"])
-                        res.insert(pos, obj)
+                    id_track.insert(pos, obj["id"])
+                    res.insert(pos, obj)
             final_match = res
             final_track = id_track
 
