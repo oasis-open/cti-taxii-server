@@ -120,9 +120,10 @@ class MongoDBFilter(BasicFilter):
             pipeline.append({"$replaceRoot": {"newRoot": "$obj"}})
 
             # Redact the result set removing objects where the modified date is not in
-            # the versions array and the object isn't in the correct collection.
+            # the version field and the object isn't in the correct collection.
             # The collection filter is required because the join between manifests and objects
-            # does not include collection_id
+            # does not include collection_id.
+            #
             col_id = self.full_query["_collection_id"]["$eq"]
             redact_objects = {
                 "$redact": {
@@ -134,7 +135,7 @@ class MongoDBFilter(BasicFilter):
                                     "$switch": {
                                         "branches": [
                                             {"case": {"$eq": ["$modified", "$version"]}, "then": True},
-                                            {"case": {"$eq": ["$created", "$version"]}, "then": True},
+                                            {"case": {"$and": [{"$eq": ["$created", "$version"]}, {"$not": ["$modified"]}]}, "then": True},
                                             {"case": {"$eq": ["$_date_added", "$version"]}, "then": True},
                                         ],
                                         "default": False,
