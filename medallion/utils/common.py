@@ -24,7 +24,7 @@ def determine_spec_version(obj):
         # For now the only way to identify one is checking the created and modified
         # are both missing.
         return "2.1"
-    obj.get("spec_version", "2.0")
+    return obj.get("spec_version", "2.0")
 
 
 def get(data, key):
