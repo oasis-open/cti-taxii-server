@@ -3,7 +3,9 @@ import json
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details, iterpath
+from ..utils.common import (create_resource, determine_version,
+                            format_datetime_micro, generate_status,
+                            generate_status_details, iterpath)
 from .base import Backend
 
 
@@ -11,9 +13,9 @@ class MemoryBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, filename=None, **kwargs):
-        if filename:
-            self.load_data_from_file(filename)
+    def __init__(self, **kwargs):
+        if kwargs.get("filename"):
+            self.load_data_from_file(kwargs.get("filename"))
         else:
             self.data = {}
 
@@ -42,7 +44,7 @@ class MemoryBackend(Backend):
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
-                request_time = format_datetime(request_time)
+                request_time = format_datetime_micro(request_time)
                 media_type = media_type_fmt.format(new_obj.get("spec_version", "2.0"))
 
                 # version is a single value now, therefore a new manifest is always created
@@ -59,7 +61,7 @@ class MemoryBackend(Backend):
 
     def get_collections(self, api_root):
         if api_root not in self.data:
-            return None, None  # must return None so 404 is raised
+            return None  # must return None so 404 is raised
 
         api_info = self._get(api_root)
         collections = copy.deepcopy(api_info.get("collections", []))
@@ -186,7 +188,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                request_time, "complete", succeeded,
+                format_datetime_micro(request_time), "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )

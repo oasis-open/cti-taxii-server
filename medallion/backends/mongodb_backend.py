@@ -5,7 +5,9 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
-from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details
+from ..utils.common import (create_resource, determine_spec_version,
+                            determine_version, format_datetime_micro,
+                            generate_status, generate_status_details)
 from .base import Backend
 
 # Module-level logger
@@ -28,21 +30,21 @@ class MongoBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, uri=None, **kwargs):
+    def __init__(self, **kwargs):
         try:
-            self.client = MongoClient(uri)
+            self.client = MongoClient(kwargs.get("uri"))
         except ConnectionFailure:
-            log.error("Unable to establish a connection to MongoDB server {}".format(uri))
+            log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
 
     @catch_mongodb_error
     def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         collection_info = api_root_db["collections"]
-        media_type_fmt = "application/stix+json; version={}"
+        media_type_fmt = "application/stix+json;version={}"
 
         obj_version = determine_version(new_obj, request_time)
-        media_type = media_type_fmt.format(new_obj.get("spec_version", "2.0"))
+        media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
         # version is a single value now, therefore a new manifest is created always
         manifest_info.insert_one(
@@ -135,7 +137,7 @@ class MongoBackend(Backend):
                     obj.pop("_collection_id", None)
                     obj.pop("_type", None)
                     # format date_added which is an ISODate object
-                    obj["date_added"] = format_datetime(obj["date_added"])
+                    obj["date_added"] = format_datetime_micro(obj["date_added"])
         return create_resource("objects", objects_found)
 
     @catch_mongodb_error
@@ -222,7 +224,7 @@ class MongoBackend(Backend):
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            format_datetime(request_time), "complete", succeeded, failed,
+            format_datetime_micro(request_time), "complete", succeeded, failed,
             pending, successes=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)

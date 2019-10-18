@@ -31,7 +31,7 @@ class MongoDBFilter(BasicFilter):
             match_spec_version = self.filter_args.get("match[spec_version]")
             if match_spec_version and "spec_version" in allowed:
                 spec_versions = match_spec_version.split(",")
-                media_fmt = "application/stix+json; version={}"
+                media_fmt = "application/stix+json;version={}"
                 if len(spec_versions) == 1:
                     parameters["media_type"] = {"$eq": media_fmt.format(spec_versions[0])}
                 else:
@@ -74,14 +74,14 @@ class MongoDBFilter(BasicFilter):
 
                 pipeline.append({"$group": {"_id": "$id", "versions": {"$push": "$$ROOT"}}})
 
-                # The versions array in the mongodb document is ordered newest to oldest, so the 'last'
-                # (most recent date) is in first position in the list and the oldest 'first' is in
-                # the last position (equal to index -1 for $arrayElemAt)
+                # The versions array in the mongodb document is ordered oldest to newest, so the 'last'
+                # (most recent date) is in last position in the list and the oldest 'first' is in
+                # the first position.
                 version_selector = []
                 if "last" in match_version:
-                    version_selector.append({"$arrayElemAt": ["$versions", 0]})
-                if "first" in match_version:
                     version_selector.append({"$arrayElemAt": ["$versions", -1]})
+                if "first" in match_version:
+                    version_selector.append({"$arrayElemAt": ["$versions", 0]})
                 for d in actual_dates:
                     version_selector.append({"$arrayElemAt": ["$versions", {"$indexOfArray": ["$versions", d]}]})
                 pipeline.append({"$addFields": {"versions": version_selector}})
