@@ -58,8 +58,8 @@ class MemoryBackend(Backend):
                 )
 
                 # if the media type is new, attach it to the collection
-                if media_type not in collection["information"]["versions"]:
-                    collection["information"]["versions"].append(media_type)
+                if media_type not in collection["media_types"]:
+                    collection["media_types"].append(media_type)
 
                 # quit once you have found the collection that needed updating
                 break
