@@ -12,7 +12,6 @@ class TaxiiTest(unittest.TestCase):
         os.path.dirname(__file__), "data", "default_data.json",
     )
     API_OBJECTS_2 = {
-        "id": "bundle--8fab937e-b694-11e3-b71c-0800271e87d2",
         "objects": [
             {
                 "created": "2017-01-27T13:49:53.935Z",
@@ -23,12 +22,12 @@ class TaxiiTest(unittest.TestCase):
                 "modified": "2017-01-27T13:49:53.935Z",
                 "name": "Malicious site hosting downloader",
                 "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
+                "pattern_type": "stix",
+                "spec_version": "2.1",
                 "type": "indicator",
                 "valid_from": "2017-01-27T13:49:53.935382Z",
             },
         ],
-        "spec_version": "2.0",
-        "type": "bundle",
     }
 
     no_config = {}

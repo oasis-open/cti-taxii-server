@@ -3,7 +3,9 @@ import json
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import create_resource, determine_version, format_datetime, generate_status, generate_status_details, iterpath
+from ..utils.common import (create_resource, determine_spec_version,
+                            determine_version, format_datetime,
+                            generate_status, generate_status_details, iterpath)
 from .base import Backend
 
 
@@ -11,9 +13,9 @@ class MemoryBackend(Backend):
 
     # access control is handled at the views level
 
-    def __init__(self, filename=None, **kwargs):
-        if filename:
-            self.load_data_from_file(filename)
+    def __init__(self, **kwargs):
+        if kwargs.get("filename"):
+            self.load_data_from_file(kwargs.get("filename"))
         else:
             self.data = {}
 
@@ -37,13 +39,13 @@ class MemoryBackend(Backend):
     def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_info = self._get(api_root)
         collections = api_info.get("collections", [])
-        media_type_fmt = "application/vnd.oasis.stix+json; version={}"
+        media_type_fmt = "application/stix+json;version={}"
 
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
                 request_time = format_datetime(request_time)
-                media_type = media_type_fmt.format(new_obj.get("spec_version", "2.0"))
+                media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
                 # version is a single value now, therefore a new manifest is always created
                 collection["manifest"].append(
@@ -54,12 +56,17 @@ class MemoryBackend(Backend):
                         "media_type": media_type,
                     },
                 )
+
+                # if the media type is new, attach it to the collection
+                if media_type not in collection["media_types"]:
+                    collection["media_types"].append(media_type)
+
                 # quit once you have found the collection that needed updating
                 break
 
     def get_collections(self, api_root):
         if api_root not in self.data:
-            return None, None  # must return None so 404 is raised
+            return None  # must return None so 404 is raised
 
         api_info = self._get(api_root)
         collections = copy.deepcopy(api_info.get("collections", []))
@@ -186,7 +193,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                request_time, "complete", succeeded,
+                format_datetime(request_time), "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )

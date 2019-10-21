@@ -4,17 +4,15 @@
 medallion
 =========
 
-NOTE: This is an `OASIS TC Open Repository <https://www.oasis-open.org/resources/open-repositories/>`_.
+This is an `OASIS TC Open Repository <https://www.oasis-open.org/resources/open-repositories/>`_.
 See the `Governance`_ section for more information.
 
-*Medallion* is a minimal implementation of a TAXII 2.0 Server in Python.
+Trusted Automated Exchange of Intelligence Information (TAXII™) is an application layer protocol for the communication of cyber threat information in a simple and scalable manner.
 
-For more information, see `the
-documentation <https://medallion.readthedocs.io/>`__ on
-ReadTheDocs.
+*Medallion* is a minimal implementation of a TAXII 2.1 Server in Python.
 
 **WARNING:** *medallion* was designed as a prototype and reference
-implementation of TAXII 2.0, and is not intended for production use.
+implementation of TAXII 2.1, and is not intended for production use.
 
 *medallion* has been designed to be a simple front-end REST server providing
 access to the endpoints defined in that specification.
@@ -32,6 +30,8 @@ somewhat more robust and makes use of a MongoDB server, installed independently.
 The MongoDB back-end can only be used if the pymongo python package is
 installed. An error message will result if it is used without that package.
 
+For more information, see `the documentation <https://medallion.readthedocs.io/>`__ on
+ReadTheDocs.
 
 Installation
 ============

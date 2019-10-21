@@ -157,6 +157,25 @@ class Backend(object):
         """
         raise NotImplementedError()
 
+    def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+        """
+        Fill:
+            Implement the delete_object TAXII endpoint by obtaining the metadata for a selected
+            object
+
+        Args:
+            api_root (str): the name of the api_root.
+            collection_id (str): the id of the collection
+            object_id (str): the id of the requested object
+            filter_args (str): query string from URL containing filter args
+            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+
+        Returns:
+            Nothing.
+
+        """
+        raise NotImplementedError()
+
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         """
         Fill:

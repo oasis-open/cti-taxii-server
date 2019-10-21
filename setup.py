@@ -27,7 +27,7 @@ setup(
     version=get_version(),
     description="A TAXII 2.0 Server.",
     long_description=get_long_description(),
-    url="https://github.com/oasis-open/cti-taxii-server",
+    url="https://oasis-open.github.io/cti-documentation/",
     author="OASIS Cyber Threat Intelligence Technical Committee",
     author_email="cti-users@lists.oasis-open.org",
     maintainer="Emmanuelle Vargas-Gonzalez",
@@ -73,5 +73,10 @@ setup(
         "mongo": [
             "pymongo",
         ],
+    },
+    project_urls={
+        'Documentation': 'https://medallion.readthedocs.io/',
+        'Source Code': 'https://github.com/oasis-open/cti-taxii-server/',
+        'Bug Tracker': 'https://github.com/oasis-open/cti-taxii-server/issues/',
     },
 )
