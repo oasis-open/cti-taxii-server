@@ -872,7 +872,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
                 "can_read": True,
                 "can_write": True,
                 "media_types": [
-                    "application/vnd.oasis.stix+json; version=2.0",
+                    "application/stix+json; version=2.1",
                 ],
             }
             collections.append(col)

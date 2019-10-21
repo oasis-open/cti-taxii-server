@@ -6,7 +6,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
 from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, format_datetime_micro,
+                            determine_version, format_datetime,
                             generate_status, generate_status_details)
 from .base import Backend
 
@@ -137,7 +137,7 @@ class MongoBackend(Backend):
                     obj.pop("_collection_id", None)
                     obj.pop("_type", None)
                     # format date_added which is an ISODate object
-                    obj["date_added"] = format_datetime_micro(obj["date_added"])
+                    obj["date_added"] = format_datetime(obj["date_added"])
         return create_resource("objects", objects_found)
 
     @catch_mongodb_error
@@ -224,7 +224,7 @@ class MongoBackend(Backend):
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            format_datetime_micro(request_time), "complete", succeeded, failed,
+            format_datetime(request_time), "complete", succeeded, failed,
             pending, successes=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)

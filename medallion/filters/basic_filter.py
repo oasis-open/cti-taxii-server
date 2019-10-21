@@ -1,32 +1,70 @@
+import bisect
 import copy
-import datetime as dt
+import operator
 
 from ..utils.common import convert_to_stix_datetime
+
+
+def find_att(obj):
+    if "version" in obj:
+        return "version"
+    elif "modified" in obj:
+        return "modified"
+    elif "created" in obj:
+        return "created"
+    else:
+        # TO DO: PUT DEFAULT VALUE HERE
+        pass
+
+
+def check_for_dupes(final_match, final_track, res):
+    for obj in res:
+        found = 0
+        pos = bisect.bisect_left(final_track, obj["id"])
+        if not final_match or pos > len(final_track) - 1 or final_track[pos] != obj["id"]:
+            final_track.insert(pos, obj["id"])
+            final_match.insert(pos, obj)
+        else:
+            obj_att = find_att(obj)
+            obj_time = convert_to_stix_datetime(obj[obj_att])
+            while pos != len(final_track) and obj["id"] == final_track[pos]:
+                final_att = find_att(final_match[pos])
+                final_time = convert_to_stix_datetime(final_match[pos][final_att])
+                if final_time == obj_time:
+                    found = 1
+                    break
+                else:
+                    pos = pos + 1
+            if found == 1:
+                continue
+            else:
+                final_track.insert(pos, obj["id"])
+                final_match.insert(pos, obj)
+
+
+def check_version(data, relate):
+    id_track = []
+    res = []
+    # O(n)?
+    for obj in data:
+        pos = bisect.bisect_left(id_track, obj["id"])
+        if not res or pos >= len(id_track) or id_track[pos] != obj["id"]:
+            id_track.insert(pos, obj["id"])
+            res.insert(pos, obj)
+        else:
+            obj_att = find_att(obj)
+            obj_time = convert_to_stix_datetime(obj[obj_att])
+            comp_att = find_att(res[pos])
+            comp_time = convert_to_stix_datetime(res[pos][comp_att])
+            if relate(obj_time, comp_time):
+                res[pos] = obj
+    return res
 
 
 class BasicFilter(object):
 
     def __init__(self, filter_args):
         self.filter_args = filter_args
-
-    @staticmethod
-    def _belongs_in_class(c, obj):
-        return c[0]["id"] == obj["id"]
-
-    @staticmethod
-    def _equivalence_partition_by_id(initial_results):
-        classes = []
-        for o in initial_results:  # for each object
-            # find the class it is in
-            found = False
-            for c in classes:
-                if BasicFilter._belongs_in_class(c, o):  # is it equivalent to this class?
-                    c.append(o)
-                    found = True
-                    break
-            if not found:  # it is in a new class
-                classes.append([o])
-        return classes
 
     @staticmethod
     def filter_by_id(data, id_):
@@ -41,99 +79,69 @@ class BasicFilter(object):
         return match_objects
 
     @staticmethod
+    def filter_by_added_after(data, manifest_info, added_after_date):
+        added_after_timestamp = convert_to_stix_datetime(added_after_date)
+        new_results = []
+        # for manifest objects
+        if manifest_info is None:
+            for obj in data:
+                if obj in new_results:
+                    continue
+                added_date_timestamp = convert_to_stix_datetime(obj["date_added"])
+                if added_date_timestamp > added_after_timestamp:
+                    new_results.append(obj)
+        # for other objects with manifests
+        else:
+            for obj in data:
+                if obj in new_results:
+                    continue
+                for item in manifest_info:
+                    if item["id"] == obj["id"]:
+                        added_date_timestamp = convert_to_stix_datetime(item["date_added"])
+                        if added_date_timestamp > added_after_timestamp:
+                            new_results.append(obj)
+        return new_results
+
+    @staticmethod
     def filter_by_version(data, version):
-        # There can be more than one filter, using v_filter for looping through
-        # each filter. For example ?match[version]=first,last
-        match_objects = []
+        # final_match is a sorted list of objects
+        final_match = []
+        # final_track is a sorted list of id's
+        final_track = []
+
+        # return most recent object versions unless otherwise specified
+        if version is None:
+            version = "last"
         version_indicators = version.split(",")
 
         if "all" in version_indicators:
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [x for x in version_indicators if x != "first" and x != "last"]
-
-        first = last = None
-        t_first = t_last = None
-
-        for obj in data:
-            if obj["id"].startswith("marking-definition--"):
-                prop = "created"
-            else:
-                prop = "modified"
-            time_of_obj = dt.datetime.strptime(obj[prop], "%Y-%m-%dT%H:%M:%S.%fZ")
-            if first is None:
-                first = last = obj
-                t_first = time_of_obj
-                t_last = time_of_obj
-            else:
-                if time_of_obj < t_first:
-                    first = obj
-                    t_first = time_of_obj
-                elif time_of_obj > t_last:
-                    last = obj
-                    t_last = time_of_obj
-
-            if obj[prop] in actual_dates:
-                match_objects.append(obj)
+        actual_dates = [convert_to_stix_datetime(x) for x in version_indicators if x != "first" and x != "last"]
+        # if a specific version is given, filter for objects with that value
+        if actual_dates:
+            id_track = []
+            res = []
+            for obj in data:
+                obj_att = find_att(obj)
+                obj_time = convert_to_stix_datetime(obj[obj_att])
+                if obj_time in actual_dates:
+                    pos = bisect.bisect_left(id_track, obj["id"])
+                    id_track.insert(pos, obj["id"])
+                    res.insert(pos, obj)
+            final_match = res
+            final_track = id_track
 
         if "first" in version_indicators:
-            match_objects.append(first)
+            res = check_version(data, operator.lt)
+            check_for_dupes(final_match, final_track, res)
 
         if "last" in version_indicators:
-            match_objects.append(last)
+            res = check_version(data, operator.gt)
+            check_for_dupes(final_match, final_track, res)
 
-        return match_objects
-
-    @staticmethod
-    def is_manifest_entry(obj):
-        # "id" is required, all other properties are optional.
-        return any(prop in obj for prop in ("id", "date_added", "versions", "media_types"))
-
-    @staticmethod
-    def filter_manifest_entries_by_version(data, version):
-        match_objects = []
-        version_indicators = version.split(",")
-
-        if "all" in version_indicators:
-            # if "all" is in the list, just return everything
-            return data
-
-        actual_dates = [x for x in version_indicators if x != "first" and x != "last"]
-        for obj in data:
-            versions_returned = []
-            first = last = None
-            t_first = t_last = None
-
-            for t in obj["versions"]:
-                timestamp = dt.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%fZ")
-                if first is None:
-                    first = last = t
-                    t_first = timestamp
-                    t_last = timestamp
-                else:
-                    if timestamp < t_first:
-                        first = t
-                        t_first = timestamp
-                    elif timestamp > t_last:
-                        last = t
-                        t_last = timestamp
-
-                if t in actual_dates:
-                    versions_returned.append(t)
-
-            if "first" in version_indicators:
-                versions_returned.append(first)
-
-            if "last" in version_indicators:
-                versions_returned.append(last)
-
-            if versions_returned:
-                return_object = copy.deepcopy(obj)
-                return_object["versions"] = versions_returned
-                match_objects.append(return_object)
-
-        return match_objects
+        return final_match
 
     @staticmethod
     def filter_by_type(data, type_):
@@ -148,10 +156,30 @@ class BasicFilter(object):
 
         return match_objects
 
+    @staticmethod
+    def filter_by_spec_version(data, spec_):
+        spec_ = spec_.split(",")
+
+        match_objects = []
+
+        for obj in data:
+            if "spec_version" in obj and any(s == obj["spec_version"] for s in spec_):
+                match_objects.append(obj)
+            elif "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
+                # this is assuming all manifests will have the media_type attribute
+                # change this if there is another way
+                match_objects.append(obj)
+
+        return match_objects
+
     def process_filter(self, data, allowed, manifest_info):
         filtered_by_type = []
         filtered_by_id = []
+        filtered_by_version = []
+        filtered_by_spec_version = []
+        filtered_by_added_after = []
 
+        # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
         if match_type and "type" in allowed:
             filtered_by_type = self.filter_by_type(data, match_type)
@@ -160,51 +188,38 @@ class BasicFilter(object):
         if match_id and "id" in allowed:
             filtered_by_id = self.filter_by_id(data, match_id)
 
-        results = []
+        initial_results = []
 
         if filtered_by_type and filtered_by_id:
             for type_match in filtered_by_type:
                 for id_match in filtered_by_id:
                     if type_match == id_match:
-                        results.append(type_match)
-
+                        initial_results.append(type_match)
         elif match_type:
             if filtered_by_type:
-                results.extend(filtered_by_type)
-
+                initial_results.extend(filtered_by_type)
         elif match_id:
             if filtered_by_id:
-                results.extend(filtered_by_id)
-
+                initial_results.extend(filtered_by_id)
         else:
-            results = data
+            initial_results = copy.deepcopy(data)
 
-        match_version = self.filter_args.get("match[version]")
-        if "version" in allowed:
-            if not match_version:
-                match_version = "last"
-            # manifest_info must be None when called from get_object_manifest()
-            if len(data) > 0 and self.is_manifest_entry(data[0]) and manifest_info is None:
-                results = self.filter_manifest_entries_by_version(results, match_version)
-            else:
-                new_results = []
-                for bucket in BasicFilter._equivalence_partition_by_id(results):
-                    new_results.extend(self.filter_by_version(bucket, match_version))
-                results = new_results
+        # match for spec_version
+        match_spec_version = self.filter_args.get("match[spec_version]")
+        if match_spec_version and "spec_version" in allowed:
+            filtered_by_spec_version = self.filter_by_spec_version(initial_results, match_spec_version)
+        else:
+            filtered_by_spec_version = initial_results
+
+        # match for added_after
         added_after_date = self.filter_args.get("added_after")
-        if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
-            new_results = []
-            for obj in results:
-                info = None
-                for item in manifest_info:
-                    if item["id"] == obj["id"]:
-                        info = item
-                        break
-                if info:
-                    added_date_timestamp = convert_to_stix_datetime(info["date_added"])
-                    if added_date_timestamp > added_after_timestamp:
-                        new_results.append(obj)
-            return new_results
+        if added_after_date is not None:
+            filtered_by_added_after = self.filter_by_added_after(filtered_by_spec_version, manifest_info, added_after_date)
         else:
-            return results
+            filtered_by_added_after = filtered_by_spec_version
+
+        # match for version, and get rid of duplicates as appropriate
+        match_version = self.filter_args.get("match[version]")
+        filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
+
+        return filtered_by_version

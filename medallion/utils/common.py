@@ -13,7 +13,7 @@ def create_resource(resource_name, o, more=False):
 def determine_version(new_obj, request_time):
     """Grab the modified time if present, if not grab created time,
     if not grab request time provided by server."""
-    return new_obj.get("modified", new_obj.get("created", format_datetime_micro(request_time)))
+    return new_obj.get("modified", new_obj.get("created", format_datetime(request_time)))
 
 
 def determine_spec_version(obj):
@@ -89,26 +89,6 @@ def get_timestamp():
 
 
 def format_datetime(dttm):
-    """Given a datetime instance, produce the string representation"""
-    # 1. Convert to timezone-aware
-    # 2. Convert to UTC
-    # 3. Format in ISO format
-    # 4. Add subsecond value if non-zero
-    # 5. Add "Z"
-
-    if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
-        # dttm is timezone-naive; assume UTC
-        zoned = pytz.UTC.localize(dttm)
-    else:
-        zoned = dttm.astimezone(pytz.UTC)
-    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
-    if zoned.microsecond > 0:
-        ms = zoned.strftime("%f")
-        ts = ts + "." + ms.rstrip("0")
-    return ts + "Z"
-
-
-def format_datetime_micro(dttm):
     """Given a datetime instance, produce the string representation
     with microsecond precision"""
     # 1. Convert to timezone-aware
