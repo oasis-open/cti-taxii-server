@@ -5,24 +5,12 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
-from ..utils.common import convert_to_stix_datetime, get_timestamp
+from ..utils.common import convert_to_stix_datetime, find_att, get_timestamp
 
 mod = Blueprint("objects", __name__)
 
 # Module-level logger
 log = logging.getLogger(__name__)
-
-
-def find_att(obj):
-    if "version" in obj:
-        return "version"
-    elif "modified" in obj:
-        return "modified"
-    elif "created" in obj:
-        return "created"
-    else:
-        # TO DO: PUT DEFAULT VALUE HERE
-        pass
 
 
 def permission_to_read(api_root, collection_id):
@@ -62,6 +50,22 @@ def get_custom_headers(api_root, id_):
 
 
 def get_and_enforce_limit(api_root, id_, objects):
+    """
+    Defines TAXII API - Pagination:
+    Pagination section (3.5 <link here>`__), Get Object Manifests section (5.3 <link here>`__), and Get Objects section (5.4 <link here>`__)
+
+    Args:
+        api_root (str): the base URL of the API Root
+        id_ (str): the `identifier` of the Collection being requested
+        objects (dict): objects being returned for request (may have been filtered by other query parameters)
+
+    Returns:
+        headers:
+            header values matching objects being sent in server response
+        objects:
+            Values matching server request, sorted by ascending date_added
+
+    """
     headers = {}
     if request.args.get('limit'):
         limit = int(request.args['limit'])
@@ -99,6 +103,22 @@ def get_and_enforce_limit(api_root, id_, objects):
 
 
 def get_and_enforce_limit_versions(api_root, id_, objects):
+    """
+    Defines TAXII API - Pagination:
+    Pagination section (3.5 <link here>`__), and Get Object Versions section (5.8 <link here>`__)
+
+    Args:
+        api_root (str): the base URL of the API Root
+        id_ (str): the `identifier` of the Collection being requested
+        objects (dict): objects being returned for request (may have been filtered by other query parameters)
+
+    Returns:
+        headers:
+            header values matching objects being sent in server response
+        objects:
+            Values matching server request, sorted by ascending date_added
+
+    """
     headers = {}
     if request.args.get('limit'):
         limit = int(request.args['limit'])

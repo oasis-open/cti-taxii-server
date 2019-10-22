@@ -148,3 +148,27 @@ def generate_status_details(id, version, message=None):
         status_details["message"] = message
 
     return status_details
+
+
+def find_att(obj):
+    """
+    Used for finding the version attribute of an ambiguous object. Manifests
+    use the "version" field, but objects will use "modified", or if that's not
+    available, the "created" field.
+
+    Args:
+        obj (dict): manifest or stix object
+
+    Returns:
+        string value of the field from the object to use for versioning
+
+    """
+    if "version" in obj:
+        return "version"
+    elif "modified" in obj:
+        return "modified"
+    elif "created" in obj:
+        return "created"
+    else:
+        # TO DO: PUT DEFAULT VALUE HERE
+        pass
