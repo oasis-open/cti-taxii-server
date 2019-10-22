@@ -5,7 +5,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
-from ..utils.common import get_timestamp, convert_to_stix_datetime
+from ..utils.common import convert_to_stix_datetime, get_timestamp
 
 mod = Blueprint("objects", __name__)
 
@@ -88,11 +88,11 @@ def get_and_enforce_limit(api_root, id_, objects):
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
                     break
             objects['objects'] = new
-            #if len(times) > 0:
+            # if len(times) > 0:
             headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
             if "X-TAXII-Date-Added-Last" not in headers:
                 headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
-    
+
     except Exception as e:
         log.exception(e)
     return headers
@@ -129,7 +129,6 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
     return headers
 
 
-
 @mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, collection_id):
@@ -141,8 +140,8 @@ def get_or_add_objects(api_root, collection_id):
                 api_root, collection_id, request.args, ("id", "type", "version", "spec_version"),
             )
             if objects:
-                headers=get_and_enforce_limit(api_root, collection_id, objects)
-                #headers = get_custom_headers(api_root, collection_id)
+                headers = get_and_enforce_limit(api_root, collection_id, objects)
+                # headers = get_custom_headers(api_root, collection_id)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
@@ -171,7 +170,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
                 api_root, collection_id, object_id, request.args, ("version", "spec_version"),
             )
             if objects:
-                headers=get_and_enforce_limit(api_root, collection_id, objects)
+                headers = get_and_enforce_limit(api_root, collection_id, objects)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
@@ -199,11 +198,10 @@ def get_object_versions(api_root, collection_id, object_id):
         versions = current_app.medallion_backend.get_object_versions(
             api_root, collection_id, object_id, request.args, ("spec_version",),
         )
-        headers=get_and_enforce_limit_versions(api_root, collection_id, versions)
+        headers = get_and_enforce_limit_versions(api_root, collection_id, versions)
         return Response(
             response=json.dumps(versions),
             status=200,
             headers=headers,
             mimetype=MEDIA_TYPE_TAXII_V21,
         )
-
