@@ -28,9 +28,7 @@ def check_for_dupes(final_match, final_track, res):
             obj_att = find_att(obj)
             obj_time = convert_to_stix_datetime(obj[obj_att])
             while pos != len(final_track) and obj["id"] == final_track[pos]:
-                final_att = find_att(final_match[pos])
-                final_time = convert_to_stix_datetime(final_match[pos][final_att])
-                if final_time == obj_time:
+                if convert_to_stix_datetime(final_match[pos][find_att(final_match[pos])]) == obj_time:
                     found = 1
                     break
                 else:
@@ -52,11 +50,7 @@ def check_version(data, relate):
             id_track.insert(pos, obj["id"])
             res.insert(pos, obj)
         else:
-            obj_att = find_att(obj)
-            obj_time = convert_to_stix_datetime(obj[obj_att])
-            comp_att = find_att(res[pos])
-            comp_time = convert_to_stix_datetime(res[pos][comp_att])
-            if relate(obj_time, comp_time):
+            if relate(convert_to_stix_datetime(obj[find_att(obj)]), convert_to_stix_datetime(res[pos][find_att(res[pos])])):
                 res[pos] = obj
     return res
 
@@ -82,24 +76,20 @@ class BasicFilter(object):
     def filter_by_added_after(data, manifest_info, added_after_date):
         added_after_timestamp = convert_to_stix_datetime(added_after_date)
         new_results = []
-        # for manifest objects
+        # for manifest objects and versions
         if manifest_info is None:
             for obj in data:
-                if obj in new_results:
-                    continue
-                added_date_timestamp = convert_to_stix_datetime(obj["date_added"])
-                if added_date_timestamp > added_after_timestamp:
+                if convert_to_stix_datetime(obj["date_added"]) > added_after_timestamp:
                     new_results.append(obj)
         # for other objects with manifests
         else:
             for obj in data:
-                if obj in new_results:
-                    continue
+                obj_time = convert_to_stix_datetime(obj[find_att(obj)])
                 for item in manifest_info:
-                    if item["id"] == obj["id"]:
-                        added_date_timestamp = convert_to_stix_datetime(item["date_added"])
-                        if added_date_timestamp > added_after_timestamp:
-                            new_results.append(obj)
+                    item_time = convert_to_stix_datetime(item[find_att(item)])
+                    if item["id"] == obj["id"] and item_time == obj_time and convert_to_stix_datetime(item["date_added"]) > added_after_timestamp:
+                        new_results.append(obj)
+                        break
         return new_results
 
     @staticmethod

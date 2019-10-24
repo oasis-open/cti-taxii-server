@@ -100,13 +100,13 @@ class MemoryBackend(Backend):
             for collection in collections:
                 if "id" in collection and collection_id == collection["id"]:
                     manifest = collection.get("manifest", [])
-                    if filter_args:
-                        full_filter = BasicFilter(filter_args)
-                        manifest = full_filter.process_filter(
-                            manifest,
-                            allowed_filters,
-                            None,
-                        )
+                    # if filter_args:
+                    full_filter = BasicFilter(filter_args)
+                    manifest = full_filter.process_filter(
+                        manifest,
+                        allowed_filters,
+                        None,
+                    )
                     return create_resource("objects", manifest)
 
     def get_api_root_information(self, api_root):
@@ -133,17 +133,17 @@ class MemoryBackend(Backend):
             for collection in collections:
                 if "id" in collection and collection_id == collection["id"]:
 
-                    if filter_args:
-                        full_filter = BasicFilter(filter_args)
-                        objs.extend(
-                            full_filter.process_filter(
-                                collection.get("objects", []),
-                                allowed_filters,
-                                collection.get("manifest", []),
-                            ),
-                        )
-                    else:
-                        objs.extend(collection.get("objects", []))
+                    # if filter_args:
+                    full_filter = BasicFilter(filter_args)
+                    objs.extend(
+                        full_filter.process_filter(
+                            collection.get("objects", []),
+                            allowed_filters,
+                            collection.get("manifest", []),
+                        ),
+                    )
+                    # else:
+                    # objs.extend(collection.get("objects", []))
 
             return create_resource("objects", objs)
 
@@ -206,19 +206,20 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
 
             objs = []
+            results = []
             for collection in collections:
                 if "id" in collection and collection_id == collection["id"]:
                     for obj in collection.get("objects", []):
                         if object_id == obj["id"]:
                             objs.append(obj)
-                if filter_args:
-                    full_filter = BasicFilter(filter_args)
-                    objs = full_filter.process_filter(
-                        objs,
-                        allowed_filters,
-                        collection.get("manifest", []),
-                    )
-            return create_resource("objects", objs)
+                # if filter_args:
+                full_filter = BasicFilter(filter_args)
+                results.extend(full_filter.process_filter(
+                    objs,
+                    allowed_filters,
+                    collection.get("manifest", []),
+                ))
+            return create_resource("objects", results)
 
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         if api_root in self.data:
@@ -232,12 +233,12 @@ class MemoryBackend(Backend):
                     for manifest in all_manifests:
                         if object_id == manifest["id"]:
                             objs.append(manifest)
-                    if filter_args:
-                        full_filter = BasicFilter(filter_args)
-                        objs = full_filter.process_filter(
-                            objs,
-                            allowed_filters,
-                            None,
-                        )
+                    # if filter_args:
+                    full_filter = BasicFilter(filter_args)
+                    objs = full_filter.process_filter(
+                        objs,
+                        allowed_filters,
+                        None,
+                    )
                     objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                     return create_resource("versions", objs)
