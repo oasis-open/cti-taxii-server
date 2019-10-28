@@ -7,11 +7,11 @@ from ..utils.common import convert_to_stix_datetime
 
 def find_att(obj):
     if "version" in obj:
-        return "version"
+        return convert_to_stix_datetime(obj["version"])
     elif "modified" in obj:
-        return "modified"
+        return convert_to_stix_datetime(obj["modified"])
     elif "created" in obj:
-        return "created"
+        return convert_to_stix_datetime(obj["created"])
     else:
         # TO DO: PUT DEFAULT VALUE HERE
         pass
@@ -25,10 +25,9 @@ def check_for_dupes(final_match, final_track, res):
             final_track.insert(pos, obj["id"])
             final_match.insert(pos, obj)
         else:
-            obj_att = find_att(obj)
-            obj_time = convert_to_stix_datetime(obj[obj_att])
+            obj_time = find_att(obj)
             while pos != len(final_track) and obj["id"] == final_track[pos]:
-                if convert_to_stix_datetime(final_match[pos][find_att(final_match[pos])]) == obj_time:
+                if find_att(final_match[pos]) == obj_time:
                     found = 1
                     break
                 else:
@@ -43,14 +42,13 @@ def check_for_dupes(final_match, final_track, res):
 def check_version(data, relate):
     id_track = []
     res = []
-    # O(n)?
     for obj in data:
         pos = bisect.bisect_left(id_track, obj["id"])
         if not res or pos >= len(id_track) or id_track[pos] != obj["id"]:
             id_track.insert(pos, obj["id"])
             res.insert(pos, obj)
         else:
-            if relate(convert_to_stix_datetime(obj[find_att(obj)]), convert_to_stix_datetime(res[pos][find_att(res[pos])])):
+            if relate(find_att(obj), find_att(res[pos])):
                 res[pos] = obj
     return res
 
@@ -84,9 +82,9 @@ class BasicFilter(object):
         # for other objects with manifests
         else:
             for obj in data:
-                obj_time = convert_to_stix_datetime(obj[find_att(obj)])
+                obj_time = find_att(obj)
                 for item in manifest_info:
-                    item_time = convert_to_stix_datetime(item[find_att(item)])
+                    item_time = find_att(item)
                     if item["id"] == obj["id"] and item_time == obj_time and convert_to_stix_datetime(item["date_added"]) > added_after_timestamp:
                         new_results.append(obj)
                         break
@@ -114,8 +112,7 @@ class BasicFilter(object):
             id_track = []
             res = []
             for obj in data:
-                obj_att = find_att(obj)
-                obj_time = convert_to_stix_datetime(obj[obj_att])
+                obj_time = find_att(obj)
                 if obj_time in actual_dates:
                     pos = bisect.bisect_left(id_track, obj["id"])
                     id_track.insert(pos, obj["id"])
@@ -156,8 +153,6 @@ class BasicFilter(object):
             if "spec_version" in obj and any(s == obj["spec_version"] for s in spec_):
                 match_objects.append(obj)
             elif "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
-                # this is assuming all manifests will have the media_type attribute
-                # change this if there is another way
                 match_objects.append(obj)
 
         return match_objects
