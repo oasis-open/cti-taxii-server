@@ -2,31 +2,7 @@
   "backend": {
     "module": "medallion.backends.taxii.directory_backend",
     "module_class": "DirectoryBackend",
-    "path": "./example_configs/directory/",
-    "discovery": {
-      "title": "Some TAXII Server",
-      "description": "This TAXII Server contains a listing of...",
-      "contact": "string containing contact information",
-      "host": "http://localhost:5000/"
-    },
-    "api-root": {
-      "title": "",
-      "description": "",
-      "versions": [
-        "taxii-2.0"
-      ],
-      "max-content-length": 9765625
-    },
-    "collection": {
-      "id": "",
-      "title": "",
-      "description": "",
-      "can_read": true,
-      "can_write": true,
-      "media_types": [
-        "application/vnd.oasis.stix+json; version=2.0"
-      ]
-    }
+    "path": "./example_configs/directory/"
   },
   "taxii": {
     "max_page_size": 100
