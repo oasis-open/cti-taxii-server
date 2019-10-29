@@ -96,7 +96,7 @@ def get_response_status_and_headers(start_index, total_count, objects):
 @auth.login_required
 def get_or_add_objects(api_root, id_):
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
-    request_time = format_datetime(get_timestamp())  # Can't I get this from the request itself?
+    request_time = get_timestamp()  # Can't I get this from the request itself?
     if collection_exists(api_root, id_):
         if request.method == "GET" and permission_to_read(api_root, id_):
             start_index, end_index = get_range_request_from_headers()
