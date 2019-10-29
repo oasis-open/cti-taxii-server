@@ -1,4 +1,5 @@
 import copy
+from datetime import timedelta
 import json
 import os.path
 import tempfile
@@ -324,7 +325,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
+            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp() + timedelta(0, i))
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
