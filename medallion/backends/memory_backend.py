@@ -168,10 +168,11 @@ class MemoryBackend(Backend):
                                 if new_obj["id"] == obj["id"]:
                                     if "modified" in new_obj and new_obj["modified"] == obj["modified"]:
                                         id_and_version_already_present = True
+                                        break
                                     else:
                                         # There is no modified field, so this object is immutable
                                         id_and_version_already_present = True
-                                    break
+                                        break
                             if id_and_version_already_present is False:
                                 collection["objects"].append(new_obj)
                                 self._update_manifest(new_obj, api_root, collection["id"], request_time)
