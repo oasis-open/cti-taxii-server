@@ -126,7 +126,7 @@ To use the Mongo DB backend plugin, include the following in the <config-file>:
          "backend": {
             "module": "medallion.backends.taxii.mongodb_backend",
             "module_class": "MongoBackend",
-            "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
+            "uri": "<Mongo DB server url>  # e.g., 'mongodb://root:example@localhost:27017/'"
          }
     }
 
