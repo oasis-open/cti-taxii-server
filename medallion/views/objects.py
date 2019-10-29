@@ -70,29 +70,25 @@ def get_and_enforce_limit(api_root, id_, objects):
     if request.args.get('limit'):
         limit = int(request.args['limit'])
     else:
-        limit = len(objects["objects"])
+        limit = current_app.taxii_config["max_page_size"]
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
             api_root, id_, None, ("id",),
         )
         if manifest:
-            # should this be converted to stix_datetime?
             manifest['objects'].sort(key=lambda x: x['date_added'])
             new = []
-            # this may be too inefficient (i.e. O(n^2))
             for man in manifest['objects']:
-                # versions should probably have its own seperate function
                 for check in objects['objects']:
                     check_time = convert_to_stix_datetime(check[find_att(check)])
                     man_time = convert_to_stix_datetime(man[find_att(man)])
                     if check['id'] == man['id'] and check_time == man_time:
                         new.append(check)
-                if len(new) == limit:
+                if len(new) == limit and len(objects["objects"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
                     break
             objects['objects'] = new
-            # if len(times) > 0:
             headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
             if "X-TAXII-Date-Added-Last" not in headers:
                 headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
@@ -123,7 +119,7 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
     if request.args.get('limit'):
         limit = int(request.args['limit'])
     else:
-        limit = len(objects)
+        limit = current_app.taxii_config["max_page_size"]
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
             api_root, id_, None, ("id",),
@@ -135,7 +131,7 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
                 for check in objects['versions']:
                     if check == man['version']:
                         new.append(check)
-                if len(new) == limit:
+                if len(new) == limit and len(objects["objects"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
                     break
@@ -175,7 +171,6 @@ def get_or_add_objects(api_root, collection_id):
             )
             if objects:
                 headers = get_and_enforce_limit(api_root, collection_id, objects)
-                # headers = get_custom_headers(api_root, collection_id)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
