@@ -5,7 +5,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 from .. import auth
 from ..exceptions import ProcessingError
-from ..utils.common import format_datetime, get_timestamp
+from ..utils.common import get_timestamp
 
 mod = Blueprint("objects", __name__)
 

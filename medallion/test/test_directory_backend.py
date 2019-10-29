@@ -1,7 +1,6 @@
 import copy
 import json
 import os
-import uuid
 
 import six
 

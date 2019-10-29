@@ -4,7 +4,8 @@ import json
 from medallion.backends.taxii.base import Backend
 from medallion.exceptions import ProcessingError
 from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.common import create_bundle, generate_status, iterpath
+from medallion.utils.common import (create_bundle, format_datetime,
+                                    generate_status, iterpath)
 
 
 class MemoryBackend(Backend):
@@ -38,6 +39,7 @@ class MemoryBackend(Backend):
     def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_info = self._get(api_root)
         collections = api_info.get("collections", [])
+        request_time = format_datetime(request_time)
 
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:

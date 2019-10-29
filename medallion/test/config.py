@@ -38,7 +38,7 @@ def directory_config():
     return _base_config({
         "module": "medallion.backends.taxii.directory_backend",
         "module_class": "DirectoryBackend",
-        "path": "./directory",
+        "path": "./medallion/test/directory/",
     }, {
         "module": "medallion.backends.auth.memory_auth",
         "module_class": "AuthMemoryBackend",
