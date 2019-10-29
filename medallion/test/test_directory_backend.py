@@ -24,16 +24,17 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         io = six.StringIO(response)
         return json.load(io)
 
-    def cleanup(self):
-        p = os.path.join(self.configuration['backend']['path'], "trustgroup1")
+    def cleanup(self, api_root, collection_id, resource, obj_id):
+        obj_type, obj_id = obj_id.split("--")
+        p = os.path.join(self.configuration['backend']['path'], api_root, collection_id, resource, obj_type, obj_id)
 
         rm_files = [f for f in os.listdir(p)
                     if os.path.isfile(os.path.join(p, f)) and f.endswith(".json") and f != "very-simple-playbook.json"]
 
         for f in rm_files:
             fp = os.path.join(p, f)
-
             os.remove(fp)
+        os.removedirs(p)
 
     def test_server_discovery(self):
         r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
@@ -41,9 +42,9 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         server_info = self.load_json_response(r.data)
-        assert server_info["title"] == "Indicators from the directory backend"
-        assert len(server_info["api_roots"]) == 1
-        assert server_info["api_roots"][0] == "http://localhost:5000/trustgroup1/"
+        assert server_info["title"] == "Some TAXII Server"
+        assert len(server_info["api_roots"]) == 3
+        assert server_info["api_roots"][-1] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
         r = self.client.get(test.API_ROOT_EP, headers=self.auth)
@@ -51,7 +52,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         api_root_metadata = self.load_json_response(r.data)
-        assert api_root_metadata["title"] == "Indicators from directory \'trustgroup1\'"
+        assert api_root_metadata["title"] == "Malware Research Group"
 
     def test_get_api_root_information_not_existent(self):
         r = self.client.get("/trustgroup2/", headers=self.auth)
@@ -68,7 +69,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         collection_ids = [cm["id"] for cm in collections_metadata]
 
         assert len(collection_ids) == 1
-        assert "46bb17fa-0af3-3446-a570-b55cdfdc7881" in collection_ids
+        assert "91a7b528-80eb-42ed-a74d-c6fbd5a26116" in collection_ids
 
     def test_get_collection(self):
         r = self.client.get(test.GET_COLLECTION_EP_FOR_DIRECTORY_BACKEND, headers=self.auth)
@@ -119,12 +120,8 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         self.assertEqual(r.status_code, 404)
 
     def test_add_objects(self):
-        # ------------- BEGIN: cleanup section ------------- #
-        self.cleanup()
-        # ------------- END: cleanup section ------------- #
-
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
-        new_id = "indicator--%s" % uuid.uuid4()
+        new_id = "indicator--b351b42e-6d40-416c-9f7b-9f6344326d63"
         new_bundle["objects"][0]["id"] = new_id
 
         # ------------- BEGIN: add object section ------------- #
@@ -179,5 +176,6 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
 
         # ------------- END: get objects section ------------- #
         # ------------- BEGIN: cleanup section ------------- #
-        self.cleanup()
+        self.cleanup("trustgroup1", "91a7b528-80eb-42ed-a74d-c6fbd5a26116", "objects", new_id)
+        self.cleanup("trustgroup1", "91a7b528-80eb-42ed-a74d-c6fbd5a26116", "manifest", new_id)
         # ------------- END: cleanup section ------------- #
