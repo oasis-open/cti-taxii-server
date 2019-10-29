@@ -1,6 +1,7 @@
 import codecs
 import copy
 import json
+import logging
 
 from ...exceptions import ProcessingError
 from ...filters.basic_filter import BasicFilter
@@ -8,6 +9,9 @@ from ...utils.common import (create_bundle, determine_spec_version,
                              determine_version, format_datetime,
                              generate_status, iterpath)
 from .base import Backend
+
+# Module-level logger
+log = logging.getLogger(__name__)
 
 
 class MemoryBackend(Backend):
@@ -194,6 +198,7 @@ class MemoryBackend(Backend):
                                 })
                                 failed += 1
                     except Exception as e:
+                        log.exception(e)
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
