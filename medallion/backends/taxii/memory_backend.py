@@ -43,9 +43,9 @@ class MemoryBackend(Backend):
         api_info = self._get(api_root)
         collections = api_info.get("collections", [])
         media_type_fmt = "application/vnd.oasis.stix+json; version={}"
-        request_time = format_datetime(request_time)
         media_type = media_type_fmt.format(determine_spec_version(new_obj))
         version = determine_version(new_obj, request_time)
+        request_time = format_datetime(request_time)
 
         for collection in collections:
             if collection_id == collection["id"]:
