@@ -86,15 +86,21 @@ def get_and_enforce_limit(api_root, id_, objects):
                     check_time = convert_to_stix_datetime(check[find_att(check)])
                     man_time = convert_to_stix_datetime(man[find_att(man)])
                     if check['id'] == man['id'] and check_time == man_time:
+                        if "X-TAXII-Date-Added-First" not in headers:
+                            headers["X-TAXII-Date-Added-First"] = man['date_added']
                         new.append(check)
                 if len(new) == limit and len(objects["objects"]) != limit:
+                    # find a better solution than this
+                    for n in new:
+                        objects["objects"].remove(n)
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
-                    headers["next"] = current_app.medallion_backend.set_next(objects["objects"][limit:], limit)
+                    headers["next"] = current_app.medallion_backend.set_next(objects["objects"])
                     break
             objects['objects'] = new
             # if len(times) > 0:
-            headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
+            if "X-TAXII-Date-Added-First" not in headers:
+                headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
             if "X-TAXII-Date-Added-Last" not in headers:
                 headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
 

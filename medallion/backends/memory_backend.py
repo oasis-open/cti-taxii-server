@@ -1,5 +1,6 @@
 import copy
 import json
+import uuid
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
@@ -18,19 +19,18 @@ class MemoryBackend(Backend):
             self.load_data_from_file(kwargs.get("filename"))
         else:
             self.data = {}
+        self.next = {}
 
-    def set_next(self, objects, limit):
-        self._prev_limit = limit
-        self.next = objects
-        print("set next")
-        return "this is a uuid"
+    def set_next(self, objects):
+        u = uuid.uuid4()
+        self.next[str(u)] = objects
+        return u
 
-    def check_next(self, uuid):
-        """try:
-            print(self.next)
-        except :
-            print("no")"""
-        pass
+    def get_next(self, u):
+        if u in self.next:
+            return self.next.pop(u)
+        else:
+            print("No next value that matches that value")
 
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
@@ -148,7 +148,7 @@ class MemoryBackend(Backend):
 
                     if filter_args:
                         if "next" in filter_args:
-                            objs.extend
+                            objs = self.get_next(filter_args["next"])
                         else:
                             full_filter = BasicFilter(filter_args)
                             objs.extend(
