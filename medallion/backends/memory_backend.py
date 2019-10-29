@@ -166,9 +166,8 @@ class MemoryBackend(Backend):
                             id_and_version_already_present = False
                             for obj in collection["objects"]:
                                 if new_obj["id"] == obj["id"]:
-                                    if "modified" in new_obj:
-                                        if new_obj["modified"] == obj["modified"]:
-                                            id_and_version_already_present = True
+                                    if "modified" in new_obj and new_obj["modified"] == obj["modified"]:
+                                        id_and_version_already_present = True
                                     else:
                                         # There is no modified field, so this object is immutable
                                         id_and_version_already_present = True
