@@ -1,6 +1,6 @@
 import logging
 
-from medallion.backends.auth.base import AuthBackend
+from .base import AuthBackend
 
 try:
     from pymongo import MongoClient
