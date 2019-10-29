@@ -21,6 +21,23 @@ def create_bundle(o):
     }
 
 
+def determine_version(new_obj, request_time):
+    """Grab the modified time if present, if not grab created time,
+    if not grab request time provided by server."""
+    return new_obj.get("modified", new_obj.get("created", format_datetime(request_time)))
+
+
+def determine_spec_version(obj):
+    """Given a STIX 2.x object, determine its spec version."""
+    missing = ("created", "modified")
+    if all(x not in obj for x in missing):
+        # Special case: only SCOs are 2.1 objects and they don't have a spec_version
+        # For now the only way to identify one is checking the created and modified
+        # are both missing.
+        return "2.1"
+    return obj.get("spec_version", "2.0")
+
+
 def get(data, key):
     for ancestors, item in iterpath(data):
         if key in ancestors:
@@ -81,22 +98,19 @@ def get_timestamp():
 
 
 def format_datetime(dttm):
+    """Given a datetime instance, produce the string representation
+    with microsecond precision"""
     # 1. Convert to timezone-aware
     # 2. Convert to UTC
-    # 3. Format in ISO format
-    # 4. Add subsecond value if non-zero
-    # 5. Add "Z"
+    # 3. Format in ISO format with microsecond precision
 
     if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
         # dttm is timezone-naive; assume UTC
         zoned = pytz.UTC.localize(dttm)
     else:
         zoned = dttm.astimezone(pytz.UTC)
-    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
-    if zoned.microsecond > 0:
-        ms = zoned.strftime("%f")
-        ts = ts + "." + ms.rstrip("0")
-    return ts + "Z"
+    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return ts
 
 
 def convert_to_stix_datetime(timestamp_string):

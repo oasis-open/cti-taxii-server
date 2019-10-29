@@ -1,10 +1,11 @@
 import logging
 
-from medallion.backends.taxii.base import Backend
-from medallion.exceptions import MongoBackendError, ProcessingError
-from medallion.filters.mongodb_filter import MongoDBFilter
-from medallion.utils.common import (create_bundle, format_datetime,
-                                    generate_status, get_timestamp)
+from ...exceptions import MongoBackendError, ProcessingError
+from ...filters.mongodb_filter import MongoDBFilter
+from ...utils.common import (create_bundle, determine_spec_version,
+                             determine_version, format_datetime,
+                             generate_status)
+from .base import Backend
 
 try:
     from pymongo import ASCENDING, MongoClient
@@ -41,33 +42,46 @@ class MongoBackend(Backend):
             log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 
     @catch_mongodb_error
-    def _update_manifest(self, new_obj, api_root, _collection_id):
+    def _update_manifest(self, new_obj, api_root, collection_id, request_time):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
+        collection_info = api_root_db["collections"]
         entry = manifest_info.find_one(
-            {"_collection_id": _collection_id, "id": new_obj["id"]},
+            {"_collection_id": collection_id, "id": new_obj["id"]},
         )
+
+        media_type_fmt = "application/vnd.oasis.stix+json; version={}"
+        media_type = media_type_fmt.format(determine_spec_version(new_obj))
+        version = determine_version(new_obj, request_time)
+
         if entry:
             if "modified" in new_obj:
                 entry["versions"].append(new_obj["modified"])
                 manifest_info.update_one(
-                    {"_collection_id": _collection_id, "id": new_obj["id"]},
+                    {"_collection_id": collection_id, "id": new_obj["id"]},
                     {"$set": {"versions": sorted(entry["versions"], reverse=True)}},
                 )
             # If the new_obj is there, and it has no modified property,
             # then it is immutable, and there is nothing to do.
         else:
-            version = new_obj.get("modified", new_obj["created"])
             manifest_info.insert_one(
                 {
                     "id": new_obj["id"],
-                    "_collection_id": _collection_id,
-                    "_type": new_obj["type"],
-                    "date_added": get_timestamp(),
+                    "date_added": request_time,
                     "versions": [version],
-                    "media_types": ["application/vnd.oasis.stix+json; version=2.0"],
+                    "media_types": [media_type],
+                    "_collection_id": collection_id,
+                    "_type": new_obj["type"],
                 },
-            )  # media_types hardcoded for now...
+            )
+
+        # update media_types in collection if a new one is present.
+        info = collection_info.find_one({"id": collection_id})
+        if media_type not in info["media_types"]:
+            collection_info.update_one(
+                {"id": collection_id},
+                {"$set": {"media_types": info["media_types"] + [media_type]}}
+            )
 
     @catch_mongodb_error
     def server_discovery(self):
@@ -194,12 +208,13 @@ class MongoBackend(Backend):
             if obj:
                 obj.pop("_id", None)
                 obj.pop("_collection_id", None)
+                obj.pop("_date_added", None)
         return total, create_bundle(objects_found)
 
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
         api_root_db = self.client[api_root]
-        objects = api_root_db["objects"]
+        objects_info = api_root_db["objects"]
         failed = 0
         succeeded = 0
         pending = 0
@@ -211,24 +226,28 @@ class MongoBackend(Backend):
                 mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
                 if "modified" in new_obj:
                     mongo_query["modified"] = new_obj["modified"]
-                existing_entry = objects.find_one(mongo_query)
+                existing_entry = objects_info.find_one(mongo_query)
+                obj_version = determine_version(new_obj, request_time)
                 if existing_entry:
                     failures.append({
                         "id": new_obj["id"],
-                        "message": "Unable to process object",
+                        "message": "Unable to process object because identical version exist.",
                     })
                     failed += 1
                 else:
                     new_obj.update({"_collection_id": collection_id})
-                    objects.insert_one(new_obj)
-                    self._update_manifest(new_obj, api_root, collection_id)
+                    if not all(prop in new_obj for prop in ("modified", "created")):
+                        new_obj["_date_added"] = obj_version  # Special case for un-versioned objects
+                    objects_info.insert_one(new_obj)
+                    self._update_manifest(new_obj, api_root, collection_id, request_time)
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
+            log.exception(e)
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            request_time, "complete", succeeded, failed,
+            format_datetime(request_time), "complete", succeeded, failed,
             pending, successes_ids=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)
@@ -236,22 +255,23 @@ class MongoBackend(Backend):
         return status
 
     @catch_mongodb_error
-    def get_object(self, api_root, id_, object_id, filter_args, allowed_filters):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
-        objects = api_root_db["objects"]
+        objects_info = api_root_db["objects"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"_collection_id": id_, "id": object_id},
+            {"_collection_id": collection_id, "id": object_id},
             allowed_filters,
         )
         count, objects_found = full_filter.process_filter(
-            objects,
+            objects_info,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_},
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
         if objects_found:
             for obj in objects_found:
                 if obj:
                     obj.pop("_id", None)
                     obj.pop("_collection_id", None)
+                    obj.pop("_date_added", None)
         return create_bundle(objects_found)
