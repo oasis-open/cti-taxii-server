@@ -19,6 +19,19 @@ class MemoryBackend(Backend):
         else:
             self.data = {}
 
+    def set_next(self, objects, limit):
+        self._prev_limit = limit
+        self.next = objects
+        print("set next")
+        return "this is a uuid"
+
+    def check_next(self, uuid):
+        """try:
+            print(self.next)
+        except :
+            print("no")"""
+        pass
+
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
             self.data = json.load(infile)
@@ -134,14 +147,17 @@ class MemoryBackend(Backend):
                 if "id" in collection and collection_id == collection["id"]:
 
                     if filter_args:
-                        full_filter = BasicFilter(filter_args)
-                        objs.extend(
-                            full_filter.process_filter(
-                                collection.get("objects", []),
-                                allowed_filters,
-                                collection.get("manifest", []),
-                            ),
-                        )
+                        if "next" in filter_args:
+                            objs.extend
+                        else:
+                            full_filter = BasicFilter(filter_args)
+                            objs.extend(
+                                full_filter.process_filter(
+                                    collection.get("objects", []),
+                                    allowed_filters,
+                                    collection.get("manifest", []),
+                                ),
+                            )
                     else:
                         objs.extend(collection.get("objects", []))
 

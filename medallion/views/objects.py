@@ -70,6 +70,7 @@ def get_and_enforce_limit(api_root, id_, objects):
     if request.args.get('limit'):
         limit = int(request.args['limit'])
     else:
+        # make this max_page_size
         limit = len(objects["objects"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
@@ -81,15 +82,15 @@ def get_and_enforce_limit(api_root, id_, objects):
             new = []
             # this may be too inefficient (i.e. O(n^2))
             for man in manifest['objects']:
-                # versions should probably have its own seperate function
                 for check in objects['objects']:
                     check_time = convert_to_stix_datetime(check[find_att(check)])
                     man_time = convert_to_stix_datetime(man[find_att(man)])
                     if check['id'] == man['id'] and check_time == man_time:
                         new.append(check)
-                if len(new) == limit:
+                if len(new) == limit and len(objects["objects"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
+                    headers["next"] = current_app.medallion_backend.set_next(objects["objects"][limit:], limit)
                     break
             objects['objects'] = new
             # if len(times) > 0:
