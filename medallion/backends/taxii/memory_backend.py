@@ -195,7 +195,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                request_time, "complete", succeeded,
+                format_datetime(request_time), "complete", succeeded,
                 failed, pending, successes_ids=successes,
                 failures=failures,
             )
