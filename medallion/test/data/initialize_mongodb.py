@@ -290,6 +290,27 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
     api_root_db["objects"].create_indexes([id_index])
 
 
+def create_users(url="mongodb://root:example@localhost:27017/"):
+    client = connect_to_client(url)
+    db = client["auth"]
+    users = db.create_collection("users")
+
+    users.insert_many([
+        {
+          "_id": "admin",
+          "password": "pbkdf2:sha256:150000$vhWiAWXq$a16882c2eaf4dbb5c55566c93ec256c189ebce855b0081f4903f09a23e8b2344"
+        },
+        {
+          "_id": "user1",
+          "password": "pbkdf2:sha256:150000$TVpGAgEI$dd391524abb0d9107ff5949ef512c150523c388cfa6490d8556d604f90de329e"
+        },
+        {
+          "_id": "user2",
+          "password": "pbkdf2:sha256:150000$CUo7l9Vz$3ff2da22dcb84c9ba64e2df4d1ee9f7061c1da4f8506618f53457f615178e3f3"
+        }
+    ])
+
+
 def wipe_mongodb_server():
     """remove all databases on the server (excluding required MongoDB system databases)"""
     client = connect_to_client()
@@ -300,3 +321,4 @@ def wipe_mongodb_server():
 
 if __name__ == "__main__":
     reset_db()
+    create_users()
