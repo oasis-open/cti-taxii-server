@@ -139,7 +139,12 @@ class MemoryBackend(Backend):
                             allowed_filters,
                             collection.get("manifest", []),
                         ),
+                    objs = full_filter.process_filter(
+                        collection.get("objects", []),
+                        allowed_filters,
+                        collection.get("manifest", []),
                     )
+                    break
 
             return create_resource("objects", objs)
 
