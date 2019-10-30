@@ -164,7 +164,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
 
         status_response2 = self.load_json_response(r_get.data)
-        assert status_response2["success_count"] == 1
+        assert status_response2["success_count"] == 2
 
         # ------------- END: get status section ------------- #
         # ------------- BEGIN: get manifest section ------------- #
@@ -179,6 +179,56 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         manifests = self.load_json_response(r_get.data)
         assert manifests["objects"][0]["id"] == new_id
         # ------------- END: end manifest section ------------- #
+
+    def test_add_existing_single_version_object(self):
+        new_id = "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
+        del new_bundle["objects"][0]
+
+        # ------------- BEGIN: add object section ------------- #
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V21
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header,
+        )
+        self.assertEqual(r_post.status_code, 202)
+        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V21)
+
+        # ------------- END: add object section ------------- #
+        # ------------- BEGIN: add object again section ------------- #
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header,
+        )
+        status_response2 = self.load_json_response(r_post.data)
+        self.assertEqual(r_post.status_code, 202)
+        self.assertEqual(status_response2["success_count"], 0)
+        self.assertEqual(
+            status_response2["failures"][0]["message"],
+            "Unable to process object because an identical entry already exists in collection '91a7b528-80eb-42ed-a74d-c6fbd5a26116'."
+        )
+
+        # ------------- END: add object again section ------------- #
+        # ------------- BEGIN: get object section ------------- #
+
+        get_header = copy.deepcopy(self.auth)
+        get_header["Accept"] = MEDIA_TYPE_TAXII_V21
+
+        r_get = self.client.get(
+            test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
+            headers=get_header,
+        )
+        self.assertEqual(r_get.status_code, 200)
+        objs = self.load_json_response(r_get.data)
+        self.assertEqual(len(objs["objects"]), 1)
+        self.assertEqual(objs["objects"][0]["id"], new_id)
 
     def test_client_object_versioning(self):
         new_id = "indicator--%s" % uuid.uuid4()
@@ -341,7 +391,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r_post.status_code, 202)
         self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V21)
 
-        # refetch objects post 1 Jan 2018 - should now have 1 result
+        # refetch objects post 1 Jan 2018 - should now have 2 results
         r_get = self.client.get(
             test.GET_OBJECTS_EP + "?added_after=2018-01-01T00:00:00Z",
             headers=get_header,
@@ -350,7 +400,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
         bundle = self.load_json_response(r_get.data)
 
-        self.assertEqual(1, len(bundle['objects']))
+        self.assertEqual(2, len(bundle['objects']))
         self.assertEqual(new_id, bundle['objects'][0]['id'])
 
     def test_marking_defintions(self):
