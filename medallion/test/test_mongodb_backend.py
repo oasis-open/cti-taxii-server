@@ -401,7 +401,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         bundle = self.load_json_response(r_get.data)
 
         self.assertEqual(2, len(bundle['objects']))
-        self.assertEqual(new_id, bundle['objects'][0]['id'])
+        self.assertTrue(any(obj["id"] == new_id for obj in bundle['objects']))
 
     def test_marking_defintions(self):
         get_header = copy.deepcopy(self.auth)
