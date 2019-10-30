@@ -133,20 +133,12 @@ class MemoryBackend(Backend):
                 if "id" in collection and collection_id == collection["id"]:
 
                     full_filter = BasicFilter(filter_args)
-                    objs.extend(
-                        full_filter.process_filter(
-                            collection.get("objects", []),
-                            allowed_filters,
-                            collection.get("manifest", []),
-                        ),
                     objs = full_filter.process_filter(
                         collection.get("objects", []),
                         allowed_filters,
                         collection.get("manifest", []),
                     )
-                    break
-
-            return create_resource("objects", objs)
+                    return create_resource("objects", objs)
 
     def add_objects(self, api_root, collection_id, objs, request_time):
         if api_root in self.data:
