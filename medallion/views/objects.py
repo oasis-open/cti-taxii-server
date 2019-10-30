@@ -117,9 +117,12 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
     """
     headers = {}
     if request.args.get('limit'):
-        limit = int(request.args['limit'])
+        if int(request.args['limit']) < current_app.taxii_config["max_page_size"]:
+            limit = int(request.args['limit'])
+        else:
+            limit = current_app.taxii_config["max_page_size"]
     else:
-        limit = current_app.taxii_config["max_page_size"]
+        limit = len(objects["objects"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
             api_root, id_, None, ("id",),
