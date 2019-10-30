@@ -145,8 +145,8 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r.data)
         assert all(obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e" for obj in objs["objects"])
         assert len(objs["objects"]) == 2
-        
-         r = self.client.get(
+
+        r = self.client.get(
             test.GET_OBJECTS_EP + "?limit=3",
             headers=self.auth,
         )
