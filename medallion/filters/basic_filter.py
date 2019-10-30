@@ -2,19 +2,7 @@ import bisect
 import copy
 import operator
 
-from ..utils.common import convert_to_stix_datetime
-
-
-def find_att(obj):
-    if "version" in obj:
-        return "version"
-    elif "modified" in obj:
-        return "modified"
-    elif "created" in obj:
-        return "created"
-    else:
-        # TO DO: PUT DEFAULT VALUE HERE
-        pass
+from ..utils.common import convert_to_stix_datetime, find_att
 
 
 def check_for_dupes(final_match, final_track, res):

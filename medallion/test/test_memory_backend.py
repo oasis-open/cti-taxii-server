@@ -134,6 +134,27 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r.data)
         assert any(obj["id"] == "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463" for obj in objs["objects"])
 
+        r = self.client.get(
+            test.GET_OBJECTS_EP + "?limit=3",
+            headers=self.auth,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert len(objs["objects"]) == 3
+
+        r = self.client.get(
+            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
+            headers=self.auth,
+            follow_redirects=True,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert len(objs["versions"]) == 1
+
     def test_add_objects(self):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_id = "indicator--%s" % uuid.uuid4()
