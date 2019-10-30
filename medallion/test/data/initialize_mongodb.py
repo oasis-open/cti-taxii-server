@@ -292,6 +292,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
 
 def create_users(url="mongodb://root:example@localhost:27017/"):
     client = connect_to_client(url)
+    client.drop_database("auth")
     db = client["auth"]
     users = db.create_collection("users")
 
@@ -307,6 +308,22 @@ def create_users(url="mongodb://root:example@localhost:27017/"):
         {
           "_id": "user2",
           "password": "pbkdf2:sha256:150000$CUo7l9Vz$3ff2da22dcb84c9ba64e2df4d1ee9f7061c1da4f8506618f53457f615178e3f3"
+        }
+    ])
+
+    api_keys = db.create_collection("api_keys")
+    api_keys.insert_many([
+        {
+            "_id": "abc123",
+            "user_id": "admin"
+        },
+        {
+            "_id": "123456",
+            "user_id": "admin"
+        },
+        {
+            "_id": "abcdef",
+            "user_id": "user1"
         }
     ])
 
