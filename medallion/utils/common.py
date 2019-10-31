@@ -164,11 +164,11 @@ def find_att(obj):
 
     """
     if "version" in obj:
-        return "version"
+        return convert_to_stix_datetime(obj["version"])
     elif "modified" in obj:
-        return "modified"
+        return convert_to_stix_datetime(obj["modified"])
     elif "created" in obj:
-        return "created"
+        return convert_to_stix_datetime(obj["created"])
     else:
         # TO DO: PUT DEFAULT VALUE HERE
         pass

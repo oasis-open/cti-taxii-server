@@ -5,7 +5,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
-from ..utils.common import convert_to_stix_datetime, find_att, get_timestamp
+from ..utils.common import find_att, get_timestamp
 
 mod = Blueprint("objects", __name__)
 
@@ -68,23 +68,24 @@ def get_and_enforce_limit(api_root, id_, objects):
     """
     headers = {}
     if request.args.get('limit'):
-        limit = int(request.args['limit'])
+        if int(request.args['limit']) < current_app.taxii_config["max_page_size"]:
+            limit = int(request.args['limit'])
+        else:
+            limit = current_app.taxii_config["max_page_size"]
     else:
         # make this max_page_size
         limit = len(objects["objects"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, None, ("id",),
+                api_root, id_, {"match[version]": "all"}, ("id",),
         )
         if manifest:
-            # should this be converted to stix_datetime?
             manifest['objects'].sort(key=lambda x: x['date_added'])
             new = []
-            # this may be too inefficient (i.e. O(n^2))
             for man in manifest['objects']:
                 for check in objects['objects']:
-                    check_time = convert_to_stix_datetime(check[find_att(check)])
-                    man_time = convert_to_stix_datetime(man[find_att(man)])
+                    check_time = find_att(check)
+                    man_time = find_att(man)
                     if check['id'] == man['id'] and check_time == man_time:
                         if "X-TAXII-Date-Added-First" not in headers:
                             headers["X-TAXII-Date-Added-First"] = man['date_added']
@@ -98,7 +99,6 @@ def get_and_enforce_limit(api_root, id_, objects):
                     headers["next"] = current_app.medallion_backend.set_next(objects["objects"])
                     break
             objects['objects'] = new
-            # if len(times) > 0:
             if "X-TAXII-Date-Added-First" not in headers:
                 headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
             if "X-TAXII-Date-Added-Last" not in headers:
@@ -128,12 +128,15 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
     """
     headers = {}
     if request.args.get('limit'):
-        limit = int(request.args['limit'])
+        if int(request.args['limit']) < current_app.taxii_config["max_page_size"]:
+            limit = int(request.args['limit'])
+        else:
+            limit = current_app.taxii_config["max_page_size"]
     else:
-        limit = len(objects)
+        limit = len(objects["versions"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, None, ("id",),
+                api_root, id_, {"match[version]": "all"}, ("id",),
         )
         if manifest:
             manifest['objects'].sort(key=lambda x: x['date_added'])
@@ -142,7 +145,7 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
                 for check in objects['versions']:
                     if check == man['version']:
                         new.append(check)
-                if len(new) == limit:
+                if len(new) == limit and len(objects["versions"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
                     break
@@ -182,7 +185,6 @@ def get_or_add_objects(api_root, collection_id):
             )
             if objects:
                 headers = get_and_enforce_limit(api_root, collection_id, objects)
-                # headers = get_custom_headers(api_root, collection_id)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
