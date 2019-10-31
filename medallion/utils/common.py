@@ -155,10 +155,13 @@ def find_att(obj):
     Used for finding the version attribute of an ambiguous object. Manifests
     use the "version" field, but objects will use "modified", or if that's not
     available, the "created" field.
+
     Args:
         obj (dict): manifest or stix object
+
     Returns:
         string value of the field from the object to use for versioning
+
     """
     if "version" in obj:
         return convert_to_stix_datetime(obj["version"])
