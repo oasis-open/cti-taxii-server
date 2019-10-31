@@ -30,6 +30,8 @@ class MemoryBackend(Backend):
         if u in self.next:
             return self.next.pop(u)
         else:
+            # what should this be?
+            # return 404 maybe?
             print("No next value that matches that value")
 
     def load_data_from_file(self, filename):
