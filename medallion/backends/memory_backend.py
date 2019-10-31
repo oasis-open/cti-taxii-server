@@ -1,5 +1,6 @@
 import copy
 import json
+import uuid
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
@@ -18,6 +19,20 @@ class MemoryBackend(Backend):
             self.load_data_from_file(kwargs.get("filename"))
         else:
             self.data = {}
+        self.next = {}
+
+    def set_next(self, objects):
+        u = uuid.uuid4()
+        self.next[str(u)] = objects
+        return u
+
+    def get_next(self, u):
+        if u in self.next:
+            return self.next.pop(u)
+        else:
+            # what should this be?
+            # return 404 maybe?
+            print("No next value that matches that value")
 
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
@@ -131,13 +146,15 @@ class MemoryBackend(Backend):
             objs = []
             for collection in collections:
                 if "id" in collection and collection_id == collection["id"]:
-
-                    full_filter = BasicFilter(filter_args)
-                    objs = full_filter.process_filter(
-                        collection.get("objects", []),
-                        allowed_filters,
-                        collection.get("manifest", []),
-                    )
+                    if "next" in filter_args:
+                            objs = self.get_next(filter_args["next"])
+                        else:
+                            full_filter = BasicFilter(filter_args)
+                            objs = full_filter.process_filter(
+                                collection.get("objects", []),
+                                allowed_filters,
+                                collection.get("manifest", []),
+                            )
                     return create_resource("objects", objs)
 
     def add_objects(self, api_root, collection_id, objs, request_time):

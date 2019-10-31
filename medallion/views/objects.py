@@ -73,6 +73,7 @@ def get_and_enforce_limit(api_root, id_, objects):
         else:
             limit = current_app.taxii_config["max_page_size"]
     else:
+        # make this max_page_size
         limit = len(objects["objects"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
@@ -90,8 +91,12 @@ def get_and_enforce_limit(api_root, id_, objects):
                             headers["X-TAXII-Date-Added-First"] = man['date_added']
                         new.append(check)
                 if len(new) == limit and len(objects["objects"]) != limit:
+                    # find a better solution than this
+                    for n in new:
+                        objects["objects"].remove(n)
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
+                    headers["next"] = current_app.medallion_backend.set_next(objects["objects"])
                     break
             objects['objects'] = new
             if "X-TAXII-Date-Added-First" not in headers:
