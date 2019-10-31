@@ -226,7 +226,6 @@ class MemoryBackend(Backend):
                     for manifest in all_manifests:
                         if object_id == manifest["id"]:
                             objs.append(manifest)
-                    # if filter_args:
                     full_filter = BasicFilter(filter_args)
                     objs = full_filter.process_filter(
                         objs,
