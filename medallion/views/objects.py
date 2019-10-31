@@ -5,7 +5,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
-from ..utils.common import convert_to_stix_datetime, find_att, get_timestamp
+from ..utils.common import find_att, get_timestamp
 
 mod = Blueprint("objects", __name__)
 
@@ -68,20 +68,23 @@ def get_and_enforce_limit(api_root, id_, objects):
     """
     headers = {}
     if request.args.get('limit'):
-        limit = int(request.args['limit'])
+        if int(request.args['limit']) < current_app.taxii_config["max_page_size"]:
+            limit = int(request.args['limit'])
+        else:
+            limit = current_app.taxii_config["max_page_size"]
     else:
-        limit = current_app.taxii_config["max_page_size"]
+        limit = len(objects["objects"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, None, ("id",),
+                api_root, id_, {"match[version]": "all"}, ("id",),
         )
         if manifest:
             manifest['objects'].sort(key=lambda x: x['date_added'])
             new = []
             for man in manifest['objects']:
                 for check in objects['objects']:
-                    check_time = convert_to_stix_datetime(check[find_att(check)])
-                    man_time = convert_to_stix_datetime(man[find_att(man)])
+                    check_time = find_att(check)
+                    man_time = find_att(man)
                     if check['id'] == man['id'] and check_time == man_time:
                         new.append(check)
                 if len(new) == limit and len(objects["objects"]) != limit:
@@ -122,10 +125,10 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
         else:
             limit = current_app.taxii_config["max_page_size"]
     else:
-        limit = len(objects["objects"])
+        limit = len(objects["versions"])
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, None, ("id",),
+                api_root, id_, {"match[version]": "all"}, ("id",),
         )
         if manifest:
             manifest['objects'].sort(key=lambda x: x['date_added'])
@@ -134,7 +137,7 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
                 for check in objects['versions']:
                     if check == man['version']:
                         new.append(check)
-                if len(new) == limit and len(objects["objects"]) != limit:
+                if len(new) == limit and len(objects["versions"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
                     break
