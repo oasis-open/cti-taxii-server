@@ -139,6 +139,7 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
                 api_root, id_, {"match[version]": "all"}, ("id",),
         )
         if manifest:
+            print(limit)
             manifest['objects'].sort(key=lambda x: x['date_added'])
             new = []
             for man in manifest['objects']:
@@ -146,8 +147,12 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
                     if check == man['version']:
                         new.append(check)
                 if len(new) == limit and len(objects["versions"]) != limit:
+                    # find a better solution than this
+                    for n in new:
+                        objects["versions"].remove(n)
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
+                    headers["next"] = current_app.medallion_backend.set_next(objects["versions"])
                     break
             objects['versions'] = new
             headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
