@@ -1,4 +1,5 @@
 import copy
+from datetime import timedelta
 import json
 import os.path
 import tempfile
@@ -135,6 +136,17 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         assert any(obj["id"] == "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463" for obj in objs["objects"])
 
         r = self.client.get(
+            test.GET_OBJECTS_EP + "?match[id]=indicator--6770298f-0fd8-471a-ab8c-1c658a46574e&match[version]=2016-11-03T12:30:59.000Z,2016-12-25T12:30:59.444Z",
+            headers=self.auth,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert all(obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e" for obj in objs["objects"])
+        assert len(objs["objects"]) == 2
+
+        r = self.client.get(
             test.GET_OBJECTS_EP + "?limit=3",
             headers=self.auth,
         )
@@ -143,6 +155,17 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         objs = self.load_json_response(r.data)
         assert len(objs["objects"]) == 3
+
+        r = self.client.get(
+            test.GET_OBJECTS_EP + "?match[id]=malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec&match[version]=first,2017-01-27T13:49:53.997Z,last",
+            headers=self.auth,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert all(obj["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec" for obj in objs["objects"])
+        assert len(objs["objects"]) == 1
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
@@ -154,6 +177,38 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         objs = self.load_json_response(r.data)
         assert len(objs["versions"]) == 1
+
+        r = self.client.get(
+            test.GET_OBJECTS_EP + "?match[spec_version]=2.1",
+            headers=self.auth,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert all(obj["spec_version"] == "2.1" for obj in objs["objects"])
+        assert len(objs["objects"]) == 5
+
+        r = self.client.get(
+            test.MANIFESTS_EP + "?match[spec_version]=2.1",
+            headers=self.auth,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert all(obj["media_type"] == "application/stix+json;version=2.1" for obj in objs["objects"])
+        assert len(objs["objects"]) == 5
+
+        r = self.client.get(
+            test.MANIFESTS_EP + "?match[id]=malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec&match[type]=malware",
+            headers=self.auth,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert len(objs["objects"]) == 1
 
     def test_add_objects(self):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
@@ -291,7 +346,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
+            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp() + timedelta(0, i))
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
@@ -398,14 +453,15 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         get_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
         r_get = self.client.get(
-            test.GET_OBJECTS_EP + "?added_after=2016-11-01T03:04:05Z",
+            test.GET_OBJECTS_EP + "?match[version]=all&added_after=2017-12-31T13:49:53.934Z",
             headers=get_header,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
         bundle = self.load_json_response(r_get.data)
 
-        assert any(obj["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec" for obj in bundle["objects"])
+        assert all(obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e" for obj in bundle["objects"])
+        assert len(bundle["objects"]) == 1
 
     def test_saving_data_file(self):  # just for the memory backend
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
