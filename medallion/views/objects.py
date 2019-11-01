@@ -139,7 +139,6 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
                 api_root, id_, {"match[version]": "all"}, ("id",),
         )
         if manifest:
-            print(limit)
             manifest['objects'].sort(key=lambda x: x['date_added'])
             new = []
             for man in manifest['objects']:

@@ -177,7 +177,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         objs = self.load_json_response(r.data)
         assert len(objs["versions"]) == 1
-        
+
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[spec_version]=2.1",
             headers=self.auth,
@@ -210,7 +210,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         objs = self.load_json_response(r.data)
         assert len(objs["objects"]) == 1
-        
+
     def test_next_parameter(self):
         r = self.client.get(
             test.GET_OBJECTS_EP + "?limit=2",
@@ -260,6 +260,35 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         assert len(objs["objects"]) == 1
         self.assertFalse(objs["more"])
         assert "next" not in r3.headers
+        assert len(current_app.medallion_backend.next) == 1
+
+        r = self.client.get(
+            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[version]=all&limit=1",
+            headers=self.auth,
+            follow_redirects=True,
+        )
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r.data)
+        assert objs["versions"] == ["2016-11-03T12:30:59.000Z"]
+        assert len(objs["versions"]) == 1
+        self.assertTrue(objs["more"])
+        assert "next" in r.headers
+
+        r2 = self.client.get(
+            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?next=" + r.headers["next"],
+            headers=self.auth,
+            follow_redirects=True,
+        )
+
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(r2.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r2.data)
+        assert objs["versions"] == ["2017-01-27T13:49:53.935Z"]
+        assert len(objs["versions"]) == 1
+        self.assertFalse(objs["more"])
+        assert "next" not in r.headers
 
     def test_add_objects(self):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
