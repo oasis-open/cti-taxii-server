@@ -4,8 +4,8 @@ import json
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, format_datetime,
-                            generate_status, generate_status_details, iterpath)
+                            determine_version, generate_status,
+                            generate_status_details, iterpath)
 from .base import Backend
 
 
@@ -44,7 +44,6 @@ class MemoryBackend(Backend):
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
-                request_time = format_datetime(request_time)
                 media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
                 # version is a single value now, therefore a new manifest is always created
@@ -193,7 +192,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                format_datetime(request_time), "complete", succeeded,
+                request_time, "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )

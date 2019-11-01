@@ -6,8 +6,8 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
 from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, format_datetime,
-                            generate_status, generate_status_details)
+                            determine_version, generate_status,
+                            generate_status_details)
 from .base import Backend
 
 # Module-level logger
@@ -224,7 +224,7 @@ class MongoBackend(Backend):
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            format_datetime(request_time), "complete", succeeded, failed,
+            request_time, "complete", succeeded, failed,
             pending, successes=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)

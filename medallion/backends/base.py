@@ -55,8 +55,9 @@ class Backend(object):
         Args:
             api_root (str): the name of the api_root.
             collection_id (str): the id of the collection
-            filter_args (str): query string from URL containing filter args
-            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
+                containing filter args
+            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
             tuple containing the total count of matching objects, and a collection of metadata for the objects
@@ -104,9 +105,9 @@ class Backend(object):
         Args:
             api_root (str): the name of the api_root.
             collection_id (str): the id of the collection
-            filter_args (str): query string from URL containing filter args, plus start index and page
-                                size to support pagination.
-            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
+                containing filter args, plus start index and page size to support pagination.
+            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
             tuple containing the total count of matching objects, and a collection of objects containing
@@ -148,8 +149,9 @@ class Backend(object):
             api_root (str): the name of the api_root.
             collection_id (str): the id of the collection
             object_id (str): the id of the requested object
-            filter_args (str): query string from URL containing filter args
-            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
+                containing filter args
+            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
             data from the collection that satisfies the filter
@@ -167,8 +169,9 @@ class Backend(object):
             api_root (str): the name of the api_root.
             collection_id (str): the id of the collection
             object_id (str): the id of the requested object
-            filter_args (str): query string from URL containing filter args
-            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
+                containing filter args
+            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
             Nothing.
@@ -186,8 +189,9 @@ class Backend(object):
             api_root (str): the name of the api_root.
             collection_id (str): the id of the collection
             object_id (str): the id of the requested object
-            filter_args (str): query string from URL containing filter args
-            allowed_filters (list): STIX properties which are allowed in the filter for this endpoint
+            filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
+                containing filter args
+            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
             data from the collection that satisfies the filter

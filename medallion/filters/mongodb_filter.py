@@ -1,6 +1,5 @@
 import pymongo
 
-from ..utils.common import convert_to_stix_datetime
 from .basic_filter import BasicFilter
 
 
@@ -50,10 +49,10 @@ class MongoDBFilter(BasicFilter):
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
+            # added_after_timestamp = convert_to_stix_datetime(added_after_date)
             date_filter = {
                 "$match": {
-                    "date_added": {"$gt": added_after_timestamp},
+                    "date_added": {"$gt": added_after_date},
                     "$comment": "Step #2: If added_after is provided, remove all objects/manifests older than the provided time",
                 }
             }
