@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
@@ -33,8 +34,33 @@ class MongoBackend(Backend):
     def __init__(self, **kwargs):
         try:
             self.client = MongoClient(kwargs.get("uri"))
+            self.pages = {}
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
+
+    def _process_header(self, filter_args):
+        limit = filter_args.get("limit")
+        next_id = filter_args.get("next")
+        if limit and next_id is None:
+            record = {"skip": 0, "limit": int(limit), "total_count": 0, "more": True}
+            next_id = str(uuid.uuid4())
+            self.pages[next_id] = record
+        elif limit and next_id:
+            record = self.pages[next_id]
+        else:
+            record = {}
+        return next_id, record
+
+    def _update_record(self, next_id, count):
+        more = False
+        if next_id:
+            self.pages[next_id]["total_count"] = count
+            more = self.pages[next_id]["more"]
+            if self.pages[next_id]["skip"] >= count:
+                more = False
+                next_id = None
+                self.pages.pop(next_id, None)
+        return next_id, more
 
     @catch_mongodb_error
     def _update_manifest(self, new_obj, api_root, collection_id, request_time):
@@ -84,10 +110,14 @@ class MongoBackend(Backend):
                     "api_roots": "$_roots._url",
                 },
             },
+            {
+                "$project": {
+                    "_roots": 0,
+                    "_id": 0,
+                }
+            }
         ]
-        info = list(discovery_info.aggregate(pipeline))[0]
-        info.pop("_roots", None)
-        info.pop("_id", None)
+        info = discovery_info.aggregate(pipeline).next()
         return info
 
     @catch_mongodb_error
@@ -97,11 +127,7 @@ class MongoBackend(Backend):
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        collections = list(collection_info.find({}))
-
-        for c in collections:
-            if c:
-                c.pop("_id", None)
+        collections = list(collection_info.find({}, {"_id": 0}))
         return create_resource("collections", collections)
 
     @catch_mongodb_error
@@ -111,77 +137,72 @@ class MongoBackend(Backend):
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        info = collection_info.find_one({"id": collection_id})
-        if info:
-            info.pop("_id", None)
+        info = collection_info.find_one({"id": collection_id}, {"_id": 0})
         return info
 
     @catch_mongodb_error
     def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
+        next_id, record = self._process_header(filter_args)
+
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}},
             allowed_filters,
+            record
         )
-        objects_found = full_filter.process_filter(
+        count, objects_found = full_filter.process_filter(
             manifest_info,
             allowed_filters,
             None,
         )
-        if objects_found:
-            for obj in objects_found:
-                if obj:
-                    obj.pop("_id", None)
-                    obj.pop("_collection_id", None)
-                    obj.pop("_type", None)
-                    # format date_added which is an ISODate object
-                    obj["date_added"] = format_datetime(obj["date_added"])
-        return create_resource("objects", objects_found)
+
+        next_id, more = self._update_record(next_id, count)
+        return create_resource("objects", objects_found, more, next_id)
 
     @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
         db = self.client["discovery_database"]
         api_root_info = db["api_root_info"]
-        info = api_root_info.find_one({"_name": api_root_name})
-        if info:
-            info.pop("_id", None)
-            info.pop("_url", None)
-            info.pop("_name", None)
+        info = api_root_info.find_one(
+            {"_name": api_root_name},
+            {"_id": 0, "_url": 0, "_name": 0}
+        )
         return info
 
     @catch_mongodb_error
     def get_status(self, api_root, status_id):
         api_root_db = self.client[api_root]
         status_info = api_root_db["status"]
-        result = status_info.find_one({"id": status_id})
-        if result:
-            result.pop("_id", None)
+        result = status_info.find_one(
+            {"id": status_id},
+            {"_id": 0}
+        )
         return result
 
     @catch_mongodb_error
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
+        next_id, record = self._process_header(filter_args)
+
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}},
             allowed_filters,
+            record
         )
         # Note: error handling was not added to following call as mongo will
         # handle (user supplied) filters gracefully if they don't exist
-        objects_found = full_filter.process_filter(
+        count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        for obj in objects_found:
-            if obj:
-                obj.pop("_id", None)
-                obj.pop("_collection_id", None)
-                obj.pop("_date_added", None)
-        return create_resource("objects", objects_found)
+
+        next_id, more = self._update_record(next_id, count)
+        return create_resource("objects", objects_found, more, next_id)
 
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -235,23 +256,22 @@ class MongoBackend(Backend):
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
+        next_id, record = self._process_header(filter_args)
+
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
             allowed_filters,
+            record
         )
-        objects_found = full_filter.process_filter(
+        count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        if objects_found:
-            for obj in objects_found:
-                if obj:
-                    obj.pop("_id", None)
-                    obj.pop("_collection_id", None)
-                    obj.pop("_date_added", None)
-        return create_resource("objects", objects_found)
+
+        next_id, more = self._update_record(next_id, count)
+        return create_resource("objects", objects_found, more, next_id)
 
     @catch_mongodb_error
     def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
@@ -287,16 +307,17 @@ class MongoBackend(Backend):
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-
+        next_id, record = self._process_header(filter_args)
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
             allowed_filters,
         )
-        manifests_found = full_filter.process_filter(
+        count, manifests_found = full_filter.process_filter(
             manifest_info,
             allowed_filters,
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
         manifests_found = list(map(lambda x: x["version"], manifests_found))
-        return create_resource("versions", manifests_found)
+        next_id, more = self._update_record(next_id, count)
+        return create_resource("versions", manifests_found, more, next_id)

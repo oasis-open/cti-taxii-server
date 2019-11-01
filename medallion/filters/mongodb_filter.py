@@ -6,10 +6,11 @@ from .basic_filter import BasicFilter
 
 class MongoDBFilter(BasicFilter):
 
-    def __init__(self, filter_args, basic_filter, allowed):
+    def __init__(self, filter_args, basic_filter, allowed, record=None):
         super(MongoDBFilter, self).__init__(filter_args)
         self.basic_filter = basic_filter
         self.full_query = self._query_parameters(allowed)
+        self.record = record
 
     def _query_parameters(self, allowed):
         parameters = self.basic_filter
@@ -92,11 +93,17 @@ class MongoDBFilter(BasicFilter):
                 pipeline.append({"$group": {"_id": "$$ROOT"}})
                 pipeline.append({"$replaceRoot": {"newRoot": "$_id"}})
         pipeline.append({"$sort": {"date_added": pymongo.ASCENDING}})
-        # self.add_pagination_operations(pipeline, self.filter_args.get("limit"))
 
         if data.name == "manifests":
+            # Project the final results
+            project_results = {"$project": {"_id": 0, "_collection_id": 0, "_type": 0}}
+            pipeline.append(project_results)
+
+            count = self.get_result_count(pipeline, data)
+            self.add_pagination_operations(pipeline)
             cursor = data.aggregate(pipeline)
             results = list(cursor)
+            return count, results
         else:
             # Join the filtered manifest(s) to the objects collection
             join_objects = {
@@ -150,23 +157,40 @@ class MongoDBFilter(BasicFilter):
             }
             pipeline.append(redact_objects)
 
-            # Project the final results
-            project_results = {"$project": {"version": 0}}
-            pipeline.append(project_results)
-
             # denormalize the embedded objects, remove duplicates and replace the document root. Could be improved
             pipeline.append({"$group": {"_id": "$$ROOT"}})
             pipeline.append({"$replaceRoot": {"newRoot": "$_id"}})
             pipeline.append({"$sort": {"_date_added": pymongo.ASCENDING, "created": pymongo.ASCENDING, "modified": pymongo.ASCENDING}})
-            # self.add_pagination_operations(pipeline, self.filter_args.get("limit"))
+
+            # Project the final results
+            project_results = {"$project": {"version": 0, "_id": 0, "_collection_id": 0, "_date_added": 0}}
+            pipeline.append(project_results)
+
+            count = self.get_result_count(pipeline, manifest_info["mongodb_manifests_collection"])
+            self.add_pagination_operations(pipeline)
 
             cursor = manifest_info["mongodb_manifests_collection"].aggregate(pipeline)
             results = list(cursor)
 
-        return results
+        return count, results
 
-    def add_pagination_operations(self, pipeline, limit=0):
-        limit = int(limit)
-        if limit > 0:
-            pipeline.append({"$skip": limit})
+    def add_pagination_operations(self, pipeline):
+        if self.record:
+            limit = self.record.get("limit")
+            skip = self.record.get("skip")
+            pipeline.append({"$skip": skip})
             pipeline.append({"$limit": limit})
+            self.record["skip"] += limit
+
+    @staticmethod
+    def get_result_count(pipeline, data):
+        count_pipeline = list(pipeline)
+        count_pipeline.append({"$count": "total_count"})
+        count_result = list(data.aggregate(count_pipeline))
+
+        if len(count_result) == 0:
+            # No results
+            return 0
+
+        count = count_result[0]["total_count"]
+        return count

@@ -5,9 +5,12 @@ import pytz
 from six import iteritems
 
 
-def create_resource(resource_name, o, more=False):
+def create_resource(resource_name, o, more=False, next_id=None):
     """Generates a Resource Object given a resource name."""
-    return {resource_name: o, "more": more}
+    resource = {resource_name: o, "more": more}
+    if next_id:
+        resource["next"] = next_id
+    return resource
 
 
 def determine_version(new_obj, request_time):
