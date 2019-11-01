@@ -89,6 +89,7 @@ def get_and_enforce_limit(api_root, id_, objects):
                         if "X-TAXII-Date-Added-First" not in headers:
                             headers["X-TAXII-Date-Added-First"] = man['date_added']
                         new.append(check)
+                        break
                 if len(new) == limit and len(objects["objects"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
@@ -139,13 +140,17 @@ def get_and_enforce_limit_versions(api_root, id_, objects):
             for man in manifest['objects']:
                 for check in objects['versions']:
                     if check == man['version']:
+                        if "X-TAXII-Date-Added-First" not in headers:
+                            headers["X-TAXII-Date-Added-First"] = man['date_added']
                         new.append(check)
+                        break
                 if len(new) == limit and len(objects["versions"]) != limit:
                     objects['more'] = True
                     headers["X-TAXII-Date-Added-Last"] = man['date_added']
                     break
             objects['versions'] = new
-            headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
+            if "X-TAXII-Date-Added-First" not in headers:
+                headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
             if "X-TAXII-Date-Added-Last" not in headers:
                 headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
 
