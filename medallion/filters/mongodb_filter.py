@@ -96,6 +96,9 @@ class MongoDBFilter(BasicFilter):
                 pipeline.append(version_filter)
 
         if data.name == "manifests":
+            # Project the final results
+            project_results = {"$project": {"_id": 0, "_collection_id": 0, "_type": 0}}
+            pipeline.append(project_results)
             count = self.get_result_count(pipeline, data)
             self.add_pagination_operations(pipeline)
 
@@ -154,11 +157,7 @@ class MongoDBFilter(BasicFilter):
                 }
                 pipeline.append(redact_objects)
                 # Project the final results
-                project_results = {
-                    "$project": {
-                        "versions": 0,
-                    },
-                }
+                project_results = {"$project": {"versions": 0, "_id": 0, "_collection_id": 0, "_date_added": 0}}
                 pipeline.append(project_results)
                 self.add_pagination_operations(pipeline)
 
