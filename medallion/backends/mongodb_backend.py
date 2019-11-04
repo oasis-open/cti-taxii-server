@@ -136,8 +136,6 @@ class MongoBackend(Backend):
                     obj.pop("_id", None)
                     obj.pop("_collection_id", None)
                     obj.pop("_type", None)
-                    # format date_added which is an ISODate object
-                    obj["date_added"] = format_datetime(obj["date_added"])
         return create_resource("objects", objects_found)
 
     @catch_mongodb_error
