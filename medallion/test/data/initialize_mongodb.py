@@ -2,7 +2,6 @@ from pymongo import ASCENDING, IndexModel
 
 from medallion.test.generic_initialize_mongodb import (
     add_api_root, build_new_mongo_databases_and_collection, connect_to_client)
-from medallion.utils.common import convert_to_stix_datetime
 
 
 def reset_db(url="mongodb://root:example@localhost:27017/"):
@@ -65,7 +64,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
     api_root_db["manifests"].insert_many([
         {
             "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-            "date_added": convert_to_stix_datetime("2016-11-01T03:04:05Z"),
+            "date_added": "2016-11-01T03:04:05Z",
             "versions": [
                 "2014-05-08T09:00:00.000Z",
             ],
@@ -77,7 +76,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "id": "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111",
-            "date_added": convert_to_stix_datetime("2017-01-27T13:49:53.997Z"),
+            "date_added": "2017-01-27T13:49:53.997Z",
             "versions": [
                 "2017-01-27T13:49:53.997Z",
             ],
@@ -89,7 +88,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
-            "date_added": convert_to_stix_datetime("2014-05-08T09:00:00.000Z"),
+            "date_added": "2014-05-08T09:00:00.000Z",
             "versions": [
                 "2014-05-08T09:00:00.000Z",
             ],
@@ -100,7 +99,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_type": "relationship",
         },
         {
-            "date_added": convert_to_stix_datetime("2017-01-20T00:00:00.000Z"),
+            "date_added": "2017-01-20T00:00:00.000Z",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
             "media_types": [
@@ -113,7 +112,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "id": "indicator--d81f86b9-975b-bc0b-775e-810c5ad45a4f",
-            "date_added": convert_to_stix_datetime("2016-12-27T13:49:53Z"),
+            "date_added": "2016-12-27T13:49:53Z",
             "versions": [
                 "2016-11-03T12:30:59.000Z",
                 "2017-01-27T13:49:53.935Z",
@@ -126,7 +125,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
         {
             "id": "indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f",
-            "date_added": convert_to_stix_datetime("2016-11-03T12:30:59.000Z"),
+            "date_added": "2016-11-03T12:30:59.000Z",
             "versions": [
                 "2016-11-03T12:30:59.000Z",
             ],

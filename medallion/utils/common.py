@@ -24,7 +24,7 @@ def create_bundle(o):
 def determine_version(new_obj, request_time):
     """Grab the modified time if present, if not grab created time,
     if not grab request time provided by server."""
-    return new_obj.get("modified", new_obj.get("created", format_datetime(request_time)))
+    return new_obj.get("modified", new_obj.get("created", request_time))
 
 
 def determine_spec_version(obj):

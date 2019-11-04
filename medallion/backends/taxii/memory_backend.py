@@ -6,8 +6,7 @@ import logging
 from ...exceptions import ProcessingError
 from ...filters.basic_filter import BasicFilter
 from ...utils.common import (create_bundle, determine_spec_version,
-                             determine_version, format_datetime,
-                             generate_status, iterpath)
+                             determine_version, generate_status, iterpath)
 from .base import Backend
 
 # Module-level logger
@@ -45,7 +44,6 @@ class MemoryBackend(Backend):
         media_type_fmt = "application/vnd.oasis.stix+json; version={}"
         media_type = media_type_fmt.format(determine_spec_version(new_obj))
         version = determine_version(new_obj, request_time)
-        request_time = format_datetime(request_time)
 
         for collection in collections:
             if collection_id == collection["id"]:
@@ -203,7 +201,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                format_datetime(request_time), "complete", succeeded,
+                request_time, "complete", succeeded,
                 failed, pending, successes_ids=successes,
                 failures=failures,
             )
