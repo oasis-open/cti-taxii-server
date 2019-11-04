@@ -700,8 +700,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # check that the returned object is the one we expected
         self.assertEqual(new_id, objs["objects"][0]["id"])
 
-    @pytest.mark.xfail(reason="Test needs to be updated")
-    def test_object_pagination(self):
+    def test_object_pagination_regular_request(self):
         # setup data by adding 100 indicators
         bundle = copy.deepcopy(self.API_OBJECTS_2)
         # 5 objects in the collection already so add another 95 to make it up to 100
@@ -725,74 +724,133 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V21)
 
         # ------------- BEGIN: test request for subset of objects endpoint ------------- #
-
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=11", headers=get_header)
         objs = self.load_json_response(r.data)
 
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-10/100')
-        self.assertEqual(len(objs['objects']), 11)
-
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(11, len(objs['objects']))
+        self.assertTrue("next" in objs)
+        self.assertEqual(True, objs["more"])
         # ------------- END: test request for subset of objects endpoint ------------- #
-        # ------------- BEGIN: test request for more than servers supported page size on objects endpoint ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-100',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+    def test_object_pagination_past_server_limit(self):
+        # setup data by adding 100 indicators
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
+        # 5 objects in the collection already so add another 95 to make it up to 100
+        for i in range(0, 94):
+            new_id = "indicator--%s" % uuid.uuid4()
+            obj = copy.deepcopy(bundle['objects'][0])
+            obj['id'] = new_id
+            bundle['objects'].append(obj)
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V21
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(bundle),
+            headers=post_header,
+        )
+
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(MEDIA_TYPE_TAXII_V21, r_post.content_type)
+
+        # ------------ BEGIN: test request for more than servers supported page size on objects endpoint ------------ #
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=101", headers=get_header)
         objs = self.load_json_response(r.data)
 
         # should return a maximum of 20 objects as that is what we have set in the server configuration
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-19/100')
-        self.assertEqual(len(objs['objects']), 20)
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(20, len(objs['objects']))
+        self.assertTrue("next" in objs)
+        self.assertEqual(True, objs["more"])
+        # ------------ END: test request for more than servers supported page size on objects endpoint ------------ #
 
-        # ------------- END: test request for more than servers supported page size on objects endpoint ------------- #
-        # ------------- BEGIN: test request for range beyond result set of objects endpoint ------------- #
+    def test_object_pagination_just_one(self):
+        # setup data by adding 100 indicators
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
+        # 5 objects in the collection already so add another 95 to make it up to 100
+        for i in range(0, 94):
+            new_id = "indicator--%s" % uuid.uuid4()
+            obj = copy.deepcopy(bundle['objects'][0])
+            obj['id'] = new_id
+            bundle['objects'].append(obj)
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 90-119',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
-        objs = self.load_json_response(r.data)
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 90-99/100')
-        self.assertEqual(len(objs['objects']), 10)
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(bundle),
+            headers=post_header,
+        )
 
-        # ------------- END: test request for range beyond result set of objects endpoint ------------- #
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(MEDIA_TYPE_TAXII_V21, r_post.content_type)
+
         # ------------- BEGIN: test request for just the first item ------------- #
-
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-0',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=1", headers=get_header)
         objs = self.load_json_response(r.data)
 
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-0/100')
-        self.assertEqual(len(objs['objects']), 1)
-
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(1, len(objs['objects']))
+        self.assertTrue("next" in objs)
+        self.assertEqual(True, objs["more"])
         # ------------- END: test request for just the first item ------------- #
-        # ------------- BEGIN: test request for one item past the end of the range ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 100-100',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
-        self.assertEqual(r.status_code, 416)
+    def test_object_pagination_whole_task(self):
+        # setup data by adding 100 indicators
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
+        # 5 objects in the collection already so add another 96 to make it up to 101
+        for i in range(0, 95):
+            new_id = "indicator--%s" % uuid.uuid4()
+            obj = copy.deepcopy(bundle['objects'][0])
+            obj['id'] = new_id
+            bundle['objects'].append(obj)
 
-        # ------------- END: test request for one item past the end of the range ------------- #
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
-    @pytest.mark.xfail(reason="Test needs to be updated")
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(bundle),
+            headers=post_header,
+        )
+        r_status = self.load_json_response(r_post.data)
+        self.assertEqual(96, r_status["success_count"])
+
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(MEDIA_TYPE_TAXII_V21, r_post.content_type)
+
+        # ------------- BEGIN: test request for the whole list of objects ------------- #
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=10", headers=get_header)
+        objs = self.load_json_response(r.data)
+
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(10, len(objs['objects']))
+        self.assertTrue("next" in objs)
+        self.assertEqual(True, objs["more"])
+
+        while objs["more"] is True:
+            r = self.client.get(test.GET_OBJECT_EP + "?limit=10&next=%s" % objs["next"], headers=get_header)
+            objs = self.load_json_response(r.data)
+
+            self.assertEqual(200, r.status_code)
+            if objs["more"] is True:
+                self.assertEqual(10, len(objs['objects']))
+                self.assertTrue("next" in objs)
+            else:
+                self.assertEqual(1, len(objs['objects']))
+                self.assertTrue("next" not in objs)
+        # ------------- END: test request for the whole list of objects ------------- #
+
     def test_manifest_pagination(self):
         # setup data by adding 100 indicators
         bundle = copy.deepcopy(self.API_OBJECTS_2)
@@ -813,49 +871,41 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
             headers=post_header,
         )
 
-        self.assertEqual(r_post.status_code, 202)
-        self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V21)
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(MEDIA_TYPE_TAXII_V21, r_post.content_type)
 
         # ------------- BEGIN: test request for subset of manifests endpoint------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10',
-        }
-        r = self.client.get(test.MANIFESTS_EP, headers=headers)
+        get_header = copy.deepcopy(self.auth)
+        get_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
+        get_header["Accept"] = MEDIA_TYPE_TAXII_V21
+        r = self.client.get(test.MANIFESTS_EP + "?limit=11", headers=get_header)
         objs = self.load_json_response(r.data)
 
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-10/100')
-        self.assertEqual(len(objs['objects']), 11)
+        self.assertEqual(200, r.status_code)
+        # self.assertEqual(r.headers.get('Content-Range'), 'items 0-10/100')
+        self.assertEqual(11, len(objs['objects']))
+        self.assertEqual(True, objs['more'])
 
         # ------------- END: test request for subset of manifests endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size of manifests endpoint------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-100',
-        }
-        r = self.client.get(test.MANIFESTS_EP, headers=headers)
+        r = self.client.get(test.MANIFESTS_EP + "?limit=20", headers=get_header)
         objs = self.load_json_response(r.data)
 
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 0-19/100')
+        self.assertEqual(r.status_code, 200)
+        # self.assertEqual(r.headers.get('Content-Range'), 'items 0-19/100')
         self.assertEqual(len(objs['objects']), 20)
 
         # ------------- END: test request for more than servers supported page size of manifests endpoint ------------- #
         # ------------- BEGIN: test request for range beyond result set of manifests endpoint  ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 90-119',
-        }
-        r = self.client.get(test.MANIFESTS_EP, headers=headers)
-        objs = self.load_json_response(r.data)
-
-        self.assertEqual(r.status_code, 206)
-        self.assertEqual(r.headers.get('Content-Range'), 'items 90-99/100')
-        self.assertEqual(len(objs['objects']), 10)
+        # r = self.client.get(test.MANIFESTS_EP, headers=get_header)
+        # objs = self.load_json_response(r.data)
+        #
+        # self.assertEqual(r.status_code, 200)
+        # # self.assertEqual(r.headers.get('Content-Range'), 'items 90-99/100')
+        # self.assertEqual(len(objs['objects']), 10)
 
         # ------------- END: test request for range beyond result set of manifests endpoint ------------- #
 
