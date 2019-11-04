@@ -50,6 +50,17 @@ def get_custom_headers(api_root, id_):
     return headers
 
 
+def process_pagination_parameters():
+    limit = request.args.get("limit")
+    if limit:
+        limit = int(limit)
+        if limit <= 0:
+            raise ProcessingError("The server did not understand the request or filter parameters", 400)
+        if limit > current_app.taxii_config["max_page_size"]:
+            limit = current_app.taxii_config["max_page_size"]
+        return limit
+
+
 @mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, collection_id):
