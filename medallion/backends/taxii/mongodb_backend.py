@@ -3,8 +3,7 @@ import logging
 from ...exceptions import MongoBackendError, ProcessingError
 from ...filters.mongodb_filter import MongoDBFilter
 from ...utils.common import (create_bundle, determine_spec_version,
-                             determine_version, format_datetime,
-                             generate_status)
+                             determine_version, generate_status)
 from .base import Backend
 
 try:
@@ -101,16 +100,20 @@ class MongoBackend(Backend):
                     "api_roots": "$_roots._url",
                 },
             },
+            {
+                "$project": {
+                    "_roots": 0,
+                    "_id": 0,
+                }
+            }
         ]
-        info = list(collection.aggregate(pipeline))[0]
-        info.pop("_roots", None)
-        info.pop("_id", None)
+        info = collection.aggregate(pipeline).next()
         return info
 
     @catch_mongodb_error
     def get_collections(self, api_root, start_index, end_index):
         if api_root not in self.client.list_database_names():
-            return None, None   # must return None, so 404 is raised
+            return None, None  # must return None, so 404 is raised
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
@@ -121,32 +124,31 @@ class MongoBackend(Backend):
             {"$sort": {"_id": ASCENDING}},
             {"$skip": start_index},
             {"$limit": (end_index - start_index) + 1},
+            {"$project": {"_id": 0}}
         ]
         collections = list(collection_info.aggregate(pipeline))
-        for c in collections:
-            if c:
-                c.pop("_id", None)
         return count, collections
 
     @catch_mongodb_error
-    def get_collection(self, api_root, id_):
+    def get_collection(self, api_root, collection_id):
         if api_root not in self.client.list_database_names():
             return None  # must return None, so 404 is raised
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        info = collection_info.find_one({"id": id_})
-        if info:
-            info.pop("_id", None)
+        info = collection_info.find_one(
+            {"id": collection_id},
+            {"_id": 0}
+        )
         return info
 
     @catch_mongodb_error
-    def get_object_manifest(self, api_root, id_, filter_args, allowed_filters, start_index, page_size):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, start_index, page_size):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"_collection_id": id_},
+            {"_collection_id": collection_id},
             allowed_filters,
             start_index,
             page_size,
@@ -156,43 +158,35 @@ class MongoBackend(Backend):
             allowed_filters,
             None,
         )
-        if objects_found:
-            for obj in objects_found:
-                if obj:
-                    obj.pop("_id", None)
-                    obj.pop("_collection_id", None)
-                    obj.pop("_type", None)
-                    # format date_added which is an ISODate object
-                    obj["date_added"] = format_datetime(obj["date_added"])
         return total, objects_found
 
     @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
         db = self.client["discovery_database"]
         api_root_info = db["api_root_info"]
-        info = api_root_info.find_one({"_name": api_root_name})
-        if info:
-            info.pop("_id", None)
-            info.pop("_url", None)
-            info.pop("_name", None)
+        info = api_root_info.find_one(
+            {"_name": api_root_name},
+            {"_id": 0, "_url": 0, "_name": 0}
+        )
         return info
 
     @catch_mongodb_error
-    def get_status(self, api_root, id_):
+    def get_status(self, api_root, collection_id):
         api_root_db = self.client[api_root]
         status_info = api_root_db["status"]
-        result = status_info.find_one({"id": id_})
-        if result:
-            result.pop("_id", None)
+        result = status_info.find_one(
+            {"id": collection_id},
+            {"_id": 0}
+        )
         return result
 
     @catch_mongodb_error
-    def get_objects(self, api_root, id_, filter_args, allowed_filters, start_index, page_size):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, start_index, page_size):
         api_root_db = self.client[api_root]
         objects = api_root_db["objects"]
         full_filter = MongoDBFilter(
             filter_args,
-            {"_collection_id": id_},
+            {"_collection_id": collection_id},
             allowed_filters,
             start_index,
             page_size,
@@ -202,13 +196,8 @@ class MongoBackend(Backend):
         total, objects_found = full_filter.process_filter(
             objects,
             allowed_filters,
-            {"mongodb_collection": api_root_db["manifests"], "_collection_id": id_},
+            {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        for obj in objects_found:
-            if obj:
-                obj.pop("_id", None)
-                obj.pop("_collection_id", None)
-                obj.pop("_date_added", None)
         return total, create_bundle(objects_found)
 
     @catch_mongodb_error
@@ -247,7 +236,7 @@ class MongoBackend(Backend):
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            format_datetime(request_time), "complete", succeeded, failed,
+            request_time, "complete", succeeded, failed,
             pending, successes_ids=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)
@@ -268,10 +257,4 @@ class MongoBackend(Backend):
             allowed_filters,
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        if objects_found:
-            for obj in objects_found:
-                if obj:
-                    obj.pop("_id", None)
-                    obj.pop("_collection_id", None)
-                    obj.pop("_date_added", None)
         return create_bundle(objects_found)
