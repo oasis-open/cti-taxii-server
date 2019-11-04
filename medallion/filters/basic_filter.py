@@ -1,8 +1,6 @@
 import copy
 import datetime as dt
 
-from ..utils.common import convert_to_stix_datetime
-
 
 class BasicFilter(object):
 
@@ -193,7 +191,7 @@ class BasicFilter(object):
                 results = new_results
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
+            added_after_timestamp = added_after_date
             new_results = []
             for obj in results:
                 info = None
@@ -202,7 +200,7 @@ class BasicFilter(object):
                         info = item
                         break
                 if info:
-                    added_date_timestamp = convert_to_stix_datetime(info["date_added"])
+                    added_date_timestamp = info["date_added"]
                     if added_date_timestamp > added_after_timestamp:
                         new_results.append(obj)
             return new_results
