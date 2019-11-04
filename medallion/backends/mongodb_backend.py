@@ -38,7 +38,7 @@ class MongoBackend(Backend):
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
 
-    def _process_header(self, filter_args):
+    def _process_params(self, filter_args):
         limit = filter_args.get("limit")
         next_id = filter_args.get("next")
         if limit and next_id is None:
@@ -144,7 +144,7 @@ class MongoBackend(Backend):
     def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        next_id, record = self._process_header(filter_args)
+        next_id, record = self._process_params(filter_args)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -185,7 +185,7 @@ class MongoBackend(Backend):
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        next_id, record = self._process_header(filter_args)
+        next_id, record = self._process_params(filter_args)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -256,7 +256,7 @@ class MongoBackend(Backend):
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        next_id, record = self._process_header(filter_args)
+        next_id, record = self._process_params(filter_args)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -307,7 +307,7 @@ class MongoBackend(Backend):
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        next_id, record = self._process_header(filter_args)
+        next_id, record = self._process_params(filter_args)
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
