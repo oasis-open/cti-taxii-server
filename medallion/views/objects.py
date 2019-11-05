@@ -41,7 +41,6 @@ def get_custom_headers(api_root, id_):
         )
         if manifest:
             times = sorted(map(lambda x: x["date_added"], manifest["objects"]))
-
             if len(times) > 0:
                 headers["X-TAXII-Date-Added-First"] = times[0]
                 headers["X-TAXII-Date-Added-Last"] = times[-1]
@@ -120,9 +119,11 @@ def get_or_delete_object(api_root, collection_id, object_id):
                 api_root, collection_id, object_id, request.args, ("version", "spec_version"),
             )
             if objects:
+                headers = get_custom_headers(api_root, collection_id)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
+                    headers=headers,
                     mimetype=MEDIA_TYPE_TAXII_V21,
                 )
             raise ProcessingError("Object '{}' not found".format(object_id), 404)
@@ -158,8 +159,10 @@ def get_object_versions(api_root, collection_id, object_id):
         versions = current_app.medallion_backend.get_object_versions(
             api_root, collection_id, object_id, request.args, ("spec_version",),
         )
+        headers = get_custom_headers(api_root, collection_id)
         return Response(
             response=json.dumps(versions),
             status=200,
+            headers=headers,
             mimetype=MEDIA_TYPE_TAXII_V21,
         )
