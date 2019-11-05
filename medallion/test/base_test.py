@@ -3,7 +3,7 @@ import unittest
 
 from medallion import create_app
 from medallion.test import config as test_configs
-from medallion.test.data.initialize_mongodb import reset_db
+from medallion.test.data.initialize_mongodb import create_users, reset_db
 
 
 class TaxiiTest(unittest.TestCase):
@@ -43,6 +43,7 @@ class TaxiiTest(unittest.TestCase):
     def setUp(self):
         if self.type == "mongo":
             reset_db()
+            create_users()
             self.configuration = self.mongodb_config
         elif self.type == "memory":
             self.memory_config['backend']['filename'] = self.DATA_FILE
