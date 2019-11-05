@@ -117,7 +117,7 @@ class MongoBackend(Backend):
 
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
-        count = collection_info.count_documents()
+        count = collection_info.count_documents({})
 
         pipeline = [
             {"$match": {}},
