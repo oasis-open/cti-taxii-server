@@ -1,5 +1,4 @@
 from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.common import convert_to_stix_datetime
 
 
 class MongoDBFilter(BasicFilter):
