@@ -2,6 +2,8 @@ import bisect
 import copy
 import operator
 
+from flask import current_app
+
 from ..utils.common import convert_to_stix_datetime, find_att
 
 
@@ -45,6 +47,44 @@ class BasicFilter(object):
 
     def __init__(self, filter_args):
         self.filter_args = filter_args
+
+    def sort_and_paginate(self, data, c_limit, manifest):
+        more = False
+        if c_limit is not None:
+            if int(c_limit) < current_app.taxii_config["max_page_size"]:
+                limit = int(c_limit)
+            else:
+                limit = current_app.taxii_config["max_page_size"]
+        else:
+            limit = len(data)
+        new = []
+        if manifest:
+            manifest.sort(key=lambda x: x['date_added'])
+            for man in manifest:
+                man_time = find_att(man)
+                for check in data:
+                    check_time = find_att(check)
+                    if check['id'] == man['id'] and check_time == man_time:
+                        new.append(check)
+                        break
+                if len(new) == limit and len(new) != len(data):
+                    # find a better solution than this
+                    more = True
+                    for n in new:
+                        data.remove(n)
+                    current_app.medallion_backend.set_next(data)
+                    break
+        else:
+            data.sort(key=lambda x: x['date_added'])
+            for check in data:
+                new.append(check)
+                if len(new) == limit and len(new) != len(data):
+                    for n in new:
+                        more = True
+                        data.remove(n)
+                    current_app.medallion_backend.set_next(data)
+                    break
+        return new, more
 
     @staticmethod
     def filter_by_id(data, id_):
@@ -186,13 +226,24 @@ class BasicFilter(object):
 
         # match for added_after
         added_after_date = self.filter_args.get("added_after")
-        if added_after_date is not None:
+        if added_after_date and "added_after" in allowed:
             filtered_by_added_after = self.filter_by_added_after(filtered_by_spec_version, manifest_info, added_after_date)
         else:
             filtered_by_added_after = filtered_by_spec_version
 
         # match for version, and get rid of duplicates as appropriate
-        match_version = self.filter_args.get("match[version]")
-        filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
+        if "version" in allowed:
+            match_version = self.filter_args.get("match[version]")
+            filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
+        else:
+            filtered_by_version = filtered_by_added_after
 
-        return filtered_by_version
+        # sort objects by date_added of manifest and paginate as necessary
+        if "limit" in allowed:
+            client_limit = self.filter_args.get("limit")
+            final_match, more = self.sort_and_paginate(filtered_by_version, client_limit, manifest_info)
+        else:
+            final_match = filtered_by_version
+            more = False
+
+        return final_match, more

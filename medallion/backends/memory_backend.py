@@ -2,6 +2,8 @@ import copy
 import json
 import uuid
 
+from flask import current_app
+
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from ..utils.common import (create_resource, determine_spec_version,
@@ -20,15 +22,40 @@ class MemoryBackend(Backend):
         else:
             self.data = {}
         self.next = {}
+        self.current_uuid = None
+
+    def next_header(self):
+        if self.current_uuid is not None:
+            t = self.current_uuid
+            self.current_uuid = None
+            return t
+        else:
+            return None
 
     def set_next(self, objects):
         u = uuid.uuid4()
         self.next[str(u)] = objects
-        return u
+        self.current_uuid = u
+        # return u
 
-    def get_next(self, u):
-        if u in self.next:
-            return self.next.pop(u)
+    def get_next(self, filter_args, allowed):
+        n = filter_args["next"]
+        if n in self.next:
+            # checks for correct args
+            if "limit" in filter_args:
+                lim = int(filter_args["limit"])
+            else:
+                lim = current_app.taxii_config["max_page_size"]
+            if len(self.next[n]) <= lim:
+                return self.next.pop(n), False
+            else:
+                t = self.next[n]
+                ret = []
+                for i in range(0, lim):
+                    ret.append(t.pop())
+                    self.next[n] = t
+                    self.current_uuid = n
+                return ret, True
         else:
             # what should this be?
             # return 404 maybe?
@@ -112,19 +139,21 @@ class MemoryBackend(Backend):
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
-            for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
-                    if "next" in filter_args:
-                        manifest = self.get_next(filter_args["next"])
-                    else:
+            if "next" in filter_args and "next" in allowed_filters:
+                manifest, more = self.get_next(filter_args, allowed_filters)
+                pass
+            else:
+                for collection in collections:
+                    if "id" in collection and collection_id == collection["id"]:
                         manifest = collection.get("manifest", [])
                         full_filter = BasicFilter(filter_args)
-                        manifest = full_filter.process_filter(
+                        manifest, more = full_filter.process_filter(
                             manifest,
                             allowed_filters,
                             None,
                         )
-                    return create_resource("objects", manifest)
+                        break
+            return create_resource("objects", manifest, more)
 
     def get_api_root_information(self, api_root):
         if api_root in self.data:
@@ -147,18 +176,19 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
 
             objs = []
-            for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
-                    if "next" in filter_args:
-                        objs = self.get_next(filter_args["next"])
-                    else:
+            if "next" in filter_args:
+                objs, more = self.get_next(filter_args, allowed_filters)
+            else:
+                for collection in collections:
+                    if "id" in collection and collection_id == collection["id"]:
                         full_filter = BasicFilter(filter_args)
-                        objs = full_filter.process_filter(
+                        objs, more = full_filter.process_filter(
                             collection.get("objects", []),
                             allowed_filters,
                             collection.get("manifest", []),
                         )
-                    return create_resource("objects", objs)
+                        break
+            return create_resource("objects", objs, more)
 
     def add_objects(self, api_root, collection_id, objs, request_time):
         if api_root in self.data:
@@ -219,20 +249,23 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
             objs = []
             manifests = []
-            for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
-                    for obj in collection.get("objects", []):
-                        if object_id == obj["id"]:
-                            objs.append(obj)
-                    manifests = collection.get("manifest", [])
-                    break
+            if "next" in filter_args:
+                objs, more = self.get_next(filter_args, allowed_filters)
+            else:
+                for collection in collections:
+                    if "id" in collection and collection_id == collection["id"]:
+                        for obj in collection.get("objects", []):
+                            if object_id == obj["id"]:
+                                objs.append(obj)
+                        manifests = collection.get("manifest", [])
+                        break
             full_filter = BasicFilter(filter_args)
-            objs = full_filter.process_filter(
+            objs, more = full_filter.process_filter(
                 objs,
                 allowed_filters,
                 manifests
             )
-            return create_resource("objects", objs)
+            return create_resource("objects", objs, more)
 
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         if api_root in self.data:
@@ -240,20 +273,21 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
 
             objs = []
-            for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
-                    if "next" in filter_args:
-                        objs = self.get_next(filter_args["next"])
-                    else:
+            if "next" in filter_args:
+                objs, more = self.get_next(filter_args, allowed_filters)
+            else:
+                for collection in collections:
+                    if "id" in collection and collection_id == collection["id"]:
                         all_manifests = collection.get("manifest", [])
                         for manifest in all_manifests:
                             if object_id == manifest["id"]:
                                 objs.append(manifest)
                         full_filter = BasicFilter(filter_args)
-                        objs = full_filter.process_filter(
+                        objs, more = full_filter.process_filter(
                             objs,
                             allowed_filters,
                             None,
                         )
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
-                    return create_resource("versions", objs)
+                        break
+            return create_resource("versions", objs, more)
