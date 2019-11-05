@@ -37,8 +37,7 @@ class MongoDBFilter(BasicFilter):
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
-            date_filter = {"$match": {"date_added": {"$gt": added_after_timestamp}}}
+            date_filter = {"$match": {"date_added": {"$gt": added_after_date}}}
             pipeline.append(date_filter)
 
         # need to handle marking-definitions differently as they are not versioned like SDO's
@@ -50,8 +49,14 @@ class MongoDBFilter(BasicFilter):
 
             # Calculate total number of matching documents
             if data.name == "objects":
+                # Project the final results
+                project_results = {"$project": {"versions": 0, "_id": 0, "_collection_id": 0, "_date_added": 0}}
+                pipeline.append(project_results)
                 count = self.get_result_count(pipeline, manifest_info["mongodb_collection"])
             else:
+                # Project the final results
+                project_results = {"$project": {"_id": 0, "_collection_id": 0, "_type": 0}}
+                pipeline.append(project_results)
                 count = self.get_result_count(pipeline, data)
 
             self.add_pagination_operations(pipeline)
