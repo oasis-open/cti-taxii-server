@@ -146,15 +146,15 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         assert all(obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e" for obj in objs["objects"])
         assert len(objs["objects"]) == 2
 
-        r = self.client.get(
-            test.GET_OBJECTS_EP + "?limit=3",
-            headers=self.auth,
-        )
-
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
-        objs = self.load_json_response(r.data)
-        assert len(objs["objects"]) == 3
+        # r = self.client.get(
+        #     test.GET_OBJECTS_EP + "?limit=3",
+        #     headers=self.auth,
+        # )
+        #
+        # self.assertEqual(r.status_code, 200)
+        # self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+        # objs = self.load_json_response(r.data)
+        # assert len(objs["objects"]) == 3
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[id]=malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec&match[version]=first,2017-01-27T13:49:53.997Z,last",

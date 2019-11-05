@@ -42,7 +42,7 @@ class MemoryBackend(Backend):
         media_type_fmt = "application/stix+json;version={}"
 
         for collection in collections:
-            if "id" in collection and collection_id == collection["id"]:
+            if collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
                 media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
@@ -85,7 +85,7 @@ class MemoryBackend(Backend):
         collections = copy.deepcopy(api_info.get("collections", []))
 
         for collection in collections:
-            if "id" in collection and collection_id == collection["id"]:
+            if collection_id == collection["id"]:
                 collection.pop("manifest", None)
                 collection.pop("responses", None)
                 collection.pop("objects", None)
@@ -97,7 +97,7 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
 
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     manifest = collection.get("manifest", [])
                     full_filter = BasicFilter(filter_args)
                     manifest = full_filter.process_filter(
@@ -127,9 +127,8 @@ class MemoryBackend(Backend):
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
-            objs = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
 
                     full_filter = BasicFilter(filter_args)
                     objs = full_filter.process_filter(
@@ -199,7 +198,7 @@ class MemoryBackend(Backend):
             objs = []
             manifests = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     for obj in collection.get("objects", []):
                         if object_id == obj["id"]:
                             objs.append(obj)
@@ -220,7 +219,7 @@ class MemoryBackend(Backend):
 
             objs = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     all_manifests = collection.get("manifest", [])
                     for manifest in all_manifests:
                         if object_id == manifest["id"]:
