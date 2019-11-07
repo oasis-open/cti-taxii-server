@@ -36,21 +36,22 @@ class MemoryBackend(Backend):
         u = uuid.uuid4()
         self.next[str(u)] = objects
         self.current_uuid = u
-        # return u
 
     def get_next(self, filter_args, allowed):
         n = filter_args["next"]
         if n in self.next:
+            t = self.next[n]
+            ret = []
             # checks for correct args
             if "limit" in filter_args:
                 lim = int(filter_args["limit"])
             else:
                 lim = current_app.taxii_config["max_page_size"]
             if len(self.next[n]) <= lim:
-                return self.next.pop(n), False
+                for i in range(0, len(t)):
+                    ret.append(t.pop())
+                return ret, False
             else:
-                t = self.next[n]
-                ret = []
                 for i in range(0, lim):
                     ret.append(t.pop())
                     self.next[n] = t
@@ -141,7 +142,6 @@ class MemoryBackend(Backend):
 
             if "next" in filter_args and "next" in allowed_filters:
                 manifest, more = self.get_next(filter_args, allowed_filters)
-                pass
             else:
                 for collection in collections:
                     if "id" in collection and collection_id == collection["id"]:

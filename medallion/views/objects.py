@@ -37,7 +37,7 @@ def get_custom_headers(api_root, id_):
     headers = {}
     try:
         manifest = current_app.medallion_backend.get_object_manifest(
-            api_root, id_, request.args, ("id", "limit"),
+            api_root, id_, request.args, ("id",),
         )
         if manifest:
             times = sorted(map(lambda x: x["date_added"], manifest["objects"]))
