@@ -44,6 +44,7 @@ class MemoryBackend(Backend):
         for collection in collections:
             if collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
+                request_time = datetime_to_string(request_time)
                 media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
                 # version is a single value now, therefore a new manifest is always created
@@ -149,7 +150,7 @@ class MemoryBackend(Backend):
             failures = []
 
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
                     try:
