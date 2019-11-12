@@ -196,14 +196,15 @@ class MemoryBackend(Backend):
             objs = []
             for collection in collections:
                 if "id" in collection and collection_id == collection["id"]:
+                    manifest = collection.get("manifest", [])
                     if "next" in filter_args:
-                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, collection.get("manifest", []))
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifest)
                     else:
                         full_filter = BasicFilter(filter_args)
                         objs, more, headers, n = full_filter.process_filter(
                             collection.get("objects", []),
                             allowed_filters,
-                            collection.get("manifest", []),
+                            manifest,
                         )
                         break
             return create_resource("objects", objs, more, n), headers
