@@ -50,6 +50,7 @@ class BasicFilter(object):
 
     def sort_and_paginate(self, data, c_limit, manifest):
         more = False
+        nex = None
         if c_limit is not None:
             if int(c_limit) < current_app.taxii_config["max_page_size"]:
                 limit = int(c_limit)
@@ -57,6 +58,7 @@ class BasicFilter(object):
                 limit = current_app.taxii_config["max_page_size"]
         else:
             limit = len(data)
+        headers = {}
         new = []
         if manifest:
             manifest.sort(key=lambda x: x['date_added'])
@@ -65,26 +67,28 @@ class BasicFilter(object):
                 for check in data:
                     check_time = find_att(check)
                     if check['id'] == man['id'] and check_time == man_time:
+                        if len(headers) == 0:
+                            headers["X-TAXII-Date-Added-First"] = man["date_added"]
                         new.append(check)
+                        if len(new) == limit:
+                            headers["X-TAXII-Date-Added-Last"] = man["date_added"]
                         break
-                if len(new) == limit and len(new) != len(data):
-                    # find a better solution than this
-                    more = True
-                    for n in new:
-                        data.remove(n)
-                    current_app.medallion_backend.set_next(data)
-                    break
+            if limit < len(data):
+                more = True
+                next_save = new[limit:]
+                new = new[:limit]
+                nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
         else:
             data.sort(key=lambda x: x['date_added'])
-            for check in data:
-                new.append(check)
-                if len(new) == limit and len(new) != len(data):
-                    for n in new:
-                        more = True
-                        data.remove(n)
-                    current_app.medallion_backend.set_next(data)
-                    break
-        return new, more
+            if limit < len(data):
+                more = True
+                next_save = data[limit:]
+                data = data[:limit]
+                nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
+            headers["X-TAXII-Date-Added-First"] = data[0]["date_added"]
+            headers["X-TAXII-Date-Added-Last"] = data[-1]["date_added"]
+            return data, True, headers, nex
+        return new, more, headers, nex
 
     @staticmethod
     def filter_by_id(data, id_):
@@ -241,9 +245,11 @@ class BasicFilter(object):
         # sort objects by date_added of manifest and paginate as necessary
         if "limit" in allowed:
             client_limit = self.filter_args.get("limit")
-            final_match, more = self.sort_and_paginate(filtered_by_version, client_limit, manifest_info)
+            final_match, more, headers, nex = self.sort_and_paginate(filtered_by_version, client_limit, manifest_info)
         else:
             final_match = filtered_by_version
             more = False
+            headers = {}
+            nex = None
 
-        return final_match, more
+        return final_match, more, headers, nex

@@ -7,9 +7,19 @@ from flask import current_app
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, format_datetime,
+                            determine_version, find_att, format_datetime,
                             generate_status, generate_status_details, iterpath)
 from .base import Backend
+
+
+def find_headers(headers, manifest, obj):
+    obj_time = find_att(obj)
+    for man in manifest:
+        if man["id"] == obj["id"] and obj_time == find_att(man):
+            if len(headers) == 0:
+                headers["X-TAXII-Date-Added-First"] = man["date_added"]
+            else:
+                headers["X-TAXII-Date-Added-Last"] = man["date_added"]
 
 
 class MemoryBackend(Backend):
@@ -22,45 +32,53 @@ class MemoryBackend(Backend):
         else:
             self.data = {}
         self.next = {}
-        self.current_uuid = None
 
-    def next_header(self):
-        if self.current_uuid is not None:
-            t = self.current_uuid
-            self.current_uuid = None
-            return t
-        else:
-            return None
+    def set_next(self, objects, args):
+        u = str(uuid.uuid4())
+        d = {"objects": objects, "args": args}
+        self.next[u] = d
+        return u
 
-    def set_next(self, objects):
-        u = uuid.uuid4()
-        self.next[str(u)] = objects
-        self.current_uuid = u
-
-    def get_next(self, filter_args, allowed):
+    def get_next(self, filter_args, allowed, manifest):
         n = filter_args["next"]
         if n in self.next:
-            t = self.next[n]
+            for arg, val in filter_args.items():
+                if arg != "next" and (arg not in self.next[n]["args"] or self.next[n]["args"][arg] != val):
+                    raise ProcessingError("Filter parameters must match the parameters of the initial request", 400)
+
+            t = self.next[n]["objects"]
+            length = len(self.next[n]["objects"])
+            headers = {}
             ret = []
-            # checks for correct args
             if "limit" in filter_args:
                 lim = int(filter_args["limit"])
             else:
                 lim = current_app.taxii_config["max_page_size"]
-            if len(self.next[n]) <= lim:
-                for i in range(0, len(t)):
-                    ret.append(t.pop())
-                return ret, False
+
+            if length <= lim:
+                limit = length
+                more = False
+                nex = None
             else:
-                for i in range(0, lim):
-                    ret.append(t.pop())
-                    self.next[n] = t
-                    self.current_uuid = n
-                return ret, True
+                limit = lim
+                more = True
+
+            for i in range(0, limit):
+                x = t.pop(0)
+                ret.append(x)
+                if len(headers) == 0:
+                    find_headers(headers, manifest, x)
+                if i == limit - 1:
+                    find_headers(headers, manifest, x)
+
+            if not more:
+                self.next.pop(n)
+            else:
+                nex = n
+
+            return ret, more, headers, nex
         else:
-            # what should this be?
-            # return 404 maybe?
-            print("No next value that matches that value")
+            raise ProcessingError("No objects stored on the server associated with the uuid '" + n + "'", 404)
 
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
@@ -140,20 +158,21 @@ class MemoryBackend(Backend):
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
-            if "next" in filter_args and "next" in allowed_filters:
-                manifest, more = self.get_next(filter_args, allowed_filters)
-            else:
-                for collection in collections:
-                    if "id" in collection and collection_id == collection["id"]:
+            for collection in collections:
+                if "id" in collection and collection_id == collection["id"]:
+                    if "next" in filter_args and "next" in allowed_filters:
+                        manifest = collection.get("manifest", [])
+                        manifest, more, headers, n = self.get_next(filter_args, allowed_filters, manifest)
+                    else:
                         manifest = collection.get("manifest", [])
                         full_filter = BasicFilter(filter_args)
-                        manifest, more = full_filter.process_filter(
+                        manifest, more, headers, n = full_filter.process_filter(
                             manifest,
                             allowed_filters,
                             None,
                         )
                         break
-            return create_resource("objects", manifest, more)
+            return create_resource("objects", manifest, more, n), headers
 
     def get_api_root_information(self, api_root):
         if api_root in self.data:
@@ -174,21 +193,20 @@ class MemoryBackend(Backend):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
-
             objs = []
-            if "next" in filter_args:
-                objs, more = self.get_next(filter_args, allowed_filters)
-            else:
-                for collection in collections:
-                    if "id" in collection and collection_id == collection["id"]:
+            for collection in collections:
+                if "id" in collection and collection_id == collection["id"]:
+                    if "next" in filter_args:
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, collection.get("manifest", []))
+                    else:
                         full_filter = BasicFilter(filter_args)
-                        objs, more = full_filter.process_filter(
+                        objs, more, headers, n = full_filter.process_filter(
                             collection.get("objects", []),
                             allowed_filters,
                             collection.get("manifest", []),
                         )
                         break
-            return create_resource("objects", objs, more)
+            return create_resource("objects", objs, more, n), headers
 
     def add_objects(self, api_root, collection_id, objs, request_time):
         if api_root in self.data:
@@ -249,23 +267,23 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
             objs = []
             manifests = []
-            if "next" in filter_args:
-                objs, more = self.get_next(filter_args, allowed_filters)
-            else:
-                for collection in collections:
-                    if "id" in collection and collection_id == collection["id"]:
+            for collection in collections:
+                if "id" in collection and collection_id == collection["id"]:
+                    manifests = collection.get("manifest", [])
+                    if "next" in filter_args:
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifests)
+                    else:
                         for obj in collection.get("objects", []):
                             if object_id == obj["id"]:
                                 objs.append(obj)
-                        manifests = collection.get("manifest", [])
+                        full_filter = BasicFilter(filter_args)
+                        objs, more, headers, n = full_filter.process_filter(
+                            objs,
+                            allowed_filters,
+                            manifests
+                        )
                         break
-            full_filter = BasicFilter(filter_args)
-            objs, more = full_filter.process_filter(
-                objs,
-                allowed_filters,
-                manifests
-            )
-            return create_resource("objects", objs, more)
+            return create_resource("objects", objs, more, n), headers
 
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         if api_root in self.data:
@@ -273,21 +291,24 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
 
             objs = []
-            if "next" in filter_args:
-                objs, more = self.get_next(filter_args, allowed_filters)
-            else:
-                for collection in collections:
-                    if "id" in collection and collection_id == collection["id"]:
+            for collection in collections:
+                if "id" in collection and collection_id == collection["id"]:
+                    all_manifests = collection.get("manifest", [])
+                    if "next" in filter_args:
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, all_manifests)
+                        objs = sorted(map(lambda x: x["version"], objs), reverse=True)
+                    else:
+
                         all_manifests = collection.get("manifest", [])
                         for manifest in all_manifests:
                             if object_id == manifest["id"]:
                                 objs.append(manifest)
                         full_filter = BasicFilter(filter_args)
-                        objs, more = full_filter.process_filter(
+                        objs, more, headers, n = full_filter.process_filter(
                             objs,
                             allowed_filters,
                             None,
                         )
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
-            return create_resource("versions", objs, more)
+            return create_resource("versions", objs, more, n), headers

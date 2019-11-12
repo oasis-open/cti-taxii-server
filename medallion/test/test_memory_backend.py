@@ -222,10 +222,10 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r.data)
         assert len(objs["objects"]) == 2
         self.assertTrue(objs["more"])
-        assert "next" in r.headers
+        assert "next" in objs
 
         r2 = self.client.get(
-            test.GET_OBJECTS_EP + "?limit=2&next=" + r.headers["next"],
+            test.GET_OBJECTS_EP + "?limit=2&next=" + objs["next"],
             headers=self.auth,
         )
 
@@ -234,7 +234,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r2.data)
         assert len(objs["objects"]) == 2
         self.assertTrue(objs["more"])
-        assert "next" in r2.headers
+        assert "next" in objs
 
         r_new = self.client.get(
             test.GET_OBJECTS_EP + "?match[id]=indicator--6770298f-0fd8-471a-ab8c-1c658a46574e&match[version]=all&limit=2",
@@ -246,11 +246,11 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r_new.data)
         assert len(objs["objects"]) == 2
         self.assertTrue(objs["more"])
-        assert "next" in r_new.headers
+        assert "next" in objs
         assert len(current_app.medallion_backend.next) == 2
 
         r3 = self.client.get(
-            test.GET_OBJECTS_EP + "?limit=2&next=" + r2.headers["next"],
+            test.GET_OBJECTS_EP + "?limit=2&next=" + objs["next"],
             headers=self.auth,
         )
 
@@ -259,11 +259,11 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r3.data)
         assert len(objs["objects"]) == 1
         self.assertFalse(objs["more"])
-        assert "next" not in r3.headers
+        assert "next" not in objs
         assert len(current_app.medallion_backend.next) == 1
 
         r = self.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[version]=all&limit=1",
+            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
             headers=self.auth,
             follow_redirects=True,
         )
@@ -274,10 +274,10 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         assert objs["versions"] == ["2016-11-03T12:30:59.000Z"]
         assert len(objs["versions"]) == 1
         self.assertTrue(objs["more"])
-        assert "next" in r.headers
+        assert "next" in objs
 
         r2 = self.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?next=" + r.headers["next"],
+            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
             headers=self.auth,
             follow_redirects=True,
         )
@@ -285,10 +285,24 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r2.status_code, 200)
         self.assertEqual(r2.content_type, MEDIA_TYPE_TAXII_V21)
         objs = self.load_json_response(r2.data)
+        assert objs["versions"] == ["2016-12-25T12:30:59.444Z"]
+        assert len(objs["versions"]) == 1
+        self.assertTrue(objs["more"])
+        assert "next" in objs
+
+        r3 = self.client.get(
+            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
+            headers=self.auth,
+            follow_redirects=True,
+        )
+
+        self.assertEqual(r3.status_code, 200)
+        self.assertEqual(r3.content_type, MEDIA_TYPE_TAXII_V21)
+        objs = self.load_json_response(r3.data)
         assert objs["versions"] == ["2017-01-27T13:49:53.935Z"]
         assert len(objs["versions"]) == 1
         self.assertFalse(objs["more"])
-        assert "next" not in r.headers
+        assert "next" not in objs
 
     def test_add_objects(self):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
