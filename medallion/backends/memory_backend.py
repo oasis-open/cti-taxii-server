@@ -3,9 +3,9 @@ import json
 
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, generate_status,
-                            generate_status_details, iterpath)
+from ..utils.common import (create_resource, datetime_to_string,
+                            determine_spec_version, determine_version,
+                            generate_status, generate_status_details, iterpath)
 from .base import Backend
 
 
@@ -184,7 +184,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                request_time, "complete", succeeded,
+                datetime_to_string(request_time), "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )
