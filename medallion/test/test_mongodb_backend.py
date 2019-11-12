@@ -253,7 +253,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
+            new_bundle["objects"][0]["modified"] = common.datetime_to_string_stix(common.get_timestamp())
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
