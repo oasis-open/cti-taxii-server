@@ -106,7 +106,7 @@ class Backend(object):
             api_root (str): the name of the api_root.
             collection_id (str): the id of the collection
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
-                containing filter args, plus start index and page size to support pagination.
+                containing filter args
             allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
