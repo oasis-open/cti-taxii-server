@@ -2,6 +2,7 @@ from pymongo import ASCENDING, IndexModel
 
 from medallion.test.generic_initialize_mongodb import (
     add_api_root, build_new_mongo_databases_and_collection, connect_to_client)
+from medallion.utils.common import datetime_to_float, string_to_datetime
 
 
 def reset_db(url="mongodb://root:example@localhost:27017/"):
@@ -93,58 +94,58 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
 
     api_root_db["manifests"].insert_many([
         {
-            "date_added": "2014-05-08T09:00:00.573812Z",
+            "date_added": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000000Z")),
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2014-05-08T09:00:00.000Z",
+            "version": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "relationship",
         },
         {
-            "date_added": "2016-11-01T03:04:05.000000Z",
+            "date_added": datetime_to_float(string_to_datetime("2016-11-01T03:04:05.000000Z")),
             "id": "indicator--cd981c25-8042-4166-8945-51178443bdac",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2014-05-08T09:00:00.000Z",
+            "version": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
         {
-            "date_added": "2016-11-03T12:30:59.001000Z",
+            "date_added": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.001000Z")),
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2016-11-03T12:30:59.000Z",
+            "version": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
         {
-            "date_added": "2016-12-27T13:49:59.000000Z",
+            "date_added": datetime_to_float(string_to_datetime("2016-12-27T13:49:59.000000Z")),
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2016-12-25T12:30:59.444Z",
+            "version": datetime_to_float(string_to_datetime("2016-12-25T12:30:59.444Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         },
         {
-            "date_added": "2017-01-20T00:00:00.000000Z",
+            "date_added": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000000Z")),
             "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2017-01-20T00:00:00.000Z",
+            "version": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "marking-definition",
         },
         {
-            "date_added": "2017-01-27T13:49:59.997000Z",
+            "date_added": datetime_to_float(string_to_datetime("2017-01-27T13:49:59.997000Z")),
             "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2017-01-27T13:49:53.997Z",
+            "version": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "malware",
         },
         {
-            "date_added": "2017-12-31T13:49:53.935923Z",
+            "date_added": datetime_to_float(string_to_datetime("2017-12-31T13:49:53.935000Z")),
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
             "media_type": "application/stix+json;version=2.1",
-            "version": "2017-01-27T13:49:53.935Z",
+            "version": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.935Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
         }
@@ -195,8 +196,8 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
 
     api_root_db["objects"].insert_many([
         {
-            "created": "2014-05-08T09:00:00.000Z",
-            "modified": "2014-05-08T09:00:00.000Z",
+            "created": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
+            "modified": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
             "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
             "relationship_type": "indicates",
             "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
@@ -206,12 +207,12 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
-            "created": "2014-05-08T09:00:00.000Z",
+            "created": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
             "id": "indicator--cd981c25-8042-4166-8945-51178443bdac",
             "indicator_types": [
                 "file-hash-watchlist",
             ],
-            "modified": "2014-05-08T09:00:00.000Z",
+            "modified": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
             "name": "File hash for Poison Ivy variant",
             "pattern": "[file:hashes.'SHA-256' = 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c']",
             "pattern_type": "stix",
@@ -221,13 +222,13 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
-            "created": "2016-11-03T12:30:59.000Z",
+            "created": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
             "description": "Accessing this url will infect your machine with malware.",
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
             "indicator_types": [
                 "url-watchlist",
             ],
-            "modified": "2016-11-03T12:30:59.000Z",
+            "modified": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
             "name": "Malicious site hosting downloader",
             "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
             "pattern_type": "stix",
@@ -237,13 +238,13 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
-            "created": "2016-11-03T12:30:59.000Z",
+            "created": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
             "description": "Accessing this url will infect your machine with malware. Updated indicator",
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
             "indicator_types": [
                 "url-watchlist",
             ],
-            "modified": "2016-12-25T12:30:59.444Z",
+            "modified": datetime_to_float(string_to_datetime("2016-12-25T12:30:59.444Z")),
             "name": "Malicious site hosting downloader",
             "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
             "pattern_type": "stix",
@@ -253,13 +254,13 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
-            "created": "2016-11-03T12:30:59.000Z",
+            "created": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
             "description": "Accessing this url will infect your machine with malware. This is the last updated indicator",
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
             "indicator_types": [
                 "url-watchlist",
             ],
-            "modified": "2017-01-27T13:49:53.935Z",
+            "modified": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.935Z")),
             "name": "Malicious site hosting downloader",
             "pattern": "[url:value = 'http://x4z9arb.cn/4712']",
             "pattern_type": "stix",
@@ -269,7 +270,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
-            "created": "2017-01-20T00:00:00.000Z",
+            "created": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000Z")),
             "definition": {
                 "tlp": "green",
             },
@@ -281,14 +282,14 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
         },
         {
-            "created": "2017-01-27T13:49:53.997Z",
+            "created": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
             "description": "Poison Ivy",
             "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
             "is_family": True,
             "malware_types": [
                 "remote-access-trojan",
             ],
-            "modified": "2017-01-27T13:49:53.997Z",
+            "modified": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
             "name": "Poison Ivy",
             "spec_version": "2.1",
             "type": "malware",
