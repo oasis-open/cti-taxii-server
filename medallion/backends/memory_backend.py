@@ -78,7 +78,7 @@ class MemoryBackend(Backend):
 
             return ret, more, headers, nex
         else:
-            raise ProcessingError("No objects stored on the server associated with the uuid '" + n + "'", 404)
+            raise ProcessingError("No objects stored on the server associated with the uuid '" + n + "'", 400)
 
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
