@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 import uuid
 
 import pytz
@@ -126,8 +127,12 @@ def datetime_to_string_stix(dttm):
 
 
 def datetime_to_float(dttm):
-    """Given a datetime instance, produce a float"""
-    return dttm.timestamp()
+    """Given a datetime instance, return its representation as a float"""
+    # Based on this solution: https://stackoverflow.com/questions/30020988/python3-datetime-timestamp-in-python2
+    if dttm.tzinfo is None:
+        return time.mktime((dttm.timetuple())) + dttm.microsecond / 1e6
+    else:
+        return (dttm - dt.datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()
 
 
 def float_to_datetime(timestamp_float):
