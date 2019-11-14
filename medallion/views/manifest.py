@@ -3,8 +3,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
-from .objects import (collection_exists, get_and_enforce_limit,
-                      permission_to_read)
+from .objects import collection_exists, get_custom_headers, permission_to_read
 
 mod = Blueprint("manifest", __name__)
 
@@ -29,8 +28,7 @@ def get_object_manifest(api_root, collection_id):
             api_root, collection_id, request.args, ("id", "type", "version", "spec_version"),
         )
         if manifests:
-            headers = get_and_enforce_limit(api_root, collection_id, manifests)
-            # headers = get_custom_headers(api_root, collection_id)
+            headers = get_custom_headers(api_root, collection_id)
             return Response(
                 response=json.dumps(manifests),
                 status=200,
