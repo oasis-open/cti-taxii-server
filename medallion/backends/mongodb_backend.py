@@ -10,7 +10,8 @@ from ..utils.common import (create_resource, datetime_to_float,
                             datetime_to_string, datetime_to_string_stix,
                             determine_spec_version, determine_version,
                             float_to_datetime, generate_status,
-                            generate_status_details, string_to_datetime, get_custom_headers)
+                            generate_status_details, get_custom_headers,
+                            string_to_datetime)
 from .base import Backend
 
 # Module-level logger
@@ -97,7 +98,7 @@ class MongoBackend(Backend):
         if internal:
             return manifest_resource
         else:
-            headers = self._get_custom_headers(manifest_resource)
+            headers = get_custom_headers(manifest_resource)
             return manifest_resource, headers
 
     @catch_mongodb_error
@@ -228,7 +229,7 @@ class MongoBackend(Backend):
                 obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
 
         manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
-        headers = self._get_custom_headers(manifest_resource)
+        headers = get_custom_headers(manifest_resource)
 
         next_id, more = self._update_record(next_id, count)
         return create_resource("objects", objects_found, more, next_id), headers
@@ -310,7 +311,7 @@ class MongoBackend(Backend):
                 obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
 
         manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
-        headers = self._get_custom_headers(manifest_resource)
+        headers = get_custom_headers(manifest_resource)
 
         next_id, more = self._update_record(next_id, count)
         return create_resource("objects", objects_found, more, next_id), headers
@@ -350,6 +351,7 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         next_id, record = self._process_params(filter_args, limit)
+
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
@@ -362,7 +364,7 @@ class MongoBackend(Backend):
         )
 
         manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
-        headers = self._get_custom_headers(manifest_resource)
+        headers = get_custom_headers(manifest_resource)
 
         manifests_found = list(map(lambda x: datetime_to_string_stix(float_to_datetime(x["version"])), manifests_found))
         next_id, more = self._update_record(next_id, count)

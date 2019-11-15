@@ -176,11 +176,8 @@ class MongoDBFilter(BasicFilter):
 
     def add_pagination_operations(self, pipeline):
         if self.record:
-            limit = self.record.get("limit")
-            skip = self.record.get("skip")
-            pipeline.append({"$skip": skip})
-            pipeline.append({"$limit": limit})
-            self.record["skip"] += limit
+            pipeline.append({"$skip": self.record["skip"]})
+            pipeline.append({"$limit": self.record["limit"]})
 
     @staticmethod
     def get_result_count(pipeline, data):
