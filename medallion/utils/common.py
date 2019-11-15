@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 import uuid
 
 import pytz
@@ -16,7 +17,7 @@ def create_resource(resource_name, o, more=False, next_id=None):
 def determine_version(new_obj, request_time):
     """Grab the modified time if present, if not grab created time,
     if not grab request time provided by server."""
-    return new_obj.get("modified", new_obj.get("created", format_datetime(request_time)))
+    return new_obj.get("modified", new_obj.get("created", datetime_to_string(request_time)))
 
 
 def determine_spec_version(obj):
@@ -91,7 +92,7 @@ def get_timestamp():
     return dt.datetime.now(tz=pytz.UTC)
 
 
-def format_datetime(dttm):
+def datetime_to_string(dttm):
     """Given a datetime instance, produce the string representation
     with microsecond precision"""
     # 1. Convert to timezone-aware
@@ -107,7 +108,42 @@ def format_datetime(dttm):
     return ts
 
 
-def convert_to_stix_datetime(timestamp_string):
+def datetime_to_string_stix(dttm):
+    """Given a datetime instance, produce the string representation
+    with millisecond precision"""
+    # 1. Convert to timezone-aware
+    # 2. Convert to UTC
+    # 3. Format in ISO format with millisecond precision,
+    #       except for objects defined with higher precision
+    # 4. Add "Z"
+
+    if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
+        # dttm is timezone-naive; assume UTC
+        zoned = pytz.UTC.localize(dttm)
+    else:
+        zoned = dttm.astimezone(pytz.UTC)
+    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
+    ms = zoned.strftime("%f")
+    if len(ms.rstrip("0")) > 3:
+        return ts + "." + ms + "Z"
+    return ts + "." + ms[:3] + "Z"
+
+
+def datetime_to_float(dttm):
+    """Given a datetime instance, return its representation as a float"""
+    # Based on this solution: https://stackoverflow.com/questions/30020988/python3-datetime-timestamp-in-python2
+    if dttm.tzinfo is None:
+        return time.mktime((dttm.timetuple())) + dttm.microsecond / 1e6
+    else:
+        return (dttm - dt.datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()
+
+
+def float_to_datetime(timestamp_float):
+    """Given a floating-point number, produce a datetime instance"""
+    return dt.datetime.fromtimestamp(timestamp_float)
+
+
+def string_to_datetime(timestamp_string):
     """Convert string timestamp to datetime instance."""
     try:
         return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -151,3 +187,27 @@ def generate_status_details(id, version, message=None):
         status_details["message"] = message
 
     return status_details
+
+
+def find_att(obj):
+    """
+    Used for finding the version attribute of an ambiguous object. Manifests
+    use the "version" field, but objects will use "modified", or if that's not
+    available, the "created" field.
+
+    Args:
+        obj (dict): manifest or stix object
+
+    Returns:
+        string value of the field from the object to use for versioning
+
+    """
+    if "version" in obj:
+        return string_to_datetime(obj["version"])
+    elif "modified" in obj:
+        return string_to_datetime(obj["modified"])
+    elif "created" in obj:
+        return string_to_datetime(obj["created"])
+    else:
+        # TO DO: PUT DEFAULT VALUE HERE
+        pass

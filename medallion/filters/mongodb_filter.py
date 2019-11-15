@@ -1,6 +1,6 @@
 import pymongo
 
-from ..utils.common import convert_to_stix_datetime
+from ..utils.common import datetime_to_float, string_to_datetime
 from .basic_filter import BasicFilter
 
 
@@ -51,7 +51,7 @@ class MongoDBFilter(BasicFilter):
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
+            added_after_timestamp = datetime_to_float(string_to_datetime(added_after_date))
             date_filter = {
                 "$match": {
                     "date_added": {"$gt": added_after_timestamp},
@@ -66,7 +66,7 @@ class MongoDBFilter(BasicFilter):
             if not match_version:
                 match_version = "last"
             if "all" not in match_version:
-                actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
+                actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
                 # If specific dates have been selected, then we add these to the $match criteria
                 # created from the self.full_query at the beginning of this method. This will make
                 # sure we can pick the correct manifests even if `added_after` later modifies this results.

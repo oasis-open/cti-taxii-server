@@ -27,6 +27,13 @@ class TaxiiTest(unittest.TestCase):
                 "type": "indicator",
                 "valid_from": "2017-01-27T13:49:53.935382Z",
             },
+            {
+                "type": "marking-definition",
+                "created": "2017-01-20T00:00:00.000Z",
+                "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+                "definition": {"tlp": "white"},
+                "definition_type": "tlp"
+            },
         ],
     }
 

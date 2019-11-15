@@ -6,9 +6,11 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
-from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, format_datetime,
-                            generate_status, generate_status_details)
+from ..utils.common import (create_resource, datetime_to_float,
+                            datetime_to_string, datetime_to_string_stix,
+                            determine_spec_version, determine_version,
+                            float_to_datetime, generate_status,
+                            generate_status_details, string_to_datetime, get_custom_headers)
 from .base import Backend
 
 # Module-level logger
@@ -38,46 +40,81 @@ class MongoBackend(Backend):
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
 
-    def _process_params(self, filter_args):
-        limit = filter_args.get("limit")
+    def _process_params(self, filter_args, limit):
         next_id = filter_args.get("next")
         if limit and next_id is None:
-            record = {"skip": 0, "limit": int(limit), "total_count": 0, "more": True}
+            record = {"skip": 0, "limit": limit, "total_count": 0, "more": True}
             next_id = str(uuid.uuid4())
             self.pages[next_id] = record
         elif limit and next_id:
-            record = self.pages[next_id]
+            try:
+                record = self.pages[next_id]
+            except KeyError:
+                raise ProcessingError("The server did not understand the request or filter parameters", 400)
         else:
             record = {}
         return next_id, record
 
-    def _update_record(self, next_id, count):
+    def _update_record(self, next_id, count, internal=False):
         more = False
         if next_id:
-            self.pages[next_id]["total_count"] = count
+            try:
+                self.pages[next_id]["total_count"] = count
+            except KeyError:
+                raise ProcessingError("The server did not understand the request or filter parameters", 400)
             more = self.pages[next_id]["more"]
+            if internal is False:
+                self.pages[next_id]["skip"] += self.pages[next_id]["limit"]
             if self.pages[next_id]["skip"] >= count:
+                self.pages.pop(next_id, None)
                 more = False
                 next_id = None
-                self.pages.pop(next_id, None)
         return next_id, more
 
+    def _get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit, internal=False):
+        api_root_db = self.client[api_root]
+        manifest_info = api_root_db["manifests"]
+        next_id, record = self._process_params(filter_args, limit)
+
+        full_filter = MongoDBFilter(
+            filter_args,
+            {"_collection_id": {"$eq": collection_id}},
+            allowed_filters,
+            record
+        )
+        count, objects_found = full_filter.process_filter(
+            manifest_info,
+            allowed_filters,
+            None,
+        )
+
+        for obj in objects_found:
+            obj["date_added"] = datetime_to_string(float_to_datetime(obj["date_added"]))
+            obj["version"] = datetime_to_string_stix(float_to_datetime(obj["version"]))
+
+        next_id, more = self._update_record(next_id, count, internal)
+        manifest_resource = create_resource("objects", objects_found, more, next_id)
+        if internal:
+            return manifest_resource
+        else:
+            headers = self._get_custom_headers(manifest_resource)
+            return manifest_resource, headers
+
     @catch_mongodb_error
-    def _update_manifest(self, new_obj, api_root, collection_id, request_time):
+    def _update_manifest(self, new_obj, api_root, collection_id, obj_version, request_time):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         collection_info = api_root_db["collections"]
         media_type_fmt = "application/stix+json;version={}"
 
-        obj_version = determine_version(new_obj, request_time)
         media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
         # version is a single value now, therefore a new manifest is created always
         manifest_info.insert_one(
             {
                 "id": new_obj["id"],
-                "date_added": request_time,
-                "version": obj_version,
+                "date_added": datetime_to_float(request_time),
+                "version": datetime_to_float(string_to_datetime(obj_version)),
                 "media_type": media_type,
                 "_collection_id": collection_id,
                 "_type": new_obj["type"],
@@ -141,25 +178,8 @@ class MongoBackend(Backend):
         return info
 
     @catch_mongodb_error
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
-        api_root_db = self.client[api_root]
-        manifest_info = api_root_db["manifests"]
-        next_id, record = self._process_params(filter_args)
-
-        full_filter = MongoDBFilter(
-            filter_args,
-            {"_collection_id": {"$eq": collection_id}},
-            allowed_filters,
-            record
-        )
-        count, objects_found = full_filter.process_filter(
-            manifest_info,
-            allowed_filters,
-            None,
-        )
-
-        next_id, more = self._update_record(next_id, count)
-        return create_resource("objects", objects_found, more, next_id)
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
+        return self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, False)
 
     @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
@@ -182,10 +202,10 @@ class MongoBackend(Backend):
         return result
 
     @catch_mongodb_error
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        next_id, record = self._process_params(filter_args)
+        next_id, record = self._process_params(filter_args, limit)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -201,8 +221,17 @@ class MongoBackend(Backend):
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
 
+        for obj in objects_found:
+            if "modified" in obj:
+                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
+            if "created" in obj:
+                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
+
+        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
+        headers = self._get_custom_headers(manifest_resource)
+
         next_id, more = self._update_record(next_id, count)
-        return create_resource("objects", objects_found, more, next_id)
+        return create_resource("objects", objects_found, more, next_id), headers
 
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -218,7 +247,7 @@ class MongoBackend(Backend):
             for new_obj in objs["objects"]:
                 mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
                 if "modified" in new_obj:
-                    mongo_query["modified"] = new_obj["modified"]
+                    mongo_query["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
                 existing_entry = objects_info.find_one(mongo_query)
                 obj_version = determine_version(new_obj, request_time)
                 if existing_entry:
@@ -231,9 +260,13 @@ class MongoBackend(Backend):
                 else:
                     new_obj.update({"_collection_id": collection_id})
                     if not all(prop in new_obj for prop in ("modified", "created")):
-                        new_obj["_date_added"] = obj_version  # Special case for un-versioned objects
+                        new_obj["_date_added"] = datetime_to_float(string_to_datetime(obj_version))  # Special case for un-versioned objects
+                    if "modified" in new_obj:
+                        new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
+                    if "created" in new_obj:
+                        new_obj["created"] = datetime_to_float(string_to_datetime(new_obj["created"]))
                     objects_info.insert_one(new_obj)
-                    self._update_manifest(new_obj, api_root, collection_id, request_time)
+                    self._update_manifest(new_obj, api_root, collection_id, obj_version, request_time)
                     status_detail = generate_status_details(
                         new_obj["id"], obj_version,
                         message="Successfully added object to collection '{}'.".format(collection_id)
@@ -245,7 +278,7 @@ class MongoBackend(Backend):
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            format_datetime(request_time), "complete", succeeded, failed,
+            datetime_to_string(request_time), "complete", succeeded, failed,
             pending, successes=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)
@@ -253,10 +286,10 @@ class MongoBackend(Backend):
         return status
 
     @catch_mongodb_error
-    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        next_id, record = self._process_params(filter_args)
+        next_id, record = self._process_params(filter_args, limit)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -270,8 +303,17 @@ class MongoBackend(Backend):
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
 
+        for obj in objects_found:
+            if "modified" in obj:
+                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
+            if "created" in obj:
+                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
+
+        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
+        headers = self._get_custom_headers(manifest_resource)
+
         next_id, more = self._update_record(next_id, count)
-        return create_resource("objects", objects_found, more, next_id)
+        return create_resource("objects", objects_found, more, next_id), headers
 
     @catch_mongodb_error
     def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
@@ -304,10 +346,10 @@ class MongoBackend(Backend):
             raise ProcessingError("Object '{}' not found".format(object_id), 404)
 
     @catch_mongodb_error
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
-        next_id, record = self._process_params(filter_args)
+        next_id, record = self._process_params(filter_args, limit)
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
@@ -318,6 +360,10 @@ class MongoBackend(Backend):
             allowed_filters,
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        manifests_found = list(map(lambda x: x["version"], manifests_found))
+
+        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
+        headers = self._get_custom_headers(manifest_resource)
+
+        manifests_found = list(map(lambda x: datetime_to_string_stix(float_to_datetime(x["version"])), manifests_found))
         next_id, more = self._update_record(next_id, count)
-        return create_resource("versions", manifests_found, more, next_id)
+        return create_resource("versions", manifests_found, more, next_id), headers

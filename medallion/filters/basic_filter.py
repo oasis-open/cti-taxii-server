@@ -2,19 +2,7 @@ import bisect
 import copy
 import operator
 
-from ..utils.common import convert_to_stix_datetime
-
-
-def find_att(obj):
-    if "version" in obj:
-        return "version"
-    elif "modified" in obj:
-        return "modified"
-    elif "created" in obj:
-        return "created"
-    else:
-        # TO DO: PUT DEFAULT VALUE HERE
-        pass
+from ..utils.common import find_att, string_to_datetime
 
 
 def check_for_dupes(final_match, final_track, res):
@@ -25,12 +13,9 @@ def check_for_dupes(final_match, final_track, res):
             final_track.insert(pos, obj["id"])
             final_match.insert(pos, obj)
         else:
-            obj_att = find_att(obj)
-            obj_time = convert_to_stix_datetime(obj[obj_att])
+            obj_time = find_att(obj)
             while pos != len(final_track) and obj["id"] == final_track[pos]:
-                final_att = find_att(final_match[pos])
-                final_time = convert_to_stix_datetime(final_match[pos][final_att])
-                if final_time == obj_time:
+                if find_att(final_match[pos]) == obj_time:
                     found = 1
                     break
                 else:
@@ -45,18 +30,13 @@ def check_for_dupes(final_match, final_track, res):
 def check_version(data, relate):
     id_track = []
     res = []
-    # O(n)?
     for obj in data:
         pos = bisect.bisect_left(id_track, obj["id"])
         if not res or pos >= len(id_track) or id_track[pos] != obj["id"]:
             id_track.insert(pos, obj["id"])
             res.insert(pos, obj)
         else:
-            obj_att = find_att(obj)
-            obj_time = convert_to_stix_datetime(obj[obj_att])
-            comp_att = find_att(res[pos])
-            comp_time = convert_to_stix_datetime(res[pos][comp_att])
-            if relate(obj_time, comp_time):
+            if relate(find_att(obj), find_att(res[pos])):
                 res[pos] = obj
     return res
 
@@ -80,26 +60,22 @@ class BasicFilter(object):
 
     @staticmethod
     def filter_by_added_after(data, manifest_info, added_after_date):
-        added_after_timestamp = convert_to_stix_datetime(added_after_date)
+        added_after_timestamp = string_to_datetime(added_after_date)
         new_results = []
-        # for manifest objects
+        # for manifest objects and versions
         if manifest_info is None:
             for obj in data:
-                if obj in new_results:
-                    continue
-                added_date_timestamp = convert_to_stix_datetime(obj["date_added"])
-                if added_date_timestamp > added_after_timestamp:
+                if string_to_datetime(obj["date_added"]) > added_after_timestamp:
                     new_results.append(obj)
         # for other objects with manifests
         else:
             for obj in data:
-                if obj in new_results:
-                    continue
+                obj_time = find_att(obj)
                 for item in manifest_info:
-                    if item["id"] == obj["id"]:
-                        added_date_timestamp = convert_to_stix_datetime(item["date_added"])
-                        if added_date_timestamp > added_after_timestamp:
-                            new_results.append(obj)
+                    item_time = find_att(item)
+                    if item["id"] == obj["id"] and item_time == obj_time and string_to_datetime(item["date_added"]) > added_after_timestamp:
+                        new_results.append(obj)
+                        break
         return new_results
 
     @staticmethod
@@ -118,14 +94,13 @@ class BasicFilter(object):
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [convert_to_stix_datetime(x) for x in version_indicators if x != "first" and x != "last"]
+        actual_dates = [string_to_datetime(x) for x in version_indicators if x != "first" and x != "last"]
         # if a specific version is given, filter for objects with that value
         if actual_dates:
             id_track = []
             res = []
             for obj in data:
-                obj_att = find_att(obj)
-                obj_time = convert_to_stix_datetime(obj[obj_att])
+                obj_time = find_att(obj)
                 if obj_time in actual_dates:
                     pos = bisect.bisect_left(id_track, obj["id"])
                     id_track.insert(pos, obj["id"])
@@ -166,8 +141,6 @@ class BasicFilter(object):
             if "spec_version" in obj and any(s == obj["spec_version"] for s in spec_):
                 match_objects.append(obj)
             elif "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
-                # this is assuming all manifests will have the media_type attribute
-                # change this if there is another way
                 match_objects.append(obj)
 
         return match_objects
@@ -175,9 +148,6 @@ class BasicFilter(object):
     def process_filter(self, data, allowed, manifest_info):
         filtered_by_type = []
         filtered_by_id = []
-        filtered_by_version = []
-        filtered_by_spec_version = []
-        filtered_by_added_after = []
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
