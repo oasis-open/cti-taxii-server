@@ -854,10 +854,10 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for just the first item ------------- #
 
     def test_object_pagination_whole_task(self):
-        # setup data by adding 100 indicators
+        # setup data by adding 100 indicators + the marking-definition in self.API_OBJECTS_2
         bundle = copy.deepcopy(self.API_OBJECTS_2)
-        # 5 objects in the collection already so add another 96 to make it up to 101
-        for i in range(0, 95):
+        # 5 objects in the collection already so add another 95 to make it up to 101
+        for i in range(0, 94):
             new_id = "indicator--%s" % uuid.uuid4()
             obj = copy.deepcopy(bundle['objects'][0])
             obj['id'] = new_id
@@ -882,24 +882,32 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         get_header = copy.deepcopy(self.auth)
         r = self.client.get(test.GET_OBJECT_EP + "?limit=10", headers=get_header)
         objs = self.load_json_response(r.data)
+        object_count = 10
 
         self.assertEqual(200, r.status_code)
-        self.assertEqual(10, len(objs['objects']))
-        self.assertTrue("next" in objs)
+        self.assertEqual(object_count, len(objs['objects']))
+        self.assertIn("next", objs)
         self.assertEqual(True, objs["more"])
+        next_id = objs["next"]
 
         while objs["more"] is True:
-            r = self.client.get(test.GET_OBJECT_EP + "?limit=10&next=%s" % objs["next"], headers=get_header)
+            r = self.client.get(test.GET_OBJECT_EP + "?limit=10&next=%s" % next_id, headers=get_header)
             objs = self.load_json_response(r.data)
 
             self.assertEqual(200, r.status_code)
             if objs["more"] is True:
                 self.assertEqual(10, len(objs['objects']))
-                self.assertTrue("next" in objs)
+                self.assertIn("next", objs)
+                object_count += 10
             else:
                 self.assertEqual(1, len(objs['objects']))
-                self.assertTrue("next" not in objs)
+                self.assertNotIn("next", objs)
+                object_count += 1
         # ------------- END: test request for the whole list of objects ------------- #
+
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=10&next=%s" % next_id, headers=get_header)
+        self.assertEqual(400, r.status_code)
+        self.assertEqual(101, object_count)
 
     def test_manifest_pagination(self):
         # setup data by adding 100 indicators
