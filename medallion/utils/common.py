@@ -189,6 +189,18 @@ def generate_status_details(id, version, message=None):
     return status_details
 
 
+def get_custom_headers(manifest_resource):
+    """Generates the X-TAXII-Date-Added headers based on a manifest resource"""
+    headers = {}
+
+    times = sorted(map(lambda x: x["date_added"], manifest_resource.get("objects", [])))
+    if len(times) > 0:
+        headers["X-TAXII-Date-Added-First"] = times[0]
+        headers["X-TAXII-Date-Added-Last"] = times[-1]
+
+    return headers
+
+
 def find_att(obj):
     """
     Used for finding the version attribute of an ambiguous object. Manifests
