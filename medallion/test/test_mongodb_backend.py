@@ -817,6 +817,11 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(True, objs["more"])
         # ------------ END: test request for more than servers supported page size on objects endpoint ------------ #
 
+    def test_object_pagination_bad_limit_value_400(self):
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=-20", headers=get_header)
+        self.assertEqual(400, r.status_code)
+
     def test_object_pagination_just_one(self):
         # setup data by adding 100 indicators
         bundle = copy.deepcopy(self.API_OBJECTS_2)
