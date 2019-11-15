@@ -39,7 +39,7 @@ def validate_limit_parameter():
         try:
             limit = int(limit)
             if limit <= 0:
-                raise
+                raise RuntimeError()
             if limit > current_app.taxii_config["max_page_size"]:
                 limit = current_app.taxii_config["max_page_size"]
         except (ValueError, RuntimeError):
