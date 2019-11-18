@@ -28,8 +28,8 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         server_info = self.load_json_response(r.data)
         assert server_info["title"] == "Some TAXII Server"
-        assert len(server_info["api_roots"]) == 2
-        assert server_info["api_roots"][0] == "http://localhost:5000/trustgroup1/"
+        assert len(server_info["api_roots"]) == 3
+        assert server_info["api_roots"][2] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
         r = self.client.get(test.API_ROOT_EP, headers=self.auth)
@@ -201,7 +201,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
+            new_bundle["objects"][0]["modified"] = common.datetime_to_string_stix(common.get_timestamp())
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),

@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 import uuid
 
 import pytz
@@ -24,7 +25,7 @@ def create_bundle(o):
 def determine_version(new_obj, request_time):
     """Grab the modified time if present, if not grab created time,
     if not grab request time provided by server."""
-    return new_obj.get("modified", new_obj.get("created", request_time))
+    return new_obj.get("modified", new_obj.get("created", datetime_to_string(request_time)))
 
 
 def determine_spec_version(obj):
@@ -39,6 +40,7 @@ def determine_spec_version(obj):
 
 
 def get(data, key):
+    """Given a dict, loop recursively over the object. Returns the value based on the key match"""
     for ancestors, item in iterpath(data):
         if key in ancestors:
             return item
@@ -94,10 +96,11 @@ def iterpath(obj, path=None):
 
 
 def get_timestamp():
+    """Get current time with UTC offset"""
     return dt.datetime.now(tz=pytz.UTC)
 
 
-def format_datetime(dttm):
+def datetime_to_string(dttm):
     """Given a datetime instance, produce the string representation
     with microsecond precision"""
     # 1. Convert to timezone-aware
@@ -113,7 +116,43 @@ def format_datetime(dttm):
     return ts
 
 
-def convert_to_stix_datetime(timestamp_string):
+def datetime_to_string_stix(dttm):
+    """Given a datetime instance, produce the string representation
+    with millisecond precision"""
+    # 1. Convert to timezone-aware
+    # 2. Convert to UTC
+    # 3. Format in ISO format with millisecond precision,
+    #       except for objects defined with higher precision
+    # 4. Add "Z"
+
+    if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
+        # dttm is timezone-naive; assume UTC
+        zoned = pytz.UTC.localize(dttm)
+    else:
+        zoned = dttm.astimezone(pytz.UTC)
+    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
+    ms = zoned.strftime("%f")
+    if len(ms.rstrip("0")) > 3:
+        return ts + "." + ms + "Z"
+    return ts + "." + ms[:3] + "Z"
+
+
+def datetime_to_float(dttm):
+    """Given a datetime instance, return its representation as a float"""
+    # Based on this solution: https://stackoverflow.com/questions/30020988/python3-datetime-timestamp-in-python2
+    if dttm.tzinfo is None:
+        return time.mktime((dttm.timetuple())) + dttm.microsecond / 1e6
+    else:
+        return (dttm - dt.datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()
+
+
+def float_to_datetime(timestamp_float):
+    """Given a floating-point number, produce a datetime instance"""
+    return dt.datetime.fromtimestamp(timestamp_float)
+
+
+def string_to_datetime(timestamp_string):
+    """Convert string timestamp to datetime instance."""
     try:
         return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     except ValueError:
@@ -124,8 +163,9 @@ def generate_status(
     request_time, status, succeeded, failed, pending,
     successes_ids=None, failures=None, pendings=None,
 ):
+    """Generate Status Resource as defined in `TAXII 2.0 section (4.3.1) <https://docs.google.com/document/d/1Jv9ICjUNZrOnwUXtenB1QcnBLO35RnjQcJLsa1mGSkI/pub#h.21tzry6u9dbz>`__."""
     status = {
-        "id": "%s" % uuid.uuid4(),
+        "id": str(uuid.uuid4()),
         "status": status,
         "request_timestamp": request_time,
         "total_count": succeeded + failed + pending,

@@ -2,8 +2,8 @@ import logging
 
 from ...exceptions import MongoBackendError, ProcessingError
 from ...filters.mongodb_filter import MongoDBFilter
-from ...utils.common import (create_bundle, determine_spec_version,
-                             determine_version, generate_status)
+from ...utils.common import (create_bundle, determine_spec_version, float_to_datetime, datetime_to_string_stix,
+                             determine_version, generate_status, datetime_to_string, datetime_to_float, string_to_datetime)
 from .base import Backend
 
 try:
@@ -41,7 +41,7 @@ class MongoBackend(Backend):
             log.error("Unable to establish a connection to MongoDB server {}".format(uri))
 
     @catch_mongodb_error
-    def _update_manifest(self, new_obj, api_root, collection_id, request_time):
+    def _update_manifest(self, new_obj, api_root, collection_id, obj_version, request_time):
         api_root_db = self.client[api_root]
         manifest_info = api_root_db["manifests"]
         collection_info = api_root_db["collections"]
@@ -51,11 +51,10 @@ class MongoBackend(Backend):
 
         media_type_fmt = "application/vnd.oasis.stix+json; version={}"
         media_type = media_type_fmt.format(determine_spec_version(new_obj))
-        version = determine_version(new_obj, request_time)
 
         if entry:
             if "modified" in new_obj:
-                entry["versions"].append(new_obj["modified"])
+                entry["versions"].append(datetime_to_float(string_to_datetime(obj_version)))
                 manifest_info.update_one(
                     {"_collection_id": collection_id, "id": new_obj["id"]},
                     {"$set": {"versions": sorted(entry["versions"], reverse=True)}},
@@ -66,8 +65,8 @@ class MongoBackend(Backend):
             manifest_info.insert_one(
                 {
                     "id": new_obj["id"],
-                    "date_added": request_time,
-                    "versions": [version],
+                    "date_added": datetime_to_float(request_time),
+                    "versions": [datetime_to_float(string_to_datetime(obj_version))],
                     "media_types": [media_type],
                     "_collection_id": collection_id,
                     "_type": new_obj["type"],
@@ -77,9 +76,10 @@ class MongoBackend(Backend):
         # update media_types in collection if a new one is present.
         info = collection_info.find_one({"id": collection_id})
         if media_type not in info["media_types"]:
+            info["media_types"].append(media_type)
             collection_info.update_one(
                 {"id": collection_id},
-                {"$set": {"media_types": info["media_types"] + [media_type]}}
+                {"$set": {"media_types": info["media_types"]}}
             )
 
     @catch_mongodb_error
@@ -158,6 +158,9 @@ class MongoBackend(Backend):
             allowed_filters,
             None,
         )
+        for obj in objects_found:
+            obj["date_added"] = datetime_to_string(float_to_datetime(obj["date_added"]))
+            obj["versions"] = [datetime_to_string_stix(float_to_datetime(x)) for x in obj["versions"]]
         return total, objects_found
 
     @catch_mongodb_error
@@ -198,6 +201,11 @@ class MongoBackend(Backend):
             allowed_filters,
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
+        for obj in objects_found:
+            if "modified" in obj:
+                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
+            if "created" in obj:
+                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
         return total, create_bundle(objects_found)
 
     @catch_mongodb_error
@@ -214,7 +222,7 @@ class MongoBackend(Backend):
             for new_obj in objs["objects"]:
                 mongo_query = {"_collection_id": collection_id, "id": new_obj["id"]}
                 if "modified" in new_obj:
-                    mongo_query["modified"] = new_obj["modified"]
+                    mongo_query["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
                 existing_entry = objects_info.find_one(mongo_query)
                 obj_version = determine_version(new_obj, request_time)
                 if existing_entry:
@@ -226,9 +234,13 @@ class MongoBackend(Backend):
                 else:
                     new_obj.update({"_collection_id": collection_id})
                     if not all(prop in new_obj for prop in ("modified", "created")):
-                        new_obj["_date_added"] = obj_version  # Special case for un-versioned objects
+                        new_obj["_date_added"] = datetime_to_float(string_to_datetime(obj_version))  # Special case for un-versioned objects
+                    if "modified" in new_obj:
+                        new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
+                    if "created" in new_obj:
+                        new_obj["created"] = datetime_to_float(string_to_datetime(new_obj["created"]))
                     objects_info.insert_one(new_obj)
-                    self._update_manifest(new_obj, api_root, collection_id, request_time)
+                    self._update_manifest(new_obj, api_root, collection_id, obj_version, request_time)
                     successes.append(new_obj["id"])
                     succeeded += 1
         except Exception as e:
@@ -236,7 +248,7 @@ class MongoBackend(Backend):
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            request_time, "complete", succeeded, failed,
+            datetime_to_string(request_time), "complete", succeeded, failed,
             pending, successes_ids=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)
@@ -257,4 +269,9 @@ class MongoBackend(Backend):
             allowed_filters,
             {"mongodb_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
+        for obj in objects_found:
+            if "modified" in obj:
+                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
+            if "created" in obj:
+                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
         return create_bundle(objects_found)

@@ -1,4 +1,5 @@
-from ..filters.basic_filter import BasicFilter
+from ..utils.common import datetime_to_float, string_to_datetime
+from .basic_filter import BasicFilter
 
 
 class MongoDBFilter(BasicFilter):
@@ -41,9 +42,10 @@ class MongoDBFilter(BasicFilter):
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
+            added_after_timestamp = datetime_to_float(string_to_datetime(added_after_date))
             date_filter = {
                 "$match": {
-                    "date_added": {"$gt": added_after_date},
+                    "date_added": {"$gt": added_after_timestamp},
                     "$comment": "Step #2: If added_after is provided, remove all objects/manifests older than the provided time",
                 }
             }
@@ -55,7 +57,7 @@ class MongoDBFilter(BasicFilter):
             if not match_version:
                 match_version = "last"
             if "all" not in match_version:
-                actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
+                actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
                 # If specific dates have been selected, then we add these to the $match criteria
                 # created from the self.full_query at the beginning of this method. The reason we need
                 # to do this is because the $indexOfArray function below will return -1 if the date
@@ -64,7 +66,7 @@ class MongoDBFilter(BasicFilter):
                 # version dates be incorrect, but we shouldn't have returned a result at all.
                 # if actual_dates:
                 if len(actual_dates) > 0:
-                    pipeline[0]["$match"]["$and"].append({"versions": {"$all": [",".join(actual_dates)]}})
+                    pipeline[0]["$match"]["$and"].append({"versions": {"$all": actual_dates}})
 
                 # The versions array in the mongodb document is ordered newest to oldest, so the 'last'
                 # (most recent date) is in first position in the list and the oldest 'first' is in

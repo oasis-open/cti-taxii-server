@@ -5,7 +5,7 @@ import logging
 
 from ...exceptions import ProcessingError
 from ...filters.basic_filter import BasicFilter
-from ...utils.common import (create_bundle, determine_spec_version,
+from ...utils.common import (create_bundle, determine_spec_version, datetime_to_string,
                              determine_version, generate_status, iterpath)
 from .base import Backend
 
@@ -62,7 +62,7 @@ class MemoryBackend(Backend):
                     collection["manifest"].append(
                         {
                             "id": new_obj["id"],
-                            "date_added": request_time,
+                            "date_added": datetime_to_string(request_time),
                             "versions": [version],
                             "media_types": [media_type],
                         },
@@ -201,7 +201,7 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                request_time, "complete", succeeded,
+                datetime_to_string(request_time), "complete", succeeded,
                 failed, pending, successes_ids=successes,
                 failures=failures,
             )
