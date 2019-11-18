@@ -5,8 +5,9 @@ import logging
 
 from ...exceptions import ProcessingError
 from ...filters.basic_filter import BasicFilter
-from ...utils.common import (create_bundle, determine_spec_version, datetime_to_string,
-                             determine_version, generate_status, iterpath)
+from ...utils.common import (create_bundle, datetime_to_string,
+                             determine_spec_version, determine_version,
+                             generate_status, iterpath)
 from .base import Backend
 
 # Module-level logger

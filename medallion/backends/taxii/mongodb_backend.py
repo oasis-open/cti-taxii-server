@@ -2,8 +2,11 @@ import logging
 
 from ...exceptions import MongoBackendError, ProcessingError
 from ...filters.mongodb_filter import MongoDBFilter
-from ...utils.common import (create_bundle, determine_spec_version, float_to_datetime, datetime_to_string_stix,
-                             determine_version, generate_status, datetime_to_string, datetime_to_float, string_to_datetime)
+from ...utils.common import (create_bundle, datetime_to_float,
+                             datetime_to_string, datetime_to_string_stix,
+                             determine_spec_version, determine_version,
+                             float_to_datetime, generate_status,
+                             string_to_datetime)
 from .base import Backend
 
 try:
