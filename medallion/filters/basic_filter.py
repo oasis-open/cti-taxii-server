@@ -2,7 +2,7 @@ import bisect
 import copy
 import operator
 
-from ..utils.common import convert_to_stix_datetime, find_att
+from ..utils.common import find_att, string_to_datetime
 
 
 def check_for_dupes(final_match, final_track, res):
@@ -60,12 +60,12 @@ class BasicFilter(object):
 
     @staticmethod
     def filter_by_added_after(data, manifest_info, added_after_date):
-        added_after_timestamp = convert_to_stix_datetime(added_after_date)
+        added_after_timestamp = string_to_datetime(added_after_date)
         new_results = []
         # for manifest objects and versions
         if manifest_info is None:
             for obj in data:
-                if convert_to_stix_datetime(obj["date_added"]) > added_after_timestamp:
+                if string_to_datetime(obj["date_added"]) > added_after_timestamp:
                     new_results.append(obj)
         # for other objects with manifests
         else:
@@ -73,7 +73,7 @@ class BasicFilter(object):
                 obj_time = find_att(obj)
                 for item in manifest_info:
                     item_time = find_att(item)
-                    if item["id"] == obj["id"] and item_time == obj_time and convert_to_stix_datetime(item["date_added"]) > added_after_timestamp:
+                    if item["id"] == obj["id"] and item_time == obj_time and string_to_datetime(item["date_added"]) > added_after_timestamp:
                         new_results.append(obj)
                         break
         return new_results
@@ -94,7 +94,7 @@ class BasicFilter(object):
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [convert_to_stix_datetime(x) for x in version_indicators if x != "first" and x != "last"]
+        actual_dates = [string_to_datetime(x) for x in version_indicators if x != "first" and x != "last"]
         # if a specific version is given, filter for objects with that value
         if actual_dates:
             id_track = []
@@ -148,9 +148,6 @@ class BasicFilter(object):
     def process_filter(self, data, allowed, manifest_info):
         filtered_by_type = []
         filtered_by_id = []
-        filtered_by_version = []
-        filtered_by_spec_version = []
-        filtered_by_added_after = []
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")

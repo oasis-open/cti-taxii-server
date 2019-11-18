@@ -5,7 +5,7 @@ from flask import Blueprint, Response, current_app, json, request
 from . import MEDIA_TYPE_TAXII_V21
 from .. import auth
 from ..exceptions import ProcessingError
-from ..utils.common import find_att, get_timestamp
+from ..utils.common import get_timestamp
 
 mod = Blueprint("objects", __name__)
 
@@ -49,116 +49,6 @@ def get_custom_headers(api_root, id_):
     return headers
 
 
-def get_and_enforce_limit(api_root, id_, objects):
-    """
-    Defines TAXII API - Pagination:
-    Pagination section (3.5 <link here>`__), Get Object Manifests section (5.3 <link here>`__), and Get Objects section (5.4 <link here>`__)
-
-    Args:
-        api_root (str): the base URL of the API Root
-        id_ (str): the `identifier` of the Collection being requested
-        objects (dict): objects being returned for request (may have been filtered by other query parameters)
-
-    Returns:
-        headers:
-            header values matching objects being sent in server response
-        objects:
-            Values matching server request, sorted by ascending date_added
-
-    """
-    headers = {}
-    if request.args.get('limit'):
-        if int(request.args['limit']) < current_app.taxii_config["max_page_size"]:
-            limit = int(request.args['limit'])
-        else:
-            limit = current_app.taxii_config["max_page_size"]
-    else:
-        limit = len(objects["objects"])
-    try:
-        manifest = current_app.medallion_backend.get_object_manifest(
-                api_root, id_, {"match[version]": "all"}, ("id",),
-        )
-        if manifest:
-            manifest['objects'].sort(key=lambda x: x['date_added'])
-            new = []
-            for man in manifest['objects']:
-                for check in objects['objects']:
-                    check_time = find_att(check)
-                    man_time = find_att(man)
-                    if check['id'] == man['id'] and check_time == man_time:
-                        if "X-TAXII-Date-Added-First" not in headers:
-                            headers["X-TAXII-Date-Added-First"] = man['date_added']
-                        new.append(check)
-                        break
-                if len(new) == limit and len(objects["objects"]) != limit:
-                    objects['more'] = True
-                    headers["X-TAXII-Date-Added-Last"] = man['date_added']
-                    break
-            objects['objects'] = new
-            if "X-TAXII-Date-Added-First" not in headers:
-                headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
-            if "X-TAXII-Date-Added-Last" not in headers:
-                headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
-
-    except Exception as e:
-        log.exception(e)
-    return headers
-
-
-def get_and_enforce_limit_versions(api_root, id_, objects):
-    """
-    Defines TAXII API - Pagination:
-    Pagination section (3.5 <link here>`__), and Get Object Versions section (5.8 <link here>`__)
-
-    Args:
-        api_root (str): the base URL of the API Root
-        id_ (str): the `identifier` of the Collection being requested
-        objects (dict): objects being returned for request (may have been filtered by other query parameters)
-
-    Returns:
-        headers:
-            header values matching objects being sent in server response
-        objects:
-            Values matching server request, sorted by ascending date_added
-
-    """
-    headers = {}
-    if request.args.get('limit'):
-        if int(request.args['limit']) < current_app.taxii_config["max_page_size"]:
-            limit = int(request.args['limit'])
-        else:
-            limit = current_app.taxii_config["max_page_size"]
-    else:
-        limit = len(objects["versions"])
-    try:
-        manifest = current_app.medallion_backend.get_object_manifest(
-                api_root, id_, {"match[version]": "all"}, ("id",),
-        )
-        if manifest:
-            manifest['objects'].sort(key=lambda x: x['date_added'])
-            new = []
-            for man in manifest['objects']:
-                for check in objects['versions']:
-                    if check == man['version']:
-                        if "X-TAXII-Date-Added-First" not in headers:
-                            headers["X-TAXII-Date-Added-First"] = man['date_added']
-                        new.append(check)
-                        break
-                if len(new) == limit and len(objects["versions"]) != limit:
-                    objects['more'] = True
-                    headers["X-TAXII-Date-Added-Last"] = man['date_added']
-                    break
-            objects['versions'] = new
-            if "X-TAXII-Date-Added-First" not in headers:
-                headers["X-TAXII-Date-Added-First"] = manifest['objects'][0]['date_added']
-            if "X-TAXII-Date-Added-Last" not in headers:
-                headers["X-TAXII-Date-Added-Last"] = manifest['objects'][-1]['date_added']
-
-    except Exception as e:
-        log.exception(e)
-    return headers
-
-
 @mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, collection_id):
@@ -184,7 +74,7 @@ def get_or_add_objects(api_root, collection_id):
                 api_root, collection_id, request.args, ("id", "type", "version", "spec_version"),
             )
             if objects:
-                headers = get_and_enforce_limit(api_root, collection_id, objects)
+                headers = get_custom_headers(api_root, collection_id)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
@@ -222,13 +112,14 @@ def get_or_delete_object(api_root, collection_id, object_id):
 
     """
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
+
     if collection_exists(api_root, collection_id):
         if request.method == "GET" and permission_to_read(api_root, collection_id):
             objects = current_app.medallion_backend.get_object(
                 api_root, collection_id, object_id, request.args, ("version", "spec_version"),
             )
             if objects:
-                headers = get_and_enforce_limit(api_root, collection_id, objects)
+                headers = get_custom_headers(api_root, collection_id)
                 return Response(
                     response=json.dumps(objects),
                     status=200,
@@ -268,7 +159,7 @@ def get_object_versions(api_root, collection_id, object_id):
         versions = current_app.medallion_backend.get_object_versions(
             api_root, collection_id, object_id, request.args, ("spec_version",),
         )
-        headers = get_and_enforce_limit_versions(api_root, collection_id, versions)
+        headers = get_custom_headers(api_root, collection_id)
         return Response(
             response=json.dumps(versions),
             status=200,
