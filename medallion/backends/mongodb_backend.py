@@ -44,14 +44,18 @@ class MongoBackend(Backend):
     def _process_params(self, filter_args, limit):
         next_id = filter_args.get("next")
         if limit and next_id is None:
-            record = {"skip": 0, "limit": limit, "total_count": 0, "more": True}
+            record = {"skip": 0, "limit": limit, "total_count": 0, "more": True, "args": set(filter_args.items())}
             next_id = str(uuid.uuid4())
             self.pages[next_id] = record
         elif limit and next_id:
             try:
                 record = self.pages[next_id]
+                if self.pages[next_id]["args"] - set(filter_args.items()):
+                    raise ValueError()
             except KeyError:
-                raise ProcessingError("The server did not understand the request or filter parameters", 400)
+                raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
+            except ValueError:
+                raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
         else:
             record = {}
         return next_id, record
