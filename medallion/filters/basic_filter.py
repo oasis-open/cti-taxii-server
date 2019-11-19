@@ -4,7 +4,7 @@ import operator
 
 from flask import current_app
 
-from ..utils.common import convert_to_stix_datetime, find_att
+from ..utils.common import find_att, string_to_datetime
 
 
 def check_for_dupes(final_match, final_track, res):
@@ -48,16 +48,9 @@ class BasicFilter(object):
     def __init__(self, filter_args):
         self.filter_args = filter_args
 
-    def sort_and_paginate(self, data, c_limit, manifest):
+    def sort_and_paginate(self, data, limit, manifest):
         more = False
         nex = None
-        if c_limit is not None:
-            if int(c_limit) < current_app.taxii_config["max_page_size"]:
-                limit = int(c_limit)
-            else:
-                limit = current_app.taxii_config["max_page_size"]
-        else:
-            limit = len(data)
         headers = {}
         new = []
         if manifest:
@@ -73,21 +66,21 @@ class BasicFilter(object):
                         if len(new) == limit:
                             headers["X-TAXII-Date-Added-Last"] = man["date_added"]
                         break
-            if limit < len(data):
+            if limit and limit < len(data):
                 more = True
                 next_save = new[limit:]
                 new = new[:limit]
                 nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
         else:
             data.sort(key=lambda x: x['date_added'])
-            if limit < len(data):
+            if limit and limit < len(data):
                 more = True
                 next_save = data[limit:]
                 data = data[:limit]
                 nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
             headers["X-TAXII-Date-Added-First"] = data[0]["date_added"]
             headers["X-TAXII-Date-Added-Last"] = data[-1]["date_added"]
-            return data, True, headers, nex
+            new = data
         return new, more, headers, nex
 
     @staticmethod
@@ -104,12 +97,12 @@ class BasicFilter(object):
 
     @staticmethod
     def filter_by_added_after(data, manifest_info, added_after_date):
-        added_after_timestamp = convert_to_stix_datetime(added_after_date)
+        added_after_timestamp = string_to_datetime(added_after_date)
         new_results = []
         # for manifest objects and versions
         if manifest_info is None:
             for obj in data:
-                if convert_to_stix_datetime(obj["date_added"]) > added_after_timestamp:
+                if string_to_datetime(obj["date_added"]) > added_after_timestamp:
                     new_results.append(obj)
         # for other objects with manifests
         else:
@@ -117,7 +110,7 @@ class BasicFilter(object):
                 obj_time = find_att(obj)
                 for item in manifest_info:
                     item_time = find_att(item)
-                    if item["id"] == obj["id"] and item_time == obj_time and convert_to_stix_datetime(item["date_added"]) > added_after_timestamp:
+                    if item["id"] == obj["id"] and item_time == obj_time and string_to_datetime(item["date_added"]) > added_after_timestamp:
                         new_results.append(obj)
                         break
         return new_results
@@ -138,7 +131,7 @@ class BasicFilter(object):
             # if "all" is in the list, just return everything
             return data
 
-        actual_dates = [convert_to_stix_datetime(x) for x in version_indicators if x != "first" and x != "last"]
+        actual_dates = [string_to_datetime(x) for x in version_indicators if x != "first" and x != "last"]
         # if a specific version is given, filter for objects with that value
         if actual_dates:
             id_track = []
@@ -189,7 +182,7 @@ class BasicFilter(object):
 
         return match_objects
 
-    def process_filter(self, data, allowed, manifest_info):
+    def process_filter(self, data, allowed, manifest_info, limit):
         filtered_by_type = []
         filtered_by_id = []
         filtered_by_version = []
@@ -230,7 +223,7 @@ class BasicFilter(object):
 
         # match for added_after
         added_after_date = self.filter_args.get("added_after")
-        if added_after_date and "added_after" in allowed:
+        if added_after_date:
             filtered_by_added_after = self.filter_by_added_after(filtered_by_spec_version, manifest_info, added_after_date)
         else:
             filtered_by_added_after = filtered_by_spec_version
@@ -243,13 +236,6 @@ class BasicFilter(object):
             filtered_by_version = filtered_by_added_after
 
         # sort objects by date_added of manifest and paginate as necessary
-        if "limit" in allowed:
-            client_limit = self.filter_args.get("limit")
-            final_match, more, headers, nex = self.sort_and_paginate(filtered_by_version, client_limit, manifest_info)
-        else:
-            final_match = filtered_by_version
-            more = False
-            headers = {}
-            nex = None
+        final_match, more, headers, nex = self.sort_and_paginate(filtered_by_version, limit, manifest_info)
 
         return final_match, more, headers, nex

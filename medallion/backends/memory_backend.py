@@ -2,13 +2,12 @@ import copy
 import json
 import uuid
 
-from flask import current_app
-
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, find_att, format_datetime,
-                            generate_status, generate_status_details, iterpath)
+from ..utils.common import (create_resource, datetime_to_string,
+                            determine_spec_version, determine_version,
+                            find_att, generate_status, generate_status_details,
+                            iterpath)
 from .base import Backend
 
 
@@ -39,7 +38,7 @@ class MemoryBackend(Backend):
         self.next[u] = d
         return u
 
-    def get_next(self, filter_args, allowed, manifest):
+    def get_next(self, filter_args, allowed, manifest, lim):
         n = filter_args["next"]
         if n in self.next:
             for arg, val in filter_args.items():
@@ -50,11 +49,6 @@ class MemoryBackend(Backend):
             length = len(self.next[n]["objects"])
             headers = {}
             ret = []
-            if "limit" in filter_args:
-                lim = int(filter_args["limit"])
-            else:
-                lim = current_app.taxii_config["max_page_size"]
-
             if length <= lim:
                 limit = length
                 more = False
@@ -70,7 +64,6 @@ class MemoryBackend(Backend):
                     find_headers(headers, manifest, x)
                 if i == limit - 1:
                     find_headers(headers, manifest, x)
-
             if not more:
                 self.next.pop(n)
             else:
@@ -105,7 +98,7 @@ class MemoryBackend(Backend):
         for collection in collections:
             if "id" in collection and collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
-                request_time = format_datetime(request_time)
+                request_time = datetime_to_string(request_time)
                 media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
                 # version is a single value now, therefore a new manifest is always created
@@ -153,7 +146,7 @@ class MemoryBackend(Backend):
                 collection.pop("objects", None)
                 return collection
 
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -162,7 +155,7 @@ class MemoryBackend(Backend):
                 if "id" in collection and collection_id == collection["id"]:
                     if "next" in filter_args and "next" in allowed_filters:
                         manifest = collection.get("manifest", [])
-                        manifest, more, headers, n = self.get_next(filter_args, allowed_filters, manifest)
+                        manifest, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
                     else:
                         manifest = collection.get("manifest", [])
                         full_filter = BasicFilter(filter_args)
@@ -170,6 +163,7 @@ class MemoryBackend(Backend):
                             manifest,
                             allowed_filters,
                             None,
+                            limit
                         )
                         break
             return create_resource("objects", manifest, more, n), headers
@@ -189,7 +183,7 @@ class MemoryBackend(Backend):
                 if status_id == status["id"]:
                     return status
 
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -198,13 +192,14 @@ class MemoryBackend(Backend):
                 if "id" in collection and collection_id == collection["id"]:
                     manifest = collection.get("manifest", [])
                     if "next" in filter_args:
-                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifest)
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
                     else:
                         full_filter = BasicFilter(filter_args)
                         objs, more, headers, n = full_filter.process_filter(
                             collection.get("objects", []),
                             allowed_filters,
                             manifest,
+                            limit
                         )
                         break
             return create_resource("objects", objs, more, n), headers
@@ -255,14 +250,14 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                format_datetime(request_time), "complete", succeeded,
+                datetime_to_string(request_time), "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )
             api_info["status"].append(status)
             return status
 
-    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -272,7 +267,7 @@ class MemoryBackend(Backend):
                 if "id" in collection and collection_id == collection["id"]:
                     manifests = collection.get("manifest", [])
                     if "next" in filter_args:
-                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifests)
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifests, limit)
                     else:
                         for obj in collection.get("objects", []):
                             if object_id == obj["id"]:
@@ -281,12 +276,13 @@ class MemoryBackend(Backend):
                         objs, more, headers, n = full_filter.process_filter(
                             objs,
                             allowed_filters,
-                            manifests
+                            manifests,
+                            limit
                         )
                         break
             return create_resource("objects", objs, more, n), headers
 
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -296,7 +292,7 @@ class MemoryBackend(Backend):
                 if "id" in collection and collection_id == collection["id"]:
                     all_manifests = collection.get("manifest", [])
                     if "next" in filter_args:
-                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, all_manifests)
+                        objs, more, headers, n = self.get_next(filter_args, allowed_filters, all_manifests, limit)
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                     else:
 
@@ -309,6 +305,7 @@ class MemoryBackend(Backend):
                             objs,
                             allowed_filters,
                             None,
+                            limit
                         )
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
