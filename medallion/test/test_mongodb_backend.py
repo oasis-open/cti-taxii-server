@@ -58,6 +58,11 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertIn("64993447-4d7e-4f70-b94d-d7f33742ee63", collection_ids)
         self.assertIn("472c94ae-3113-4e3e-a4dd-a9f4ac7471d4", collection_ids)
 
+    def test_get_collection_404(self):
+        # note that api root "carbon1" is nonexistent
+        r = self.client.get("/carbon1/collections/12345678-1234-1234-1234-123456789012/", headers=self.auth)
+        self.assertEqual(404, r.status_code)
+
     def test_get_collection(self):
         r = self.client.get(
             test.GET_COLLECTION_EP,
@@ -1038,3 +1043,73 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(7, len(objs['objects']))
 
         # ------------- END: test request for all versions, should return seven results ------------- #
+
+    def test_object_versions(self):
+        # ------------- BEGIN: test request for object versions, should return three results ------------- #
+
+        headers = {
+            'Authorization': self.auth['Authorization'],
+        }
+        r = self.client.get(test.OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions/", headers=headers)
+        objs = self.load_json_response(r.data)
+
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(3, len(objs['versions']))
+
+        # ------------- END: test request for object versions, should return three results ------------- #
+
+    def test_delete_object(self):
+
+        # setup data by adding 3 versions of an indicator to collection
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
+        new_id = "indicator--%s" % uuid.uuid4()
+        new_mod_times = ["2017-01-27T13:49:53.935Z", "2018-06-27T13:49:53.000Z", "2019-01-27T13:49:53.444Z"]
+        for i in range(0, 3):
+            obj = copy.deepcopy(bundle['objects'][0])
+            obj['id'] = new_id
+            obj['modified'] = new_mod_times[i]
+            bundle['objects'].append(obj)
+
+        # ------------- BEGIN: test request for object deletion, should return 200 ------------- #
+        headers = {
+            'Authorization': self.auth['Authorization'],
+        }
+        r = self.client.delete(test.OBJECTS_EP + "%s/?match[version]=all" % new_id, headers=headers)
+        self.assertEqual(200, r.status_code)
+        # ------------- END: test request for object deletion, should return 200 ------------- #
+
+        # ------------- BEGIN: test request getting deleted object returns 404 ------------- #
+        r = self.client.get(
+            test.OBJECTS_EP + "%s/" % new_id,
+            headers=headers,
+        )
+        objs = self.load_json_response(r.data)
+        if r.status_code == 200:
+            self.assertEqual(0, len(objs["objects"]))
+        else:
+            self.assertEqual(404, r.status_code)
+        # ------------- END: test request getting deleted object returns 404 ------------- #
+
+        # ------------- BEGIN: test request getting deleted object manifest returns 404 ------------- #
+        r = self.client.get(
+            test.MANIFESTS_EP + "?match[id]=%s&match[version]=all" % new_id,
+            headers=headers,
+        )
+        objs = self.load_json_response(r.data)
+        if r.status_code == 200:
+            self.assertEqual(0, len(objs["objects"]))
+        else:
+            self.assertEqual(404, r.status_code)
+        # ------------- END: test request getting deleted object manifest returns 404 ------------- #
+
+        # ------------- BEGIN: test request getting deleted object manifest returns 404 ------------- #
+        r = self.client.get(
+            test.OBJECTS_EP + "%s/versions/" % new_id,
+            headers=headers,
+        )
+        objs = self.load_json_response(r.data)
+        if r.status_code == 200:
+            self.assertEqual(0, len(objs["versions"]))
+        else:
+            self.assertEqual(404, r.status_code)
+        # ------------- END: test request getting deleted object manifest returns 404 ------------- #
