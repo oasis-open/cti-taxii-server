@@ -856,6 +856,59 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(True, objs["more"])
         # ------------- END: test request for just the first item ------------- #
 
+    def test_object_pagination_changing_params_400(self):
+        # setup data by adding 100 indicators
+        bundle = copy.deepcopy(self.API_OBJECTS_2)
+        # 5 objects in the collection already so add another 95 to make it up to 100
+        for i in range(0, 46):
+            new_id = "indicator--%s" % uuid.uuid4()
+            obj = copy.deepcopy(bundle['objects'][0])
+            obj['id'] = new_id
+            bundle['objects'].append(obj)
+
+        for i in range(0, 46):
+            new_id = "foo-bar--%s" % uuid.uuid4()
+            obj = copy.deepcopy(bundle['objects'][0])
+            obj['id'] = new_id
+            obj['type'] = 'foo-bar'
+            bundle['objects'].append(obj)
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V21
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(bundle),
+            headers=post_header,
+        )
+
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(MEDIA_TYPE_TAXII_V21, r_post.content_type)
+
+        # ------------- BEGIN: test request for the first page ------------- #
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=15&match[type]=indicator", headers=get_header)
+        objs = self.load_json_response(r.data)
+
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(15, len(objs['objects']))
+        self.assertTrue(all(obj["type"] == "indicator" for obj in objs["objects"]))
+        self.assertIn("next", objs)
+        self.assertEqual(True, objs["more"])
+        # ------------- END: test request for the first page ------------- #
+
+        # ------------- BEGIN: test request with subsequent page, params changed ------------- #
+        get_header = copy.deepcopy(self.auth)
+        r = self.client.get(test.GET_OBJECT_EP + "?limit=15&next=%s&match[type]=indicator,foo-bar" % objs["next"], headers=get_header)
+        objs = self.load_json_response(r.data)
+
+        self.assertEqual(400, r.status_code)
+        self.assertNotIn("objects", objs)
+        self.assertNotIn("next", objs)
+        self.assertNotIn("more", objs)
+        # ------------- END: test request with subsequent page, params changed ------------- #
+
     def test_object_pagination_whole_task(self):
         # setup data by adding 100 indicators + the marking-definition in self.API_OBJECTS_2
         bundle = copy.deepcopy(self.API_OBJECTS_2)
