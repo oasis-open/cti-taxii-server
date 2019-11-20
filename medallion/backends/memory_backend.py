@@ -43,7 +43,7 @@ class MemoryBackend(Backend):
         if n in self.next:
             for arg, val in filter_args.items():
                 if arg != "next" and (arg not in self.next[n]["args"] or self.next[n]["args"][arg] != val):
-                    raise ProcessingError("Filter parameters must match the parameters of the initial request", 400)
+                    raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
 
             t = self.next[n]["objects"]
             length = len(self.next[n]["objects"])
@@ -71,7 +71,7 @@ class MemoryBackend(Backend):
 
             return ret, more, headers, nex
         else:
-            raise ProcessingError("No objects stored on the server associated with the uuid '" + n + "'", 400)
+            raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
 
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
