@@ -1,8 +1,9 @@
 {
   "backend": {
-    "module": "medallion.backends.taxii.directory_backend",
-    "module_class": "DirectoryBackend",
-    "path": "./example_configs/directory/"
+    "module": "medallion.backends.taxii.memory_backend",
+    "module_class": "MemoryBackend",
+    "path": "./example_configs/directory/",
+    "load_from_path": true
   },
   "taxii": {
     "max_page_size": 100
