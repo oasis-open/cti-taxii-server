@@ -28,7 +28,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         p = os.path.join(self.configuration['backend']['path'], api_root, collection_id, resource, obj_type, obj_id)
 
         rm_files = [f for f in os.listdir(p)
-                    if os.path.isfile(os.path.join(p, f)) and f.endswith(".json") and f != "very-simple-playbook.json"]
+                    if os.path.isfile(os.path.join(p, f)) and f.endswith(".json")]
 
         for f in rm_files:
             fp = os.path.join(p, f)
