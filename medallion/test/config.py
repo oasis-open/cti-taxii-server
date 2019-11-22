@@ -39,7 +39,8 @@ def directory_config():
         "module": "medallion.backends.taxii.memory_backend",
         "module_class": "MemoryBackend",
         "path": "./medallion/test/directory/",
-        "load_from_path": True
+        "load_from_path": True,
+        "save_resources": True
     }, {
         "module": "medallion.backends.auth.memory_auth",
         "module_class": "AuthMemoryBackend",
