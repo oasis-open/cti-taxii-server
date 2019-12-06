@@ -36,33 +36,11 @@ def memory_config(data_file):
 
 def directory_config():
     return _base_config({
-        "module": "medallion.backends.taxii.directory_backend",
-        "module_class": "DirectoryBackend",
+        "module": "medallion.backends.taxii.memory_backend",
+        "module_class": "MemoryBackend",
         "path": "./medallion/test/directory/",
-        "discovery": {
-            "title": "Indicators from the directory backend",
-            "description": "Indicators from the directory backend",
-            "contact": "",
-            "host": "http://localhost:5000/"
-        },
-        "api-root": {
-            "title": "",
-            "description": "",
-            "versions": [
-                "taxii-2.0"
-            ],
-            "max-content-length": 9765625
-        },
-        "collection": {
-            "id": "",
-            "title": "",
-            "description": "",
-            "can_read": True,
-            "can_write": True,
-            "media_types": [
-                "application/vnd.oasis.stix+json; version=2.0"
-            ]
-        }
+        "load_from_path": True,
+        "save_resources": True
     }, {
         "module": "medallion.backends.auth.memory_auth",
         "module_class": "AuthMemoryBackend",

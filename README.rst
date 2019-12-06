@@ -96,29 +96,26 @@ To use the Memory backend plugin, include the following in the <config-file>:
         }
     }
 
-To use the Directory backend plugin, include the following in the <config-file>:
+To use the directory features, include the following in the <config-file>:
 
 .. code:: json
 
     {
         "backend": {
-            "module": "medallion.backends.taxii.directory_backend",
-            "module_class": "DirectoryBackend",
-            "path": "<path to directory>"
+            "module": "medallion.backends.taxii.memory_backend",
+            "module_class": "MemoryBackend",
+            "path": "<path to directory>",
+            "load_from_path": true
         }
     }
 
-The directory backend config also contains information for certain requests to the TAXII 2.0 server.
 A complete config can be seen in this `example <https:/example_configs/directory_backend_config_auth_from_file.json>`_
 
-The directory backend uses the path pointed to by the path config as its root. Each directory within becomes a TAXII 2.0
+The backend uses the path pointed to by the path config as its root. Each directory within becomes a TAXII 2.0
 api root. STIX 2.0 bundles as JSON files can be placed within the root, and the contents of each file will be aggregated
 into a single collection.
 
-The directory backend caches the contents of the files in memory and is best suited for frequent reads and
-infrequent writes.
-
-To use the Mongo DB backend plugin, include the following in the <config-file>:
+To use the MongoDB backend plugin, include the following in the <config-file>:
 
 .. code:: json
 

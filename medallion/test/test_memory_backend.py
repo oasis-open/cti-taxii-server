@@ -227,7 +227,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(status_response2["success_count"], 0)
         self.assertEqual(
             status_response2["failures"][0]["message"],
-            "Unable to process object",
+            "Unable to process object because identical version exist.",
         )
 
         # ------------- END: add object again section ------------- #
