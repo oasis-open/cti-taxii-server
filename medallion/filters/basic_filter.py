@@ -2,7 +2,7 @@ import bisect
 import copy
 import operator
 
-from ..utils.common import find_att, string_to_datetime
+from ..common import find_att, string_to_datetime
 
 
 def check_for_dupes(final_match, final_track, res):
