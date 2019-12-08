@@ -1,8 +1,9 @@
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_TAXII_V21
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
 from ..exceptions import ProcessingError
+from .discovery import api_root_exists
 from .objects import (collection_exists, permission_to_read,
                       validate_limit_parameter)
 
@@ -24,16 +25,20 @@ def get_object_manifest(api_root, collection_id):
         manifest: A Manifest Resource upon successful requests. Additional information here <link here>`__.
 
     """
-    if collection_exists(api_root, collection_id) and permission_to_read(api_root, collection_id):
-        limit = validate_limit_parameter()
-        manifests, headers = current_app.medallion_backend.get_object_manifest(
-            api_root, collection_id, request.args, ("id", "type", "version", "spec_version"), limit
+    validate_version_parameter_in_accept_header()
+    api_root_exists(api_root)
+    collection_exists(api_root, collection_id)
+    permission_to_read(api_root, collection_id)
+
+    limit = validate_limit_parameter()
+    manifests, headers = current_app.medallion_backend.get_object_manifest(
+        api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
+    )
+    if manifests:
+        return Response(
+            response=json.dumps(manifests),
+            status=200,
+            headers=headers,
+            mimetype=MEDIA_TYPE_TAXII_V21,
         )
-        if manifests:
-            return Response(
-                response=json.dumps(manifests),
-                status=200,
-                headers=headers,
-                mimetype=MEDIA_TYPE_TAXII_V21,
-            )
-        raise ProcessingError("Collection '{}' has no manifests available".format(collection_id), 404)
+    raise ProcessingError("Collection '{}' has no manifests available".format(collection_id), 404)
