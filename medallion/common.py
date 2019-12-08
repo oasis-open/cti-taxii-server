@@ -1,16 +1,22 @@
+import calendar
 import datetime as dt
-import time
+import threading
 import uuid
 
 import pytz
 from six import iteritems
 
 
-def create_resource(resource_name, o, more=False, next_id=None):
+def create_resource(resource_name, items, more=False, next_id=None):
     """Generates a Resource Object given a resource name."""
-    resource = {resource_name: o, "more": more}
-    if next_id:
-        resource["next"] = next_id
+    resource = {}
+    if items:
+        resource[resource_name] = items
+    if resource_name == "objects" or resource_name == "versions":
+        if next_id and resource:
+            resource["next"] = next_id
+        if resource:
+            resource["more"] = more
     return resource
 
 
@@ -133,7 +139,7 @@ def datetime_to_float(dttm):
     """Given a datetime instance, return its representation as a float"""
     # Based on this solution: https://stackoverflow.com/questions/30020988/python3-datetime-timestamp-in-python2
     if dttm.tzinfo is None:
-        return time.mktime((dttm.timetuple())) + dttm.microsecond / 1e6
+        return calendar.timegm(dttm.utctimetuple()) + dttm.microsecond / 1e6
     else:
         return (dttm - dt.datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()
 
@@ -201,6 +207,15 @@ def get_custom_headers(manifest_resource):
     return headers
 
 
+def parse_request_parameters(filter_args):
+    """Generates a dict with params received from client"""
+    session_args = {}
+    for key, value in filter_args.items():
+        if key != "limit" and key != "next":
+            session_args[key] = sorted(set(value.replace(" ", "").split(",")))
+    return session_args
+
+
 def find_att(obj):
     """
     Used for finding the version attribute of an ambiguous object. Manifests
@@ -223,3 +238,22 @@ def find_att(obj):
     else:
         # TO DO: PUT DEFAULT VALUE HERE
         pass
+
+
+class SessionChecker(object):
+    """Calls a target method every X seconds to perform a task."""
+
+    def __init__(self, interval, target_function):
+        self.interval = interval
+        self.target_function = target_function
+        self.thread = threading.Timer(interval=self.interval, function=self.handle_function)
+        self.thread.daemon = True
+
+    def handle_function(self):
+        self.target_function()
+        self.thread = threading.Timer(interval=self.interval, function=self.handle_function)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def start(self):
+        self.thread.start()
