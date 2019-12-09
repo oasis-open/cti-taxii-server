@@ -114,7 +114,7 @@ def get_or_add_objects(api_root, collection_id):
         objects, headers = current_app.medallion_backend.get_objects(
             api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
         )
-        if objects:
+        if objects or request.args:
             return Response(
                 response=json.dumps(objects),
                 status=200,
@@ -165,7 +165,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
         objects, headers = current_app.medallion_backend.get_object(
             api_root, collection_id, object_id, request.args.to_dict(), ("version", "spec_version"), limit
         )
-        if objects:
+        if objects or request.args:
             return Response(
                 response=json.dumps(objects),
                 status=200,
