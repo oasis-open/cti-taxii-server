@@ -145,8 +145,8 @@ def datetime_to_float(dttm):
 
 
 def float_to_datetime(timestamp_float):
-    """Given a floating-point number, produce a datetime instance"""
-    return dt.datetime.fromtimestamp(timestamp_float)
+    """Given a floating-point number, produce a datetime instance with UTC timezone"""
+    return dt.datetime.fromtimestamp(timestamp_float, tz=pytz.UTC)
 
 
 def string_to_datetime(timestamp_string):
@@ -238,6 +238,17 @@ def find_att(obj):
     else:
         # TO DO: PUT DEFAULT VALUE HERE
         pass
+
+
+def find_version_attribute(obj):
+    """Depending on the object, modified, created or _date_added is used to store the
+    object version"""
+    if "modified" in obj:
+        return "modified"
+    elif "created" in obj:
+        return "created"
+    elif "_date_added" in obj:
+        return "_date_added"
 
 
 class SessionChecker(object):
