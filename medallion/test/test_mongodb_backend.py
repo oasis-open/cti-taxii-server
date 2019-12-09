@@ -216,7 +216,6 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: add object again section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-
         r_get = self.client.get(
             test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
             headers=self.headers,
