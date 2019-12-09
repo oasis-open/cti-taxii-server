@@ -63,10 +63,21 @@ class MongoDBFilter(BasicFilter):
                 else:
                     pipeline[0]["$match"]["$and"].append({"media_type": {"$in": [media_fmt.format(x) for x in spec_versions]}})
             else:
-                pipeline.append({"$group": {"_id": "$id", "media_types": {"$push": "$$ROOT"}}})
-                pipeline.append({"$sort": {"media_types.media_type": pymongo.ASCENDING}})
+                pipeline.append({"$group": {"_id": "$id", "objs": {"$push": "$$ROOT"}, "media_types": {"$push": "$media_type"}}})
+                pipeline.append({"$sort": {"media_types": pymongo.ASCENDING}})
                 pipeline.append({"$addFields": {"media_types": {"$arrayElemAt": ["$media_types", -1]}}})
-                pipeline.append({"$replaceRoot": {"newRoot": "$media_types"}})
+                redact_objects = {
+                    "$redact": {
+                        "$cond": {
+                            "if": {"$ne": ["$objs.media_type", "$media_types"]},
+                            "then": "$$KEEP",
+                            "else": "$$PRUNE",
+                        }
+                    }
+                }
+                pipeline.append(redact_objects)
+                pipeline.append({"$unwind": "$objs"})
+                pipeline.append({"$replaceRoot": {"newRoot": "$objs"}})
 
         # create version filter
         if "version" in allowed:
