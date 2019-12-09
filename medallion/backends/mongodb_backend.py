@@ -7,10 +7,10 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from ..common import (SessionChecker, create_resource, datetime_to_float,
                       datetime_to_string, datetime_to_string_stix,
                       determine_spec_version, determine_version,
-                      float_to_datetime, generate_status,
-                      generate_status_details, get_custom_headers,
-                      get_timestamp, parse_request_parameters,
-                      string_to_datetime)
+                      find_version_attribute, float_to_datetime,
+                      generate_status, generate_status_details,
+                      get_custom_headers, get_timestamp,
+                      parse_request_parameters, string_to_datetime)
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
 from .base import Backend
@@ -366,14 +366,16 @@ class MongoBackend(Backend):
             allowed_filters,
             {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
         )
-        for obj in objects_found:
-            objects_info.delete_one(
-                {"_id": obj.get("_id", None)}
-            )
-            obj_version = obj.get("modified", obj.get("created", obj.get("_date_added")))
-            manifest_info.delete_one(
-                {"_collection_id": collection_id, "id": object_id, "version": obj_version}
-            )
+        if objects_found:
+            for obj in objects_found:
+                attr = find_version_attribute(obj)
+                objects_info.delete_one(
+                    {"_collection_id": collection_id, "id": object_id, attr: obj[attr]}
+                )
+                obj_version = obj.get("modified", obj.get("created", obj.get("_date_added")))
+                manifest_info.delete_one(
+                    {"_collection_id": collection_id, "id": object_id, "version": obj_version}
+                )
         else:
             raise ProcessingError("Object '{}' not found".format(object_id), 404)
 
@@ -383,6 +385,7 @@ class MongoBackend(Backend):
         manifest_info = api_root_db["manifests"]
         # set manually to properly retrieve manifests, and early to not break the pagination checks
         filter_args["match[id]"] = object_id
+        filter_args["match[version]"] = "all"
         next_id, record = self._process_params(filter_args, limit)
 
         self._validate_object_id(manifest_info, collection_id, object_id)
