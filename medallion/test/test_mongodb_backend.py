@@ -555,6 +555,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         new_bundle["objects"][0]["id"] = new_id
 
         post_header = copy.deepcopy(self.headers)
+        post_header.pop("Authorization")
         post_header.update(self.content_type_header)
 
         r_post = self.client.post(
