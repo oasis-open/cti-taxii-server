@@ -1,5 +1,5 @@
-from ..filters.basic_filter import BasicFilter
-from ..utils.common import convert_to_stix_datetime
+from ..utils.common import datetime_to_float, string_to_datetime
+from .basic_filter import BasicFilter
 
 
 class MongoDBFilter(BasicFilter):
@@ -42,7 +42,7 @@ class MongoDBFilter(BasicFilter):
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
+            added_after_timestamp = datetime_to_float(string_to_datetime(added_after_date))
             date_filter = {
                 "$match": {
                     "date_added": {"$gt": added_after_timestamp},
@@ -57,7 +57,7 @@ class MongoDBFilter(BasicFilter):
             if not match_version:
                 match_version = "last"
             if "all" not in match_version:
-                actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
+                actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
                 # If specific dates have been selected, then we add these to the $match criteria
                 # created from the self.full_query at the beginning of this method. The reason we need
                 # to do this is because the $indexOfArray function below will return -1 if the date
@@ -66,7 +66,7 @@ class MongoDBFilter(BasicFilter):
                 # version dates be incorrect, but we shouldn't have returned a result at all.
                 # if actual_dates:
                 if len(actual_dates) > 0:
-                    pipeline[0]["$match"]["$and"].append({"versions": {"$all": [",".join(actual_dates)]}})
+                    pipeline[0]["$match"]["$and"].append({"versions": {"$all": actual_dates}})
 
                 # The versions array in the mongodb document is ordered newest to oldest, so the 'last'
                 # (most recent date) is in first position in the list and the oldest 'first' is in
@@ -86,6 +86,9 @@ class MongoDBFilter(BasicFilter):
                 pipeline.append(version_filter)
 
         if data.name == "manifests":
+            # Project the final results
+            project_results = {"$project": {"_id": 0, "_collection_id": 0, "_type": 0}}
+            pipeline.append(project_results)
             count = self.get_result_count(pipeline, data)
             self.add_pagination_operations(pipeline)
 
@@ -133,8 +136,7 @@ class MongoDBFilter(BasicFilter):
                                         "$switch": {
                                             "branches": [
                                                 {"case": {"$in": ["$modified", "$versions"]}, "then": True},
-                                                {"case": {"$and": [{"$in": ["$created", "$versions"]},
-                                                                   {"$not": ["$modified"]}]}, "then": True},
+                                                {"case": {"$and": [{"$in": ["$created", "$versions"]}, {"$not": ["$modified"]}]}, "then": True},
                                                 {"case": {"$in": ["$_date_added", "$versions"]}, "then": True},
                                             ],
                                             "default": False,
@@ -149,11 +151,7 @@ class MongoDBFilter(BasicFilter):
                 }
                 pipeline.append(redact_objects)
                 # Project the final results
-                project_results = {
-                    "$project": {
-                        "versions": 0,
-                    },
-                }
+                project_results = {"$project": {"versions": 0, "_id": 0, "_collection_id": 0, "_date_added": 0}}
                 pipeline.append(project_results)
                 self.add_pagination_operations(pipeline)
 

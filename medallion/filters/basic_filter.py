@@ -1,7 +1,4 @@
 import copy
-import datetime as dt
-
-from medallion.utils.common import convert_to_stix_datetime
 
 
 class BasicFilter(object):
@@ -61,7 +58,7 @@ class BasicFilter(object):
                 prop = "created"
             else:
                 prop = "modified"
-            time_of_obj = dt.datetime.strptime(obj[prop], "%Y-%m-%dT%H:%M:%S.%fZ")
+            time_of_obj = obj[prop]
             if first is None:
                 first = last = obj
                 t_first = time_of_obj
@@ -106,7 +103,7 @@ class BasicFilter(object):
             t_first = t_last = None
 
             for t in obj["versions"]:
-                timestamp = dt.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%fZ")
+                timestamp = t
                 if first is None:
                     first = last = t
                     t_first = timestamp
@@ -193,7 +190,6 @@ class BasicFilter(object):
                 results = new_results
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
             new_results = []
             for obj in results:
                 info = None
@@ -202,8 +198,7 @@ class BasicFilter(object):
                         info = item
                         break
                 if info:
-                    added_date_timestamp = convert_to_stix_datetime(info["date_added"])
-                    if added_date_timestamp > added_after_timestamp:
+                    if info["date_added"] > added_after_date:
                         new_results.append(obj)
             return new_results
         else:
