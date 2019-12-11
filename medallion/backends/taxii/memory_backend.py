@@ -2,6 +2,8 @@ import codecs
 import copy
 import json
 import logging
+import os
+import re
 
 from ...exceptions import ProcessingError
 from ...filters.basic_filter import BasicFilter
@@ -20,10 +22,95 @@ class MemoryBackend(Backend):
 
     def __init__(self, **kwargs):
         filename = kwargs.get("filename")
+        self.data = {}
+        self.save_status = kwargs.get("save_status", False)
+        self.save_resources = kwargs.get("save_resources", False)
+        self.path = kwargs.get("path")
+        self.load_from_path = kwargs.get("load_from_path", False)
+        if filename and self.load_from_path:
+            raise RuntimeError("Currently is not possible to load from various sources simultaneously.")
         if filename:
             self.load_data_from_file(filename)
-        else:
-            self.data = {}
+        if self.path and self.load_from_path:
+            self._init_discovery()
+
+    def _init_discovery(self):
+        if not self.path:
+            raise ProcessingError('path was not specified in the config file', 400)
+
+        if os.path.isdir(self.path) is False:
+            raise ProcessingError("directory '{}' was not found".format(self.path), 500)
+
+        discovery_path = os.path.join(self.path, "discovery.json")
+        self.data["/discovery"] = self._load_file(discovery_path)
+
+        for dirpath, dirnames, filenames in os.walk(self.path):
+            for dirname in dirnames:
+                filename = dirname + ".json"
+                file_path = os.path.join(dirpath, dirname, filename)
+                if os.path.isfile(file_path):
+                    self.data[dirname] = {}
+                    self.data[dirname]["information"] = self._load_file(file_path)
+                    self.data[dirname]["collections"] = []
+                    self.data[dirname]["status"] = []
+                    self._init_collections(dirname, os.path.join(dirpath, dirname))
+            break
+
+    def _init_collections(self, api_root, apiroot_path):
+        for dirpath, dirnames, filenames in os.walk(apiroot_path):
+            for dirname in dirnames:
+                filename = dirname + ".json"
+                file_path = os.path.join(dirpath, dirname, filename)
+
+                if os.path.isfile(file_path):
+                    collection = self._load_file(file_path)
+                    collection["manifest"] = []
+                    collection["objects"] = []
+
+                    self.data[api_root]["collections"].append(collection)
+                    self._init_resource(collection, os.path.join(dirpath, dirname), "objects")
+                    self._init_resource(collection, os.path.join(dirpath, dirname), "manifest")
+
+                if dirname == "status":
+                    self._init_status(api_root, os.path.join(dirpath, "status"))
+            break
+
+    def _init_resource(self, collection, collection_path, resource):
+        collection_path = os.path.join(collection_path, resource)
+
+        for dirpath, dirnames, filenames in os.walk(collection_path):
+            for filename in filenames:
+                file_path = os.path.join(dirpath, filename)
+
+                if os.path.isfile(file_path):
+                    loaded_obj = self._load_file(file_path)
+                    collection[resource].append(loaded_obj)
+
+    def _init_status(self, api_root, status_path):
+        for dirpath, dirnames, filenames in os.walk(status_path):
+            for filename in filenames:
+                file_path = os.path.join(dirpath, filename)
+                self.data[api_root]["status"].append(self._load_file(file_path))
+
+    @staticmethod
+    def _timestamp2filename(timestamp):
+        """Takes timestamp string and removes some characters for normalized name"""
+        ts = re.sub(r"[-T:\.Z ]", "", timestamp)
+        return ts
+
+    @staticmethod
+    def _save_file(obj, filename, *paths):
+        final_path = os.path.join(*paths)
+        if os.path.isdir(final_path) is False:
+            os.makedirs(final_path)
+        with codecs.open(os.path.join(final_path, filename), mode="w", encoding="utf8") as infile:
+            json.dump(obj, infile, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
+    def _load_file(*paths):
+        final_path = os.path.join(*paths)
+        with codecs.open(final_path, mode="r", encoding="utf8") as infile:
+            return json.load(infile)
 
     def load_data_from_file(self, filename):
         with codecs.open(filename, mode="r", encoding="utf8") as infile:
@@ -46,6 +133,9 @@ class MemoryBackend(Backend):
         media_type = media_type_fmt.format(determine_spec_version(new_obj))
         version = determine_version(new_obj, request_time)
 
+        obj_type, obj_id = new_obj["id"].split("--")
+        json_name = self._timestamp2filename(version) + ".json"
+
         for collection in collections:
             if collection_id == collection["id"]:
                 if "manifest" not in collection:
@@ -60,18 +150,29 @@ class MemoryBackend(Backend):
                         # to do.
                         break
                 else:
-                    collection["manifest"].append(
-                        {
-                            "id": new_obj["id"],
-                            "date_added": datetime_to_string(request_time),
-                            "versions": [version],
-                            "media_types": [media_type],
-                        },
-                    )
+                    entry = {
+                        "id": new_obj["id"],
+                        "date_added": datetime_to_string(request_time),
+                        "versions": [version],
+                        "media_types": [media_type],
+                    }
+                    collection["manifest"].append(entry)
+                    if self.save_resources:
+                        self._save_file(entry, json_name, self.path, api_root, collection_id, "manifest", obj_type, obj_id)
+                if self.save_resources:
+                    self._save_file(new_obj, json_name, self.path, api_root, collection_id, "objects", obj_type, obj_id)
 
                 # if the media type is new, attach it to the collection
                 if media_type not in collection["media_types"]:
                     collection["media_types"].append(media_type)
+                    collection_cp = copy.deepcopy(collection)
+                    collection_cp.pop("manifest", None)
+                    collection_cp.pop("modified", None)
+                    collection_cp.pop("objects", None)
+
+                    json_name = collection["id"] + ".json"
+                    if self.save_resources:
+                        self._save_file(collection_cp, json_name, self.path, api_root, collection_id)
 
                 # quit once you have found the collection that needed updating
                 break
@@ -207,6 +308,8 @@ class MemoryBackend(Backend):
                 failures=failures,
             )
             api_info["status"].append(status)
+            if self.save_status:
+                self._save_file(status, status["id"] + ".json", self.path, api_root, "status")
             return status
 
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):

@@ -1,5 +1,5 @@
+import calendar
 import datetime as dt
-import time
 import uuid
 
 import pytz
@@ -124,7 +124,6 @@ def datetime_to_string_stix(dttm):
     # 3. Format in ISO format with millisecond precision,
     #       except for objects defined with higher precision
     # 4. Add "Z"
-
     if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
         # dttm is timezone-naive; assume UTC
         zoned = pytz.UTC.localize(dttm)
@@ -141,14 +140,14 @@ def datetime_to_float(dttm):
     """Given a datetime instance, return its representation as a float"""
     # Based on this solution: https://stackoverflow.com/questions/30020988/python3-datetime-timestamp-in-python2
     if dttm.tzinfo is None:
-        return time.mktime((dttm.timetuple())) + dttm.microsecond / 1e6
+        return calendar.timegm(dttm.utctimetuple()) + dttm.microsecond / 1e6
     else:
         return (dttm - dt.datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()
 
 
 def float_to_datetime(timestamp_float):
     """Given a floating-point number, produce a datetime instance"""
-    return dt.datetime.fromtimestamp(timestamp_float)
+    return dt.datetime.utcfromtimestamp(timestamp_float)
 
 
 def string_to_datetime(timestamp_string):
