@@ -50,7 +50,7 @@ class MongoBackend(Backend):
         next_id = filter_args.get("next")
         if limit and next_id is None:
             client_params = parse_request_parameters(filter_args)
-            record = {"skip": 0, "limit": limit, "total": 0, "args": client_params, "request_time": datetime_to_float(get_timestamp())}
+            record = {"skip": 0, "limit": limit, "args": client_params, "request_time": datetime_to_float(get_timestamp())}
             next_id = str(uuid.uuid4())
             self.pages[next_id] = record
         elif limit and next_id:
@@ -69,7 +69,6 @@ class MongoBackend(Backend):
     def _update_record(self, next_id, count, internal=False):
         more = False
         if next_id:
-            self.pages[next_id]["total"] = count
             if internal is False:
                 self.pages[next_id]["skip"] += self.pages[next_id]["limit"]
             if self.pages[next_id]["skip"] >= count:
@@ -229,6 +228,7 @@ class MongoBackend(Backend):
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
+        manifest_info = api_root_db["manifests"]
         next_id, record = self._process_params(filter_args, limit)
 
         full_filter = MongoDBFilter(
@@ -242,7 +242,7 @@ class MongoBackend(Backend):
         count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
-            {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
+            manifest_info
         )
 
         for obj in objects_found:
@@ -286,7 +286,7 @@ class MongoBackend(Backend):
                     failed += 1
                 else:
                     new_obj.update({"_collection_id": collection_id})
-                    if not all(prop in new_obj for prop in ("modified", "created")):
+                    if all(prop not in new_obj for prop in ("modified", "created")):
                         new_obj["_date_added"] = datetime_to_float(string_to_datetime(obj_version))  # Special case for un-versioned objects
                     if "modified" in new_obj:
                         new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
@@ -332,7 +332,7 @@ class MongoBackend(Backend):
         count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
-            {"mongodb_manifests_collection": manifest_info, "_collection_id": collection_id},
+            manifest_info
         )
 
         for obj in objects_found:
@@ -364,7 +364,7 @@ class MongoBackend(Backend):
         count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
-            {"mongodb_manifests_collection": api_root_db["manifests"], "_collection_id": collection_id},
+            manifest_info
         )
         if objects_found:
             for obj in objects_found:

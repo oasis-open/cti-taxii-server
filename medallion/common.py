@@ -215,7 +215,7 @@ def parse_request_parameters(filter_args):
     session_args = {}
     for key, value in filter_args.items():
         if key != "limit" and key != "next":
-            session_args[key] = sorted(set(value.replace(" ", "").split(",")))
+            session_args[key] = set(value.replace(" ", "").split(","))
     return session_args
 
 
