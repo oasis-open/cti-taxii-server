@@ -204,10 +204,10 @@ class MongoDBFilter(BasicFilter):
             project_results = {"$project": {"version": 0, "media_type": 0, "_id": 0, "_collection_id": 0, "_date_added": 0}}
             pipeline.append(project_results)
 
-            count = self.get_result_count(pipeline, manifest_info["mongodb_manifests_collection"])
+            count = self.get_result_count(pipeline, manifest_info)
             self.add_pagination_operations(pipeline)
 
-            cursor = manifest_info["mongodb_manifests_collection"].aggregate(pipeline)
+            cursor = manifest_info.aggregate(pipeline)
             results = list(cursor)
 
         return count, results
