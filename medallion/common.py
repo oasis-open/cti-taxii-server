@@ -110,8 +110,7 @@ def datetime_to_string(dttm):
         zoned = pytz.UTC.localize(dttm)
     else:
         zoned = dttm.astimezone(pytz.UTC)
-    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    return ts
+    return zoned.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def datetime_to_string_stix(dttm):
@@ -131,11 +130,10 @@ def datetime_to_string_stix(dttm):
     ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
     ms = zoned.strftime("%f")
     if len(ms[3:].rstrip("0")) >= 1:
-        return ts + "." + ms + "Z"
-    elif len(ms[:3].rstrip("0")) >= 1:
-        return ts + "." + ms[:3] + "Z"
+        ts = ts + "." + ms + "Z"
     else:
-        return ts + "Z"
+        ts = ts + "." + ms[:3] + "Z"
+    return ts
 
 
 def datetime_to_float(dttm):
