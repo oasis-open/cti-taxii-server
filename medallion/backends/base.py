@@ -46,7 +46,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
         """
         Fill:
             Implement the get_object_manifest TAXII endpoint by obtaining the metadata
@@ -58,6 +58,7 @@ class Backend(object):
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
             allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
+            limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
             tuple containing the total count of matching objects, and a collection of metadata for the objects
@@ -97,7 +98,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         """
         Fill:
             Implement the get_objects TAXII endpoint by obtaining the data from a collection
@@ -108,6 +109,7 @@ class Backend(object):
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
             allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
+            limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
             tuple containing the total count of matching objects, and a collection of objects containing
@@ -139,7 +141,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         """
         Fill:
             Implement the get_object TAXII endpoint by obtaining the data from a collection related
@@ -152,6 +154,7 @@ class Backend(object):
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
             allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
+            limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
             data from the collection that satisfies the filter
@@ -179,7 +182,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         """
         Fill:
             Implement the get_object_versions TAXII endpoint by obtaining the metadata for a selected
@@ -192,6 +195,7 @@ class Backend(object):
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
             allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
+            limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
             data from the collection that satisfies the filter

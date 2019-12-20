@@ -129,7 +129,8 @@ class TaxiiTest(unittest.TestCase):
         else:
             encoded_auth = "Basic " + \
                 base64.b64encode(b"admin:Password0").decode("ascii")
-        self.auth = {"Authorization": encoded_auth}
+        self.headers = {"Accept": "application/taxii+json;version=2.1", "Authorization": encoded_auth}
+        self.content_type_header = {"Content-Type": "application/taxii+json;version=2.1"}
 
     def tearDown(self):
         self.app_context.pop()
