@@ -2,7 +2,7 @@ import copy
 import json
 
 from ..common import (create_resource, datetime_to_string,
-                      determine_spec_version, determine_version,
+                      determine_spec_version, determine_version, find_att,
                       generate_status, generate_status_details, iterpath)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
@@ -206,7 +206,7 @@ class MemoryBackend(Backend):
                     manifests = collection.get("manifest", [])
                     break
             if len(objs) == 0:
-                return None
+                raise ProcessingError("Object '{}' not found".format(object_id), 404)
             full_filter = BasicFilter(filter_args)
             objs = full_filter.process_filter(
                 objs,
