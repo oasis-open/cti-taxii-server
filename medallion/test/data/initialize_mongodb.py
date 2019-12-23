@@ -1,8 +1,8 @@
 from pymongo import ASCENDING, IndexModel
 
+from medallion.common import datetime_to_float, string_to_datetime
 from medallion.test.generic_initialize_mongodb import (
     add_api_root, build_new_mongo_databases_and_collection, connect_to_client)
-from medallion.utils.common import datetime_to_float, string_to_datetime
 
 
 def reset_db(url="mongodb://root:example@localhost:27017/"):

@@ -1,14 +1,23 @@
+import calendar
 import datetime as dt
-import time
+import threading
 import uuid
 
 import pytz
 from six import iteritems
 
 
-def create_resource(resource_name, o, more=False):
+def create_resource(resource_name, items, more=False, next_id=None):
     """Generates a Resource Object given a resource name."""
-    return {resource_name: o, "more": more}
+    resource = {}
+    if items:
+        resource[resource_name] = items
+    if resource_name == "objects" or resource_name == "versions":
+        if next_id and resource:
+            resource["next"] = next_id
+        if resource:
+            resource["more"] = more
+    return resource
 
 
 def determine_version(new_obj, request_time):
@@ -101,8 +110,7 @@ def datetime_to_string(dttm):
         zoned = pytz.UTC.localize(dttm)
     else:
         zoned = dttm.astimezone(pytz.UTC)
-    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    return ts
+    return zoned.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def datetime_to_string_stix(dttm):
@@ -121,23 +129,25 @@ def datetime_to_string_stix(dttm):
         zoned = dttm.astimezone(pytz.UTC)
     ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
     ms = zoned.strftime("%f")
-    if len(ms.rstrip("0")) > 3:
-        return ts + "." + ms + "Z"
-    return ts + "." + ms[:3] + "Z"
+    if len(ms[3:].rstrip("0")) >= 1:
+        ts = ts + "." + ms + "Z"
+    else:
+        ts = ts + "." + ms[:3] + "Z"
+    return ts
 
 
 def datetime_to_float(dttm):
     """Given a datetime instance, return its representation as a float"""
     # Based on this solution: https://stackoverflow.com/questions/30020988/python3-datetime-timestamp-in-python2
     if dttm.tzinfo is None:
-        return time.mktime((dttm.timetuple())) + dttm.microsecond / 1e6
+        return calendar.timegm(dttm.utctimetuple()) + dttm.microsecond / 1e6
     else:
         return (dttm - dt.datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()
 
 
 def float_to_datetime(timestamp_float):
     """Given a floating-point number, produce a datetime instance"""
-    return dt.datetime.fromtimestamp(timestamp_float)
+    return dt.datetime.utcfromtimestamp(timestamp_float)
 
 
 def string_to_datetime(timestamp_string):
@@ -186,6 +196,27 @@ def generate_status_details(id, version, message=None):
     return status_details
 
 
+def get_custom_headers(manifest_resource):
+    """Generates the X-TAXII-Date-Added headers based on a manifest resource"""
+    headers = {}
+
+    times = sorted(map(lambda x: x["date_added"], manifest_resource.get("objects", [])))
+    if len(times) > 0:
+        headers["X-TAXII-Date-Added-First"] = times[0]
+        headers["X-TAXII-Date-Added-Last"] = times[-1]
+
+    return headers
+
+
+def parse_request_parameters(filter_args):
+    """Generates a dict with params received from client"""
+    session_args = {}
+    for key, value in filter_args.items():
+        if key != "limit" and key != "next":
+            session_args[key] = set(value.replace(" ", "").split(","))
+    return session_args
+
+
 def find_att(obj):
     """
     Used for finding the version attribute of an ambiguous object. Manifests
@@ -208,3 +239,33 @@ def find_att(obj):
     else:
         # TO DO: PUT DEFAULT VALUE HERE
         pass
+
+
+def find_version_attribute(obj):
+    """Depending on the object, modified, created or _date_added is used to store the
+    object version"""
+    if "modified" in obj:
+        return "modified"
+    elif "created" in obj:
+        return "created"
+    elif "_date_added" in obj:
+        return "_date_added"
+
+
+class SessionChecker(object):
+    """Calls a target method every X seconds to perform a task."""
+
+    def __init__(self, interval, target_function):
+        self.interval = interval
+        self.target_function = target_function
+        self.thread = threading.Timer(interval=self.interval, function=self.handle_function)
+        self.thread.daemon = True
+
+    def handle_function(self):
+        self.target_function()
+        self.thread = threading.Timer(interval=self.interval, function=self.handle_function)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def start(self):
+        self.thread.start()

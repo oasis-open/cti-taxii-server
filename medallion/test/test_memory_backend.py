@@ -8,8 +8,7 @@ import uuid
 from flask import current_app
 import six
 
-from medallion import set_config, test
-from medallion.utils import common
+from medallion import common, set_config, test
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
@@ -60,7 +59,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         return json.load(io)
 
     def test_server_discovery(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+        r = self.client.get(test.DISCOVERY_EP, headers=self.headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
@@ -68,7 +67,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
 
     def test_get_api_root_information(self):
-        r = self.client.get(test.API_ROOT_EP, headers=self.auth)
+        r = self.client.get(test.API_ROOT_EP, headers=self.headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
@@ -77,11 +76,11 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
     def test_get_api_root_information_not_existent(self):
         # note  that 'trustgroup2' does not exist as an API root
-        r = self.client.get("/trustgroup2/", headers=self.auth)
+        r = self.client.get("/trustgroup2/", headers=self.headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_collections(self):
-        r = self.client.get(test.COLLECTIONS_EP, headers=self.auth)
+        r = self.client.get(test.COLLECTIONS_EP, headers=self.headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
@@ -98,7 +97,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
     def test_get_collection(self):
         r = self.client.get(
             test.GET_COLLECTION_EP,
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -109,14 +108,14 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
     def test_get_collection_not_existent(self):
         r = self.client.get(
             test.NON_EXISTENT_COLLECTION_EP,
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 404)
 
     def test_get_object(self):
         r = self.client.get(
             test.GET_OBJECT_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -127,7 +126,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
     def test_get_objects(self):
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[type]=relationship",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -137,7 +136,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[id]=indicator--6770298f-0fd8-471a-ab8c-1c658a46574e&match[version]=2016-11-03T12:30:59.000Z,2016-12-25T12:30:59.444Z",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -158,7 +157,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[id]=malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec&match[version]=first,2017-01-27T13:49:53.997Z,last",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -169,7 +168,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
-            headers=self.auth,
+            headers=self.headers,
             follow_redirects=True,
         )
 
@@ -180,7 +179,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[spec_version]=2.1",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -191,7 +190,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r = self.client.get(
             test.MANIFESTS_EP + "?match[spec_version]=2.1",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -202,7 +201,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r = self.client.get(
             test.MANIFESTS_EP + "?match[id]=malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec&match[type]=malware",
-            headers=self.auth,
+            headers=self.headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -217,7 +216,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -233,7 +232,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # ------------- END: add object section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.headers)
         get_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
         r_get = self.client.get(
@@ -251,7 +250,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.API_ROOT_EP + "status/%s/" % status_response["id"],
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
@@ -264,7 +263,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=%s" % new_id,
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
@@ -280,7 +279,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -311,7 +310,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # ------------- END: add object again section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.headers)
         get_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
         r_get = self.client.get(
@@ -330,7 +329,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -361,7 +360,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # ------------- END: add object again section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.headers)
         get_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
         r_get = self.client.get(
@@ -380,7 +379,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -396,7 +395,8 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.datetime_to_string_stix(common.get_timestamp() + timedelta(0, i))
+            new_bundle["objects"][0]["modified"] = common.datetime_to_string_stix(
+                common.get_timestamp() + timedelta(0, i))
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
@@ -409,7 +409,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # ------------- END: add object section ------------- #
         # ------------- BEGIN: get object section 1 ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.headers)
         get_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
         r_get = self.client.get(
@@ -474,7 +474,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.API_ROOT_EP + "status/%s/" % status_response["id"],
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
@@ -487,7 +487,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=%s" % new_id,
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V21)
@@ -499,7 +499,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # ------------- END: get manifest section ------------- #
 
     def test_added_after_filtering(self):
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.headers)
         get_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
         r_get = self.client.get(
@@ -518,7 +518,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -538,7 +538,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
             r_get = self.client.get(
                 test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
-                headers=self.auth,
+                headers=self.headers,
             )
             objs = self.load_json_response(r_get.data)
             assert objs["objects"][0]["id"] == new_id
@@ -552,7 +552,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
 
     def test_get_collections_404(self):
         # note that the api root "carbon1" is nonexistent
-        r = self.client.get("/carbon1/collections/", headers=self.auth)
+        r = self.client.get("/carbon1/collections/", headers=self.headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_status_401(self):
@@ -564,7 +564,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
     access control for Status resources"""
 
     def test_get_status_404(self):
-        r = self.client.get(test.API_ROOT_EP + "status/22101993/", headers=self.auth)
+        r = self.client.get(test.API_ROOT_EP + "status/22101993/", headers=self.headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_object_manifest_401(self):
@@ -575,13 +575,13 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
     def test_get_object_manifest_403(self):
         r = self.client.get(
             test.FORBIDDEN_COLLECTION_EP + "manifest/",
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 403)
 
     def test_get_object_manifest_404(self):
         # note that collection ID doesnt exist
-        r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=self.auth)
+        r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=self.headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_object_401(self):
@@ -597,7 +597,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         """
         r = self.client.get(
             test.FORBIDDEN_COLLECTION_EP + "objects/indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f/",
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 403)
 
@@ -605,7 +605,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # TAXII spec allows for a 404 or empty bundle if object is not found
         r = self.client.get(
             test.GET_OBJECT_EP + "malware--cee60c30-a68c-11e3-b0c1-a01aac20d000/",
-            headers=self.auth,
+            headers=self.headers,
         )
         objs = self.load_json_response(r.data)
 
@@ -645,7 +645,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # get_objects()
         r = self.client.get(
             test.FORBIDDEN_COLLECTION_EP + "objects/",
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 403)
 
@@ -654,7 +654,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -669,7 +669,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # get_objects()
         r = self.client.get(
             test.NON_EXISTENT_COLLECTION_EP + "objects/",
-            headers=self.auth,
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 404)
 
@@ -678,7 +678,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
@@ -708,7 +708,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             "valid_from": "2017-01-27T13:51:53.935382Z",
         }
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.headers)
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
