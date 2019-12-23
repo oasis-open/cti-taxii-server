@@ -2,12 +2,11 @@ import copy
 import json
 import uuid
 
+from ..common import (create_resource, datetime_to_string,
+                      determine_spec_version, determine_version, find_att,
+                      generate_status, generate_status_details, iterpath)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import (create_resource, datetime_to_string,
-                            determine_spec_version, determine_version,
-                            find_att, generate_status, generate_status_details,
-                            iterpath)
 from .base import Backend
 
 
@@ -96,7 +95,7 @@ class MemoryBackend(Backend):
         media_type_fmt = "application/stix+json;version={}"
 
         for collection in collections:
-            if "id" in collection and collection_id == collection["id"]:
+            if collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
                 request_time = datetime_to_string(request_time)
                 media_type = media_type_fmt.format(determine_spec_version(new_obj))
@@ -140,7 +139,7 @@ class MemoryBackend(Backend):
         collections = copy.deepcopy(api_info.get("collections", []))
 
         for collection in collections:
-            if "id" in collection and collection_id == collection["id"]:
+            if collection_id == collection["id"]:
                 collection.pop("manifest", None)
                 collection.pop("responses", None)
                 collection.pop("objects", None)
@@ -215,7 +214,7 @@ class MemoryBackend(Backend):
             failures = []
 
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
                     try:
@@ -289,7 +288,7 @@ class MemoryBackend(Backend):
 
             objs = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     all_manifests = collection.get("manifest", [])
                     if "next" in filter_args:
                         objs, more, headers, n = self.get_next(filter_args, allowed_filters, all_manifests, limit)

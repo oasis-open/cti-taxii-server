@@ -4,7 +4,7 @@ import operator
 
 from flask import current_app
 
-from ..utils.common import find_att, string_to_datetime
+from ..common import find_att, string_to_datetime
 
 
 def check_for_dupes(final_match, final_track, res):
@@ -185,9 +185,6 @@ class BasicFilter(object):
     def process_filter(self, data, allowed, manifest_info, limit):
         filtered_by_type = []
         filtered_by_id = []
-        filtered_by_version = []
-        filtered_by_spec_version = []
-        filtered_by_added_after = []
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
