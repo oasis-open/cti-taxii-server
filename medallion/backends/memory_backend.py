@@ -151,7 +151,7 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
 
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     if "next" in filter_args and "next" in allowed_filters:
                         manifest = collection.get("manifest", [])
                         manifest, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
@@ -188,7 +188,7 @@ class MemoryBackend(Backend):
             collections = api_info.get("collections", [])
             objs = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     manifest = collection.get("manifest", [])
                     if "next" in filter_args:
                         objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
@@ -263,7 +263,7 @@ class MemoryBackend(Backend):
             objs = []
             manifests = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     manifests = collection.get("manifest", [])
                     if "next" in filter_args:
                         objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifests, limit)
