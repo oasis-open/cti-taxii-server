@@ -177,20 +177,6 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
         objs = self.load_json_response(r.data)
         assert len(objs["versions"]) == 1
-        self.assertFalse(objs["more"])
-        assert objs["versions"] == ["2017-01-27T13:49:53.935Z"]
-
-        r = self.client.get(
-            test.MANIFESTS_EP + "?limit=1",
-            headers=self.auth,
-        )
-
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
-        objs = self.load_json_response(r.data)
-        assert len(objs["objects"]) == 1
-        self.assertTrue(objs["more"])
-        assert objs["objects"][0]["date_added"] == "2014-05-08T09:00:00.000000Z"
 
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[spec_version]=2.1",
