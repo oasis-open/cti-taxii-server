@@ -76,7 +76,7 @@ def connect_to_backend(config_info):
         return module_class(**config_info)
     except Exception as e:
         log.error("Unknown backend for TAXII server. {} ".format(str(e)))
-        raise e
+        raise
 
 
 def register_blueprints(flask_application_instance):
