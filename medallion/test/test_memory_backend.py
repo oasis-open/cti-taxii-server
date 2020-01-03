@@ -249,7 +249,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         assert len(current_app.medallion_backend.next) == 2
 
         r3 = self.client.get(
-            test.GET_OBJECTS_EP + "?limit=2&next=" + objs["next"],
+            test.GET_OBJECTS_EP + "?match[id]=indicator--6770298f-0fd8-471a-ab8c-1c658a46574e&match[version]=all&limit=2&next=" + objs["next"],
             headers=self.headers,
         )
 
