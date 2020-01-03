@@ -49,10 +49,13 @@ class BasicFilter(object):
         self.filter_args = filter_args
 
     def sort_and_paginate(self, data, limit, manifest):
+        temp = None
         more = False
         nex = None
         headers = {}
         new = []
+        if len(data) == 0:
+            return new, more, headers, nex
         if manifest:
             manifest.sort(key=lambda x: x['date_added'])
             for man in manifest:
@@ -63,6 +66,7 @@ class BasicFilter(object):
                         if len(headers) == 0:
                             headers["X-TAXII-Date-Added-First"] = man["date_added"]
                         new.append(check)
+                        temp = man
                         if len(new) == limit:
                             headers["X-TAXII-Date-Added-Last"] = man["date_added"]
                         break
@@ -71,6 +75,8 @@ class BasicFilter(object):
                 next_save = new[limit:]
                 new = new[:limit]
                 nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
+            else:
+                headers["X-TAXII-Date-Added-Last"] = temp["date_added"]
         else:
             data.sort(key=lambda x: x['date_added'])
             if limit and limit < len(data):

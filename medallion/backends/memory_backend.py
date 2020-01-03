@@ -2,9 +2,10 @@ import copy
 import json
 import uuid
 
-from ..common import (create_resource, datetime_to_string,
-                      determine_spec_version, determine_version, find_att,
-                      generate_status, generate_status_details, iterpath)
+from ..common import (SessionChecker, create_resource, datetime_to_float,
+                      datetime_to_string, determine_spec_version,
+                      determine_version, find_att, generate_status,
+                      generate_status_details, get_timestamp, iterpath)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from .base import Backend
@@ -30,20 +31,24 @@ class MemoryBackend(Backend):
         else:
             self.data = {}
         self.next = {}
+        self.timeout = kwargs.get("session_timeout", 30)
+
+        checker = SessionChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
+        checker.start()
 
     def set_next(self, objects, args):
         u = str(uuid.uuid4())
-        d = {"objects": objects, "args": args}
+        d = {"objects": objects, "args": args, "request_time": datetime_to_float(get_timestamp())}
         self.next[u] = d
         return u
 
     def get_next(self, filter_args, allowed, manifest, lim):
         n = filter_args["next"]
         if n in self.next:
-            for arg, val in filter_args.items():
-                if arg != "next" and (arg not in self.next[n]["args"] or self.next[n]["args"][arg] != val):
-                    raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
-
+            no_next = filter_args
+            del no_next["next"]
+            if no_next != self.next[n]["args"]:
+                raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
             t = self.next[n]["objects"]
             length = len(self.next[n]["objects"])
             headers = {}
@@ -71,6 +76,16 @@ class MemoryBackend(Backend):
             return ret, more, headers, nex
         else:
             raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
+
+    def _pop_expired_sessions(self):
+        expired_ids = []
+        boundary = datetime_to_float(get_timestamp())
+        for next_id, record in self.next.items():
+            if boundary - record["request_time"] > self.timeout:
+                expired_ids.append(next_id)
+
+        for item in expired_ids:
+            self.next.pop(item)
 
     def load_data_from_file(self, filename):
         with open(filename, "r") as infile:
@@ -152,7 +167,7 @@ class MemoryBackend(Backend):
 
             for collection in collections:
                 if collection_id == collection["id"]:
-                    if "next" in filter_args and "next" in allowed_filters:
+                    if "next" in filter_args:
                         manifest = collection.get("manifest", [])
                         manifest, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
                     else:
