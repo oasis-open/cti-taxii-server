@@ -161,6 +161,8 @@ class MemoryBackend(Backend):
                 return collection
 
     def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
+        more = False
+        n = None
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -173,12 +175,15 @@ class MemoryBackend(Backend):
                     else:
                         manifest = collection.get("manifest", [])
                         full_filter = BasicFilter(filter_args)
-                        manifest, more, headers, n = full_filter.process_filter(
+                        manifest, next_save, headers = full_filter.process_filter(
                             manifest,
                             allowed_filters,
                             None,
                             limit
                         )
+                        if len(next_save) != 0:
+                            more = True
+                            n = self.set_next(next_save, filter_args)
                         break
             return create_resource("objects", manifest, more, n), headers
 
@@ -198,6 +203,8 @@ class MemoryBackend(Backend):
                     return status
 
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
+        more = False
+        n = None
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -209,12 +216,15 @@ class MemoryBackend(Backend):
                         objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
                     else:
                         full_filter = BasicFilter(filter_args)
-                        objs, more, headers, n = full_filter.process_filter(
+                        objs, next_save, headers = full_filter.process_filter(
                             collection.get("objects", []),
                             allowed_filters,
                             manifest,
                             limit
                         )
+                        if len(next_save) != 0:
+                            more = True
+                            n = self.set_next(next_save, filter_args)
                         break
             return create_resource("objects", objs, more, n), headers
 
@@ -272,6 +282,8 @@ class MemoryBackend(Backend):
             return status
 
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
+        more = False
+        n = None
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -286,17 +298,24 @@ class MemoryBackend(Backend):
                         for obj in collection.get("objects", []):
                             if object_id == obj["id"]:
                                 objs.append(obj)
+                        if len(objs) == 0:
+                            raise ProcessingError("Object '{}' not found".format(object_id), 404)
                         full_filter = BasicFilter(filter_args)
-                        objs, more, headers, n = full_filter.process_filter(
+                        objs, next_save, headers = full_filter.process_filter(
                             objs,
                             allowed_filters,
                             manifests,
                             limit
                         )
+                        if len(next_save) != 0:
+                            more = True
+                            n = self.set_next(next_save, filter_args)
                         break
             return create_resource("objects", objs, more, n), headers
 
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
+        more = False
+        n = None
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -315,12 +334,15 @@ class MemoryBackend(Backend):
                             if object_id == manifest["id"]:
                                 objs.append(manifest)
                         full_filter = BasicFilter(filter_args)
-                        objs, more, headers, n = full_filter.process_filter(
+                        objs, next_save, headers = full_filter.process_filter(
                             objs,
                             allowed_filters,
                             None,
                             limit
                         )
+                        if len(next_save) != 0:
+                            more = True
+                            n = self.set_next(next_save, filter_args)
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
             return create_resource("versions", objs, more, n), headers

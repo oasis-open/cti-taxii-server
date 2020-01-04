@@ -2,8 +2,6 @@ import bisect
 import copy
 import operator
 
-from flask import current_app
-
 from ..common import find_att, string_to_datetime
 
 
@@ -50,12 +48,11 @@ class BasicFilter(object):
 
     def sort_and_paginate(self, data, limit, manifest):
         temp = None
-        more = False
-        nex = None
+        next_save = {}
         headers = {}
         new = []
         if len(data) == 0:
-            return new, more, headers, nex
+            return new, next_save, headers
         if manifest:
             manifest.sort(key=lambda x: x['date_added'])
             for man in manifest:
@@ -71,23 +68,19 @@ class BasicFilter(object):
                             headers["X-TAXII-Date-Added-Last"] = man["date_added"]
                         break
             if limit and limit < len(data):
-                more = True
                 next_save = new[limit:]
                 new = new[:limit]
-                nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
             else:
                 headers["X-TAXII-Date-Added-Last"] = temp["date_added"]
         else:
             data.sort(key=lambda x: x['date_added'])
             if limit and limit < len(data):
-                more = True
                 next_save = data[limit:]
                 data = data[:limit]
-                nex = current_app.medallion_backend.set_next(next_save, self.filter_args)
             headers["X-TAXII-Date-Added-First"] = data[0]["date_added"]
             headers["X-TAXII-Date-Added-Last"] = data[-1]["date_added"]
             new = data
-        return new, more, headers, nex
+        return new, next_save, headers
 
     @staticmethod
     def filter_by_id(data, id_):
@@ -239,6 +232,6 @@ class BasicFilter(object):
             filtered_by_version = filtered_by_added_after
 
         # sort objects by date_added of manifest and paginate as necessary
-        final_match, more, headers, nex = self.sort_and_paginate(filtered_by_version, limit, manifest_info)
+        final_match, save_next, headers = self.sort_and_paginate(filtered_by_version, limit, manifest_info)
 
-        return final_match, more, headers, nex
+        return final_match, save_next, headers
