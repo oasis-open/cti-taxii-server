@@ -109,7 +109,7 @@ To use the directory features, include the following in the <config-file>:
         }
     }
 
-A complete config can be seen in this `example <https:/example_configs/directory_backend_config_auth_from_file.json>`_
+A complete config can be seen in this `example <https://github.com/oasis-open/cti-taxii-server/blob/master/example_configs/directory_backend_config_auth_from_file.json>`_
 
 The backend uses the path pointed to by the path config as its root. Each directory within becomes a TAXII 2.0
 api root. STIX 2.0 bundles as JSON files can be placed within the root, and the contents of each file will be aggregated
