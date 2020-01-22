@@ -11,6 +11,12 @@ from ..filters.basic_filter import BasicFilter
 from .base import Backend
 
 
+def remove_hidden_field(objs):
+    for obj in objs:
+        if "_date_added" in obj:
+            del obj["_date_added"]
+
+
 def find_headers(headers, manifest, obj):
     obj_time = find_att(obj)
     for man in manifest:
@@ -38,6 +44,11 @@ class MemoryBackend(Backend):
 
     def set_next(self, objects, args):
         u = str(uuid.uuid4())
+        del args["limit"]
+        for arg in args:
+            new_list = args[arg].split(',')
+            new_list.sort()
+            args[arg] = new_list
         d = {"objects": objects, "args": args, "request_time": datetime_to_float(get_timestamp())}
         self.next[u] = d
         return u
@@ -45,9 +56,13 @@ class MemoryBackend(Backend):
     def get_next(self, filter_args, allowed, manifest, lim):
         n = filter_args["next"]
         if n in self.next:
-            no_next = filter_args
-            del no_next["next"]
-            if no_next != self.next[n]["args"]:
+            for arg in filter_args:
+                new_list = filter_args[arg].split(',')
+                new_list.sort()
+                filter_args[arg] = new_list
+            del filter_args["next"]
+            del filter_args["limit"]
+            if filter_args != self.next[n]["args"]:
                 raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
             t = self.next[n]["objects"]
             length = len(self.next[n]["objects"])
@@ -226,6 +241,7 @@ class MemoryBackend(Backend):
                             more = True
                             n = self.set_next(next_save, filter_args)
                         break
+            remove_hidden_field(objs)
             return create_resource("objects", objs, more, n), headers
 
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -256,10 +272,13 @@ class MemoryBackend(Backend):
                                         id_and_version_already_present = True
                                         break
                             if id_and_version_already_present is False:
+                                version = determine_version(new_obj, request_time)
+                                if "modified" not in new_obj and "created" not in new_obj:
+                                    new_obj["_date_added"] = version
                                 collection["objects"].append(new_obj)
                                 self._update_manifest(new_obj, api_root, collection["id"], request_time)
                                 status_details = generate_status_details(
-                                    new_obj["id"], determine_version(new_obj, request_time)
+                                    new_obj["id"], version
                                 )
                                 successes.append(status_details)
                                 succeeded += 1
@@ -311,6 +330,7 @@ class MemoryBackend(Backend):
                             more = True
                             n = self.set_next(next_save, filter_args)
                         break
+            remove_hidden_field(objs)
             return create_resource("objects", objs, more, n), headers
 
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
