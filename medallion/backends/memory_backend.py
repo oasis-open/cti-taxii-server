@@ -205,8 +205,7 @@ class MemoryBackend(Backend):
                             objs.append(obj)
                     manifests = collection.get("manifest", [])
                     break
-            if len(objs) == 0:
-                raise ProcessingError("Object '{}' not found".format(object_id), 404)
+
             full_filter = BasicFilter(filter_args)
             objs = full_filter.process_filter(
                 objs,
@@ -229,14 +228,16 @@ class MemoryBackend(Backend):
                             objs.append(obj)
                     manifests = collection.get("manifest", [])
                     break
-            if len(objs) == 0:
-                raise ProcessingError("Object '{}' not found".format(obj_id), 404)
+
             full_filter = BasicFilter(filter_args)
             objs = full_filter.process_filter(
                 objs,
                 allowed_filters,
                 manifests
             )
+
+            if len(objs) == 0:
+                raise ProcessingError("Object '{}' not found".format(obj_id), 404)
 
             for obj in objs:
                 if obj in coll:
