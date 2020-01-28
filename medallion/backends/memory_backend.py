@@ -2,7 +2,7 @@ import copy
 import json
 
 from ..common import (create_resource, datetime_to_string,
-                      determine_spec_version, determine_version,
+                      determine_spec_version, determine_version, find_att,
                       generate_status, generate_status_details, iterpath)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
@@ -205,6 +205,7 @@ class MemoryBackend(Backend):
                             objs.append(obj)
                     manifests = collection.get("manifest", [])
                     break
+
             full_filter = BasicFilter(filter_args)
             objs = full_filter.process_filter(
                 objs,
@@ -212,6 +213,40 @@ class MemoryBackend(Backend):
                 manifests
             )
             return create_resource("objects", objs), {}
+
+    def delete_object(self, api_root, collection_id, obj_id, filter_args, allowed_filters):
+        if api_root in self.data:
+            api_info = self._get(api_root)
+            collections = api_info.get("collections", [])
+            objs = []
+            manifests = []
+            for collection in collections:
+                if "id" in collection and collection_id == collection["id"]:
+                    coll = collection.get("objects", [])
+                    for obj in coll:
+                        if obj_id == obj["id"]:
+                            objs.append(obj)
+                    manifests = collection.get("manifest", [])
+                    break
+
+            full_filter = BasicFilter(filter_args)
+            objs = full_filter.process_filter(
+                objs,
+                allowed_filters,
+                manifests
+            )
+
+            if len(objs) == 0:
+                raise ProcessingError("Object '{}' not found".format(obj_id), 404)
+
+            for obj in objs:
+                if obj in coll:
+                    coll.remove(obj)
+                    obj_time = find_att(obj)
+                    for man in manifests:
+                        if obj["id"] == man["id"] and obj_time == find_att(man):
+                            manifests.remove(man)
+                            break
 
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
