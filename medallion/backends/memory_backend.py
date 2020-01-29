@@ -349,10 +349,11 @@ class MemoryBackend(Backend):
                     break
 
             full_filter = BasicFilter(filter_args)
-            objs = full_filter.process_filter(
+            objs, nex, headers = full_filter.process_filter(
                 objs,
                 allowed_filters,
-                manifests
+                manifests,
+                None
             )
 
             if len(objs) == 0:
