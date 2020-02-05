@@ -230,13 +230,15 @@ class MemoryBackend(Backend):
                     if "next" in filter_args:
                         objs, more, headers, n = self.get_next(filter_args, allowed_filters, manifest, limit)
                     else:
+                        objs = copy.deepcopy(collection.get("objects", []))
                         full_filter = BasicFilter(filter_args)
                         objs, next_save, headers = full_filter.process_filter(
-                            collection.get("objects", []),
+                            objs,
                             allowed_filters,
                             manifest,
                             limit
                         )
+
                         if len(next_save) != 0:
                             more = True
                             n = self.set_next(next_save, filter_args)
