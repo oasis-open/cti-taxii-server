@@ -201,12 +201,10 @@ class BasicFilter(object):
                 for id_match in filtered_by_id:
                     if type_match == id_match:
                         initial_results.append(type_match)
-        elif match_type:
-            if filtered_by_type:
-                initial_results.extend(filtered_by_type)
-        elif match_id:
-            if filtered_by_id:
-                initial_results.extend(filtered_by_id)
+        elif match_type and filtered_by_type:
+            initial_results.extend(filtered_by_type)
+        elif match_id and filtered_by_id:
+            initial_results.extend(filtered_by_id)
         else:
             initial_results = copy.deepcopy(data)
 

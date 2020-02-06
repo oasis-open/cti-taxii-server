@@ -44,7 +44,8 @@ class MemoryBackend(Backend):
 
     def set_next(self, objects, args):
         u = str(uuid.uuid4())
-        del args["limit"]
+        if "limit" in args:
+            del args["limit"]
         for arg in args:
             new_list = args[arg].split(',')
             new_list.sort()
