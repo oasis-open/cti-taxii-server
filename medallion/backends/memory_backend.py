@@ -1,11 +1,11 @@
 import copy
 import json
 
+from ..common import (create_resource, datetime_to_string,
+                      determine_spec_version, determine_version, find_att,
+                      generate_status, generate_status_details, iterpath)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
-from ..utils.common import (create_resource, determine_spec_version,
-                            determine_version, format_datetime,
-                            generate_status, generate_status_details, iterpath)
 from .base import Backend
 
 
@@ -42,9 +42,9 @@ class MemoryBackend(Backend):
         media_type_fmt = "application/stix+json;version={}"
 
         for collection in collections:
-            if "id" in collection and collection_id == collection["id"]:
+            if collection_id == collection["id"]:
                 version = determine_version(new_obj, request_time)
-                request_time = format_datetime(request_time)
+                request_time = datetime_to_string(request_time)
                 media_type = media_type_fmt.format(determine_spec_version(new_obj))
 
                 # version is a single value now, therefore a new manifest is always created
@@ -86,19 +86,19 @@ class MemoryBackend(Backend):
         collections = copy.deepcopy(api_info.get("collections", []))
 
         for collection in collections:
-            if "id" in collection and collection_id == collection["id"]:
+            if collection_id == collection["id"]:
                 collection.pop("manifest", None)
                 collection.pop("responses", None)
                 collection.pop("objects", None)
                 return collection
 
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     manifest = collection.get("manifest", [])
                     full_filter = BasicFilter(filter_args)
                     manifest = full_filter.process_filter(
@@ -106,7 +106,7 @@ class MemoryBackend(Backend):
                         allowed_filters,
                         None,
                     )
-                    return create_resource("objects", manifest)
+                    return create_resource("objects", manifest), {}
 
     def get_api_root_information(self, api_root):
         if api_root in self.data:
@@ -123,14 +123,13 @@ class MemoryBackend(Backend):
                 if status_id == status["id"]:
                     return status
 
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
-            objs = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
 
                     full_filter = BasicFilter(filter_args)
                     objs = full_filter.process_filter(
@@ -138,7 +137,7 @@ class MemoryBackend(Backend):
                         allowed_filters,
                         collection.get("manifest", []),
                     )
-                    return create_resource("objects", objs)
+                    return create_resource("objects", objs), {}
 
     def add_objects(self, api_root, collection_id, objs, request_time):
         if api_root in self.data:
@@ -151,7 +150,7 @@ class MemoryBackend(Backend):
             failures = []
 
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     if "objects" not in collection:
                         collection["objects"] = []
                     try:
@@ -186,14 +185,36 @@ class MemoryBackend(Backend):
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
             status = generate_status(
-                format_datetime(request_time), "complete", succeeded,
+                datetime_to_string(request_time), "complete", succeeded,
                 failed, pending, successes=successes,
                 failures=failures,
             )
             api_info["status"].append(status)
             return status
 
-    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
+        if api_root in self.data:
+            api_info = self._get(api_root)
+            collections = api_info.get("collections", [])
+            objs = []
+            manifests = []
+            for collection in collections:
+                if collection_id == collection["id"]:
+                    for obj in collection.get("objects", []):
+                        if object_id == obj["id"]:
+                            objs.append(obj)
+                    manifests = collection.get("manifest", [])
+                    break
+
+            full_filter = BasicFilter(filter_args)
+            objs = full_filter.process_filter(
+                objs,
+                allowed_filters,
+                manifests
+            )
+            return create_resource("objects", objs), {}
+
+    def delete_object(self, api_root, collection_id, obj_id, filter_args, allowed_filters):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
@@ -201,27 +222,40 @@ class MemoryBackend(Backend):
             manifests = []
             for collection in collections:
                 if "id" in collection and collection_id == collection["id"]:
-                    for obj in collection.get("objects", []):
-                        if object_id == obj["id"]:
+                    coll = collection.get("objects", [])
+                    for obj in coll:
+                        if obj_id == obj["id"]:
                             objs.append(obj)
                     manifests = collection.get("manifest", [])
                     break
+
             full_filter = BasicFilter(filter_args)
             objs = full_filter.process_filter(
                 objs,
                 allowed_filters,
                 manifests
             )
-            return create_resource("objects", objs)
 
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+            if len(objs) == 0:
+                raise ProcessingError("Object '{}' not found".format(obj_id), 404)
+
+            for obj in objs:
+                if obj in coll:
+                    coll.remove(obj)
+                    obj_time = find_att(obj)
+                    for man in manifests:
+                        if obj["id"] == man["id"] and obj_time == find_att(man):
+                            manifests.remove(man)
+                            break
+
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         if api_root in self.data:
             api_info = self._get(api_root)
             collections = api_info.get("collections", [])
 
             objs = []
             for collection in collections:
-                if "id" in collection and collection_id == collection["id"]:
+                if collection_id == collection["id"]:
                     all_manifests = collection.get("manifest", [])
                     for manifest in all_manifests:
                         if object_id == manifest["id"]:
@@ -233,4 +267,4 @@ class MemoryBackend(Backend):
                         None,
                     )
                     objs = sorted(map(lambda x: x["version"], objs), reverse=True)
-                    return create_resource("versions", objs)
+                    return create_resource("versions", objs), {}

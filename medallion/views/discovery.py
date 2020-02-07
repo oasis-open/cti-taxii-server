@@ -1,10 +1,16 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import MEDIA_TYPE_TAXII_V21
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
 from ..exceptions import ProcessingError
 
 mod = Blueprint("discovery", __name__)
+
+
+def api_root_exists(api_root):
+    result = current_app.medallion_backend.get_api_root_information(api_root)
+    if not result:
+        raise ProcessingError("API root '{}' information not found".format(api_root), 404)
 
 
 @mod.route("/taxii2/", methods=["GET"])
@@ -21,6 +27,7 @@ def get_server_discovery():
     # Having access to the discovery method is only related to having
     # credentials on the server. The metadata returned might be different
     # depending upon the credentials.
+    validate_version_parameter_in_accept_header()
     server_discovery = current_app.medallion_backend.server_discovery()
 
     if server_discovery:
@@ -47,15 +54,14 @@ def get_api_root_information(api_root):
 
     """
     # TODO: Check if user has access to objects in collection.
+    validate_version_parameter_in_accept_header()
+    api_root_exists(api_root)
     root_info = current_app.medallion_backend.get_api_root_information(api_root)
-
-    if root_info:
-        return Response(
-            response=json.dumps(root_info),
-            status=200,
-            mimetype=MEDIA_TYPE_TAXII_V21,
-        )
-    raise ProcessingError("API root '{}' information not found".format(api_root), 404)
+    return Response(
+        response=json.dumps(root_info),
+        status=200,
+        mimetype=MEDIA_TYPE_TAXII_V21,
+    )
 
 
 @mod.route("/<string:api_root>/status/<string:status_id>/", methods=["GET"])
@@ -74,6 +80,8 @@ def get_status(api_root, status_id):
 
     """
     # TODO: Check if user has access to the Status resource.
+    validate_version_parameter_in_accept_header()
+    api_root_exists(api_root)
     status = current_app.medallion_backend.get_status(api_root, status_id)
 
     if status:
