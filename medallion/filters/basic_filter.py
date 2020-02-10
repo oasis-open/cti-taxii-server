@@ -184,36 +184,32 @@ class BasicFilter(object):
     def process_filter(self, data, allowed, manifest_info, limit):
         filtered_by_type = []
         filtered_by_id = []
+        filtered_by_spec_version = []
+        filtered_by_added_after = []
+        filtered_by_version = []
+        final_match = []
+        save_next = []
+        headers = {}
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
         if match_type and "type" in allowed:
             filtered_by_type = self.filter_by_type(data, match_type)
+        else:
+            filtered_by_type = copy.deepcopy(data)
 
         match_id = self.filter_args.get("match[id]")
         if match_id and "id" in allowed:
-            filtered_by_id = self.filter_by_id(data, match_id)
-
-        initial_results = []
-
-        if filtered_by_type and filtered_by_id:
-            for type_match in filtered_by_type:
-                for id_match in filtered_by_id:
-                    if type_match == id_match:
-                        initial_results.append(type_match)
-        elif match_type and filtered_by_type:
-            initial_results.extend(filtered_by_type)
-        elif match_id and filtered_by_id:
-            initial_results.extend(filtered_by_id)
+            filtered_by_id = self.filter_by_id(filtered_by_type, match_id)
         else:
-            initial_results = copy.deepcopy(data)
+            filtered_by_id = filtered_by_type
 
         # match for spec_version
         match_spec_version = self.filter_args.get("match[spec_version]")
         if match_spec_version and "spec_version" in allowed:
-            filtered_by_spec_version = self.filter_by_spec_version(initial_results, match_spec_version)
+            filtered_by_spec_version = self.filter_by_spec_version(filtered_by_id, match_spec_version)
         else:
-            filtered_by_spec_version = initial_results
+            filtered_by_spec_version = filtered_by_id
 
         # match for added_after
         added_after_date = self.filter_args.get("added_after")
