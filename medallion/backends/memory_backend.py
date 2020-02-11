@@ -391,6 +391,8 @@ class MemoryBackend(Backend):
                         for manifest in all_manifests:
                             if object_id == manifest["id"]:
                                 objs.append(manifest)
+                        if len(objs) == 0:
+                            raise ProcessingError("Object '{}' not found".format(object_id), 404)
                         full_filter = BasicFilter(filter_args)
                         objs, next_save, headers = full_filter.process_filter(
                             objs,
