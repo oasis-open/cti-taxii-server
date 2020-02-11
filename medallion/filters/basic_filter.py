@@ -147,13 +147,20 @@ class BasicFilter(object):
                 add = True
                 if "spec_version" in obj:
                     s1 = obj["spec_version"]
-                else:
+                elif "media_type" in obj:
                     s1 = obj["media_type"].split("version=")[1]
+                else:
+                    # version cannot be determined, so it must be added
+                    match_objects.append(obj)
+                    continue
                 for match in data:
                     if "spec_version" in match:
                         s2 = match["spec_version"]
-                    else:
+                    elif "media_type" in match:
                         s2 = match["media_type"].split("version=")[1]
+                    else:
+                        # version cannot be determined, so disregard
+                        continue
                     if obj["id"] == match["id"] and s2 > s1:
                         add = False
                 if add:
