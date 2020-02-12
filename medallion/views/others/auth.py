@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, current_app, jsonify, request
 from werkzeug.security import check_password_hash
 
-from medallion import auth, jwt_encode
+from ... import auth, jwt_encode
 
 auth_bp = Blueprint('auth', __name__)
 

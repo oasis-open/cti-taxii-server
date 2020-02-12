@@ -28,8 +28,8 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
         server_info = self.load_json_response(r.data)
         assert server_info["title"] == "Some TAXII Server"
-        assert len(server_info["api_roots"]) == 2
-        assert server_info["api_roots"][0] == "http://localhost:5000/trustgroup1/"
+        assert len(server_info["api_roots"]) == 3
+        assert server_info["api_roots"][2] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
         r = self.client.get(test.API_ROOT_EP, headers=self.auth)
@@ -201,7 +201,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
+            new_bundle["objects"][0]["modified"] = common.datetime_to_string_stix(common.get_timestamp())
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
@@ -946,3 +946,61 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(len(objs['objects']), 2)
 
         # ------------- END: test request for all versions, should return two results ------------- #
+
+    def test_add_existing_single_version_object(self):
+        new_id = "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
+        new_bundle = copy.deepcopy(self.API_OBJECTS_2)
+        new_bundle["objects"][0] = {
+            "type": "marking-definition",
+            "spec_version": "2.1",
+            "created": "2017-01-20T00:00:00.000Z",
+            "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+            "definition": {"tlp": "white"},
+            "name": "TLP:WHITE",
+            "definition_type": "tlp"
+        }
+
+        # ------------- BEGIN: add object section ------------- #
+
+        post_header = copy.deepcopy(self.auth)
+        post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
+        post_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header,
+        )
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(MEDIA_TYPE_TAXII_V20, r_post.content_type)
+
+        # ------------- END: add object section ------------- #
+        # ------------- BEGIN: add object again section ------------- #
+
+        r_post = self.client.post(
+            test.ADD_OBJECTS_EP,
+            data=json.dumps(new_bundle),
+            headers=post_header,
+        )
+        status_response2 = self.load_json_response(r_post.data)
+        self.assertEqual(202, r_post.status_code)
+        self.assertEqual(0, status_response2["success_count"])
+        self.assertEqual(
+            "Unable to process object because identical version exist.",
+            status_response2["failures"][0]["message"]
+        )
+
+        # ------------- END: add object again section ------------- #
+        # ------------- BEGIN: get object section ------------- #
+
+        get_header = copy.deepcopy(self.auth)
+        get_header["Accept"] = MEDIA_TYPE_TAXII_V20
+
+        r_get = self.client.get(
+            test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
+            headers=get_header,
+        )
+        self.assertEqual(200, r_get.status_code)
+        objs = self.load_json_response(r_get.data)
+        self.assertEqual(1, len(objs["objects"]))
+        self.assertEqual(new_id, objs["objects"][0]["id"])

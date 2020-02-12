@@ -227,7 +227,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         self.assertEqual(status_response2["success_count"], 0)
         self.assertEqual(
             status_response2["failures"][0]["message"],
-            "Unable to process object",
+            "Unable to process object because identical version exist.",
         )
 
         # ------------- END: add object again section ------------- #
@@ -268,7 +268,7 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         for i in range(0, 5):
             new_bundle = copy.deepcopy(self.API_OBJECTS_2)
             new_bundle["objects"][0]["id"] = new_id
-            new_bundle["objects"][0]["modified"] = common.format_datetime(common.get_timestamp())
+            new_bundle["objects"][0]["modified"] = common.datetime_to_string_stix(common.get_timestamp())
             r_post = self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),

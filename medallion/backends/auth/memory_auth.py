@@ -1,4 +1,4 @@
-from medallion.backends.auth.base import AuthBackend
+from .base import AuthBackend
 
 
 class AuthMemoryBackend(AuthBackend):
