@@ -544,6 +544,9 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
             )
             self.app.medallion_backend.save_data_to_file(f)
             assert os.path.isfile(f.name)
+
+            # seek(0) is needed to reset the file pointer so it's correctly
+            # read by the backend again
             f.seek(0)
 
             configuration = copy.deepcopy(self.configuration)
