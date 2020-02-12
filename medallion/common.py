@@ -237,8 +237,7 @@ def find_att(obj):
     elif "created" in obj:
         return string_to_datetime(obj["created"])
     else:
-        # TO DO: PUT DEFAULT VALUE HERE
-        pass
+        return string_to_datetime(obj["_date_added"])
 
 
 def find_version_attribute(obj):
