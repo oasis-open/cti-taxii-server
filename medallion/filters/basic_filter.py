@@ -226,24 +226,24 @@ class BasicFilter(object):
         else:
             filtered_by_id = filtered_by_type
 
-        # match for spec_version
-        match_spec_version = self.filter_args.get("match[spec_version]")
-        if "spec_version" in allowed:
-            filtered_by_spec_version = self.filter_by_spec_version(initial_results, match_spec_version)
-      
         # match for added_after
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            filtered_by_added_after = self.filter_by_added_after(filtered_by_spec_version, manifest_info, added_after_date)
+            filtered_by_added_after = self.filter_by_added_after(filtered_by_id, manifest_info, added_after_date)
         else:
-            filtered_by_added_after = filtered_by_spec_version
+            filtered_by_added_after = filtered_by_id
+
+        # match for spec_version
+        match_spec_version = self.filter_args.get("match[spec_version]")
+        if "spec_version" in allowed:
+            filtered_by_spec_version = self.filter_by_spec_version(filtered_by_added_after, match_spec_version)
 
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
-            filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
+            filtered_by_version = self.filter_by_version(filtered_by_spec_version, match_version)
         else:
-            filtered_by_version = filtered_by_added_after
+            filtered_by_version = filtered_by_spec_version
 
         # sort objects by date_added of manifest and paginate as necessary
         final_match, save_next, headers = self.sort_and_paginate(filtered_by_version, limit, manifest_info)
