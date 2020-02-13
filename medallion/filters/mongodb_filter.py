@@ -1,5 +1,5 @@
-from medallion.filters.basic_filter import BasicFilter
-from medallion.utils.common import convert_to_stix_datetime
+from ..utils.common import datetime_to_float, string_to_datetime
+from .basic_filter import BasicFilter
 
 
 class MongoDBFilter(BasicFilter):
@@ -18,48 +18,38 @@ class MongoDBFilter(BasicFilter):
             if match_type and "type" in allowed:
                 types_ = match_type.split(",")
                 if len(types_) == 1:
-                    parameters["_type"] = types_[0]
+                    parameters["_type"] = {"$eq": types_[0]}
                 else:
                     parameters["_type"] = {"$in": types_}
             match_id = self.filter_args.get("match[id]")
             if match_id and "id" in allowed:
                 ids_ = match_id.split(",")
                 if len(ids_) == 1:
-                    parameters["id"] = ids_[0]
+                    parameters["id"] = {"$eq": ids_[0]}
                 else:
                     parameters["id"] = {"$in": ids_}
         return parameters
 
     def process_filter(self, data, allowed, manifest_info):
-        match_filter = {"$match": self.full_query}
+        match_filter = {
+            "$match": {
+                "$and": [self.full_query],
+                "$comment": "Step #1: Match against an object/manifest id or type present in a collection.",
+            },
+        }
         pipeline = [match_filter]
 
         # create added_after filter
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            added_after_timestamp = convert_to_stix_datetime(added_after_date)
-            date_filter = {"$match": {"date_added": {"$gt": added_after_timestamp}}}
+            added_after_timestamp = datetime_to_float(string_to_datetime(added_after_date))
+            date_filter = {
+                "$match": {
+                    "date_added": {"$gt": added_after_timestamp},
+                    "$comment": "Step #2: If added_after is provided, remove all objects/manifests older than the provided time",
+                }
+            }
             pipeline.append(date_filter)
-
-        # need to handle marking-definitions differently as they are not versioned like SDO's
-        if self.filter_contains_marking_definition(pipeline):
-            # If we are finding marking-definitions from the objects collection
-            # we need to change the match criteria from "_type" to "type"
-            if data.name == "objects" and "_type" in pipeline[0]["$match"].keys():
-                pipeline[0]["$match"]["type"] = pipeline[0]["$match"].pop("_type")
-
-            # Calculate total number of matching documents
-            if data.name == "objects":
-                count = self.get_result_count(pipeline, manifest_info["mongodb_collection"])
-            else:
-                count = self.get_result_count(pipeline, data)
-
-            self.add_pagination_operations(pipeline)
-
-            cursor = data.aggregate(pipeline)
-            results = list(cursor)
-
-            return count, results
 
         # create version filter
         if "version" in allowed:
@@ -67,7 +57,7 @@ class MongoDBFilter(BasicFilter):
             if not match_version:
                 match_version = "last"
             if "all" not in match_version:
-                actual_dates = [x for x in match_version.split(",") if (x != "first" and x != "last")]
+                actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
                 # If specific dates have been selected, then we add these to the $match criteria
                 # created from the self.full_query at the beginning of this method. The reason we need
                 # to do this is because the $indexOfArray function below will return -1 if the date
@@ -76,7 +66,7 @@ class MongoDBFilter(BasicFilter):
                 # version dates be incorrect, but we shouldn't have returned a result at all.
                 # if actual_dates:
                 if len(actual_dates) > 0:
-                    pipeline.insert(1, {"$match": {"versions": {"$all": [",".join(actual_dates)]}}})
+                    pipeline[0]["$match"]["$and"].append({"versions": {"$all": actual_dates}})
 
                 # The versions array in the mongodb document is ordered newest to oldest, so the 'last'
                 # (most recent date) is in first position in the list and the oldest 'first' is in
@@ -96,6 +86,9 @@ class MongoDBFilter(BasicFilter):
                 pipeline.append(version_filter)
 
         if data.name == "manifests":
+            # Project the final results
+            project_results = {"$project": {"_id": 0, "_collection_id": 0, "_type": 0}}
+            pipeline.append(project_results)
             count = self.get_result_count(pipeline, data)
             self.add_pagination_operations(pipeline)
 
@@ -140,10 +133,14 @@ class MongoDBFilter(BasicFilter):
                                 "$and": [
                                     {"$eq": ["$_collection_id", col_id]},
                                     {
-                                        "$or": [
-                                            {"$eq": ["$type", "marking-definition"]},
-                                            {"$setIsSubset": [["$modified"], "$versions"]},
-                                        ],
+                                        "$switch": {
+                                            "branches": [
+                                                {"case": {"$in": ["$modified", "$versions"]}, "then": True},
+                                                {"case": {"$and": [{"$in": ["$created", "$versions"]}, {"$not": ["$modified"]}]}, "then": True},
+                                                {"case": {"$in": ["$_date_added", "$versions"]}, "then": True},
+                                            ],
+                                            "default": False,
+                                        },
                                     },
                                 ],
                             },
@@ -154,11 +151,7 @@ class MongoDBFilter(BasicFilter):
                 }
                 pipeline.append(redact_objects)
                 # Project the final results
-                project_results = {
-                    "$project": {
-                        "versions": 0,
-                    },
-                }
+                project_results = {"$project": {"versions": 0, "_id": 0, "_collection_id": 0, "_date_added": 0}}
                 pipeline.append(project_results)
                 self.add_pagination_operations(pipeline)
 
@@ -172,7 +165,8 @@ class MongoDBFilter(BasicFilter):
             pipeline.append({"$skip": self.start_index})
             pipeline.append({"$limit": (self.end_index - self.start_index) + 1})
 
-    def get_result_count(self, pipeline, data):
+    @staticmethod
+    def get_result_count(pipeline, data):
         count_pipeline = list(pipeline)
         count_pipeline.append({"$count": "total_count"})
         count_result = list(data.aggregate(count_pipeline))
@@ -182,24 +176,4 @@ class MongoDBFilter(BasicFilter):
             return 0
 
         count = count_result[0]["total_count"]
-
         return count
-
-    def filter_contains_marking_definition(self, pipeline):
-        # If we are matching on id (either match[id]= or /{id}), then check if
-        # we are trying to find a marking definition. If so, we don't want do
-        # filter by version as marking-definition objects are not versioned.
-        if "id" in pipeline[0]["$match"].keys() and pipeline[0]["$match"]["id"].startswith("marking-definition"):
-            return True
-
-        if "_type" in pipeline[0]["$match"].keys():
-            if ((
-                isinstance(pipeline[0]["$match"]["_type"], dict) and
-                "$in" in pipeline[0]["$match"]["_type"].keys()
-            ) and
-                    ("marking-definition" in pipeline[0]["$match"]["_type"]["$in"])):
-                return True
-            elif pipeline[0]["$match"]["_type"].startswith("marking-definition"):
-                return True
-
-        return False
