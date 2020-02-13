@@ -113,13 +113,19 @@ class MemoryBackend(Backend):
             return json.load(infile)
 
     def load_data_from_file(self, filename):
-        with codecs.open(filename, mode="r", encoding="utf8") as infile:
-            self.data = json.load(infile)
+        if type(filename) is str:
+            with codecs.open(filename, mode="r", encoding="utf8") as infile:
+                self.data = json.load(infile)
+        else:
+            self.data = json.load(filename)
 
     def save_data_to_file(self, filename, **kwargs):
         """The kwargs are passed to ``json.dump()`` if provided."""
-        with codecs.open(filename, mode="w", encoding="utf8") as outfile:
-            json.dump(self.data, outfile, **kwargs)
+        if type(filename) is str:
+            with codecs.open(filename, mode="w", encoding="utf8") as outfile:
+                json.dump(self.data, outfile, **kwargs)
+        else:
+            json.dump(self.data, filename, **kwargs)
 
     def _get(self, key):
         for ancestors, item in iterpath(self.data):
