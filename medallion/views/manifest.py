@@ -34,11 +34,10 @@ def get_object_manifest(api_root, collection_id):
     manifests, headers = current_app.medallion_backend.get_object_manifest(
         api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
     )
-    if manifests:
-        return Response(
-            response=json.dumps(manifests),
-            status=200,
-            headers=headers,
-            mimetype=MEDIA_TYPE_TAXII_V21,
-        )
-    raise ProcessingError("Collection '{}' has no manifests available".format(collection_id), 404)
+
+    return Response(
+        response=json.dumps(manifests),
+        status=200,
+        headers=headers,
+        mimetype=MEDIA_TYPE_TAXII_V21,
+    )

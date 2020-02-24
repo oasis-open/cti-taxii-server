@@ -210,6 +210,21 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         objs = self.load_json_response(r.data)
         assert len(objs["objects"]) == 1
 
+        # Test behavior with an empty collection
+        r = self.client.get(
+            test.GET_COLLECTION_EP + "objects/", headers=self.headers
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json, {})
+
+        # Try with some filters too
+        r = self.client.get(
+            test.GET_COLLECTION_EP + "objects/", headers=self.headers,
+            query_string={"match[type]": "identity"}
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json, {})
+
     def test_next_parameter(self):
         r = self.client.get(
             test.GET_OBJECTS_EP + "?limit=2",
@@ -678,6 +693,21 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         # note that collection ID doesnt exist
         r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=self.headers)
         self.assertEqual(r.status_code, 404)
+
+    def test_get_object_manifest_empty(self):
+        r = self.client.get(
+            test.GET_COLLECTION_EP + "manifest/", headers=self.headers
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json, {})
+
+        # Try with some filters too
+        r = self.client.get(
+            test.GET_COLLECTION_EP + "manifest/", headers=self.headers,
+            query_string={"match[type]": "identity"}
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json, {})
 
     def test_get_object_401(self):
         r = self.client.get(
