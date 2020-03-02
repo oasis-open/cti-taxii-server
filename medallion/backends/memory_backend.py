@@ -1,6 +1,8 @@
 import copy
 import json
 
+from six import string_types
+
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from ..utils.common import (create_resource, determine_spec_version,
@@ -20,7 +22,7 @@ class MemoryBackend(Backend):
             self.data = {}
 
     def load_data_from_file(self, filename):
-        if type(filename) is str:
+        if isinstance(filename, string_types):
             with open(filename, "r") as infile:
                 self.data = json.load(infile)
         else:
@@ -28,7 +30,7 @@ class MemoryBackend(Backend):
 
     def save_data_to_file(self, filename, **kwargs):
         """The kwargs are passed to ``json.dump()`` if provided."""
-        if type(filename) is str:
+        if isinstance(filename, string_types):
             with open(filename, "w") as outfile:
                 json.dump(self.data, outfile, **kwargs)
         else:
