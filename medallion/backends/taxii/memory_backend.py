@@ -5,6 +5,8 @@ import logging
 import os
 import re
 
+from six import string_types
+
 from ...exceptions import ProcessingError
 from ...filters.basic_filter import BasicFilter
 from ...utils.common import (create_bundle, datetime_to_string,
@@ -113,7 +115,7 @@ class MemoryBackend(Backend):
             return json.load(infile)
 
     def load_data_from_file(self, filename):
-        if type(filename) is str:
+        if isinstance(filename, string_types):
             with codecs.open(filename, mode="r", encoding="utf8") as infile:
                 self.data = json.load(infile)
         else:
@@ -121,7 +123,7 @@ class MemoryBackend(Backend):
 
     def save_data_to_file(self, filename, **kwargs):
         """The kwargs are passed to ``json.dump()`` if provided."""
-        if type(filename) is str:
+        if isinstance(filename, string_types):
             with codecs.open(filename, mode="w", encoding="utf8") as outfile:
                 json.dump(self.data, outfile, **kwargs)
         else:
