@@ -1046,17 +1046,17 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
             self.assertEqual(404, r.status_code)
         # ------------- END: test request getting deleted object returns 404 ------------- #
 
-        # ------------- BEGIN: test request getting deleted object manifest returns 404 ------------- #
+        # ------------- BEGIN: test request getting deleted object manifest returns no manifests ------------- #
         r = self.client.get(
             test.MANIFESTS_EP + "?match[id]=%s&match[version]=all" % new_id,
             headers=self.headers,
         )
         objs = self.load_json_response(r.data)
         if r.status_code == 200:
-            self.assertEqual(0, len(objs["objects"]))
+            self.assertEqual(0, len(objs.get("objects", [])))
         else:
             self.assertEqual(404, r.status_code)
-        # ------------- END: test request getting deleted object manifest returns 404 ------------- #
+        # ------------- END: test request getting deleted object manifest returns no manifests ------------- #
 
         # ------------- BEGIN: test request getting deleted object manifest returns 404 ------------- #
         r = self.client.get(
