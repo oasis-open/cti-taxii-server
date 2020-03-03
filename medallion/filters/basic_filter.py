@@ -46,6 +46,42 @@ class BasicFilter(object):
     def __init__(self, filter_args):
         self.filter_args = filter_args
 
+    def sort_and_paginate(self, data, limit, manifest):
+        temp = None
+        next_save = {}
+        headers = {}
+        new = []
+        if len(data) == 0:
+            return new, next_save, headers
+        if manifest:
+            manifest.sort(key=lambda x: x['date_added'])
+            for man in manifest:
+                man_time = find_att(man)
+                for check in data:
+                    check_time = find_att(check)
+                    if check['id'] == man['id'] and check_time == man_time:
+                        if len(headers) == 0:
+                            headers["X-TAXII-Date-Added-First"] = man["date_added"]
+                        new.append(check)
+                        temp = man
+                        if len(new) == limit:
+                            headers["X-TAXII-Date-Added-Last"] = man["date_added"]
+                        break
+            if limit and limit < len(data):
+                next_save = new[limit:]
+                new = new[:limit]
+            else:
+                headers["X-TAXII-Date-Added-Last"] = temp["date_added"]
+        else:
+            data.sort(key=lambda x: x['date_added'])
+            if limit and limit < len(data):
+                next_save = data[limit:]
+                data = data[:limit]
+            headers["X-TAXII-Date-Added-First"] = data[0]["date_added"]
+            headers["X-TAXII-Date-Added-Last"] = data[-1]["date_added"]
+            new = data
+        return new, next_save, headers
+
     @staticmethod
     def filter_by_id(data, id_):
         id_ = id_.split(",")
@@ -145,51 +181,51 @@ class BasicFilter(object):
 
         return match_objects
 
-    def process_filter(self, data, allowed, manifest_info):
+    def process_filter(self, data, allowed, manifest_info, limit):
         filtered_by_type = []
         filtered_by_id = []
+        filtered_by_spec_version = []
+        filtered_by_added_after = []
+        filtered_by_version = []
+        final_match = []
+        save_next = []
+        headers = {}
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
         if match_type and "type" in allowed:
             filtered_by_type = self.filter_by_type(data, match_type)
+        else:
+            filtered_by_type = copy.deepcopy(data)
 
         match_id = self.filter_args.get("match[id]")
         if match_id and "id" in allowed:
-            filtered_by_id = self.filter_by_id(data, match_id)
-
-        initial_results = []
-
-        if filtered_by_type and filtered_by_id:
-            for type_match in filtered_by_type:
-                for id_match in filtered_by_id:
-                    if type_match == id_match:
-                        initial_results.append(type_match)
-        elif match_type:
-            if filtered_by_type:
-                initial_results.extend(filtered_by_type)
-        elif match_id:
-            if filtered_by_id:
-                initial_results.extend(filtered_by_id)
+            filtered_by_id = self.filter_by_id(filtered_by_type, match_id)
         else:
-            initial_results = copy.deepcopy(data)
+            filtered_by_id = filtered_by_type
 
         # match for spec_version
         match_spec_version = self.filter_args.get("match[spec_version]")
         if match_spec_version and "spec_version" in allowed:
-            filtered_by_spec_version = self.filter_by_spec_version(initial_results, match_spec_version)
+            filtered_by_spec_version = self.filter_by_spec_version(filtered_by_id, match_spec_version)
         else:
-            filtered_by_spec_version = initial_results
+            filtered_by_spec_version = filtered_by_id
 
         # match for added_after
         added_after_date = self.filter_args.get("added_after")
-        if added_after_date is not None:
+        if added_after_date:
             filtered_by_added_after = self.filter_by_added_after(filtered_by_spec_version, manifest_info, added_after_date)
         else:
             filtered_by_added_after = filtered_by_spec_version
 
         # match for version, and get rid of duplicates as appropriate
-        match_version = self.filter_args.get("match[version]")
-        filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
+        if "version" in allowed:
+            match_version = self.filter_args.get("match[version]")
+            filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
+        else:
+            filtered_by_version = filtered_by_added_after
 
-        return filtered_by_version
+        # sort objects by date_added of manifest and paginate as necessary
+        final_match, save_next, headers = self.sort_and_paginate(filtered_by_version, limit, manifest_info)
+
+        return final_match, save_next, headers
