@@ -88,10 +88,10 @@ class TaxiiTest(unittest.TestCase):
         "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "uri": "mongodb://travis:test@127.0.0.1:27017/",
+            "uri": "mongodb://root:example@127.0.0.1:27017/",
         },
         "users": {
-            "admin": "Password0",
+            "root": "example",
         },
         "taxii": {
             "max_page_size": 20,
@@ -126,6 +126,9 @@ class TaxiiTest(unittest.TestCase):
         if self.type == "memory_no_config" or self.type == "no_auth":
             encoded_auth = "Basic " + \
                 base64.b64encode(b"user:pass").decode("ascii")
+        elif self.type == "mongo":
+            encoded_auth = "Basic " + \
+                base64.b64encode(b"root:example").decode("ascii")
         else:
             encoded_auth = "Basic " + \
                 base64.b64encode(b"admin:Password0").decode("ascii")
