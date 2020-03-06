@@ -4,6 +4,7 @@ import json
 import sys
 import unittest
 import uuid
+import time
 
 import pytest
 import six
@@ -11,6 +12,7 @@ import six
 from medallion import (application_instance, register_blueprints, set_config,
                        test)
 from medallion.views import MEDIA_TYPE_TAXII_V21
+import requests
 from requests.auth import HTTPBasicAuth
 
 from .base_test import TaxiiTest
@@ -42,41 +44,73 @@ API_OBJECT = {
 }
 
 
-def load_json_response(response):
-    if isinstance(response, bytes):
-        response = response.decode()
-    io = six.StringIO(response)
-    return json.load(io)
+class MemoryTestServer(TaxiiTest):
+    
+    def __init__(self):
+        self.type = "memory"
+        self.setUp()
 
 
-class TestDoubleTAXIIServer():
+class MongoTestServer(TaxiiTest):
+    
+    def __init__(self):
+        self.type = "mongo"
+        self.setUp()
 
+
+class TestDoubleTAXIIServer(unittest.TestCase):
+    
+    backends = [MemoryTestServer(), MongoTestServer()]
+
+    """
     def test_backends(self):
-        backends = [self.MemoryTestServer(), self.MongoTestServer()]
+        backends = [MongoTestServer(), MemoryTestServer()]
         for b in backends:
             b.setUp()
         object_methods = [method_name for method_name in dir(self)
                           if method_name[:4] == "func"]
         for method_name in object_methods:
+            results = []
             test_method = getattr(self, method_name)
             for backend in backends:
-                print(method_name)
-                print(backend)
-                test_method(backend)
+                results.append(test_method(backend))
+            assert len(set(results)) == 1
+    """
 
-    def func_server_discovery(self, backend):
-        headers = {"accept": "application/taxii+json;version=2.1",
-                   "content-type": "application/taxii+json;version=2.1"}
-        r = backend.client.get(test.DISCOVERY_EP,
-                               auth=HTTPBasicAuth('admin', 'Password0'),
-                               header=headers)
-        print(load_json_response(r.data))
+    @staticmethod
+    def load_json_response(response):
+        if isinstance(response, bytes):
+            response = response.decode()
+        io = six.StringIO(response)
+        x = json.load(io)
+        return x
 
-    class MemoryTestServer(TaxiiTest):
-        type = "memory"
+    def test_server_discovery(self):
+        results = []
+        for backend in self.backends:
+            results.append(backend.client.get(test.DISCOVERY_EP, headers=backend.headers))
 
-    class MongoTestServer(TaxiiTest):
-        type = "mongo"
+        for r in results:
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+            server_info = self.load_json_response(r.data)
+            assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+
+        #assert len(set(results)) == 1
+
+
+    def test_get_api_root_information(self):
+        results = []
+        for backend in self.backends:
+            results.append(backend.client.get(test.API_ROOT_EP, headers=backend.headers))
+
+        for r in results:
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V21)
+            api_root_metadata = self.load_json_response(r.data)
+            assert api_root_metadata["title"] == "Malware Research Group"
+
+        #assert len(set(results)) == 1
 
 
 class TestTAXIIServerWithMockBackend(unittest.TestCase):
