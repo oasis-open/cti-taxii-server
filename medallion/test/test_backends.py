@@ -74,8 +74,7 @@ class TestDoubleTAXIIServer(unittest.TestCase):
             test_method = getattr(self, method_name)
             for backend in backends:
                 results.append(test_method(backend))
-            assert len(set(results)) == 1
-    """
+            assert len(set(results)) == 1"""
 
     @staticmethod
     def load_json_response(response):
