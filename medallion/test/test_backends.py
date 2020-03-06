@@ -2,9 +2,9 @@ import base64
 import copy
 import json
 import sys
+import time
 import unittest
 import uuid
-import time
 
 import pytest
 import six
@@ -45,21 +45,21 @@ API_OBJECT = {
 
 
 class MemoryTestServer(TaxiiTest):
-    
+
     def __init__(self):
         self.type = "memory"
         self.setUp()
 
 
 class MongoTestServer(TaxiiTest):
-    
+
     def __init__(self):
         self.type = "mongo"
         self.setUp()
 
 
 class TestDoubleTAXIIServer(unittest.TestCase):
-    
+
     backends = [MemoryTestServer(), MongoTestServer()]
 
     """
