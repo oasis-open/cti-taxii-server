@@ -95,7 +95,7 @@ class TestDoubleTAXIIServer(unittest.TestCase):
             server_info = self.load_json_response(r.data)
             assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
 
-        #assert len(set(results)) == 1
+        assert len(set(results)) == 1
 
 
     def test_get_api_root_information(self):
@@ -109,7 +109,7 @@ class TestDoubleTAXIIServer(unittest.TestCase):
             api_root_metadata = self.load_json_response(r.data)
             assert api_root_metadata["title"] == "Malware Research Group"
 
-        #assert len(set(results)) == 1
+        assert len(set(results)) == 1
 
 
 class TestTAXIIServerWithMockBackend(unittest.TestCase):

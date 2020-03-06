@@ -14,6 +14,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "title": "Some TAXII Server",
         "description": "This TAXII Server contains a listing of",
         "contact": "string containing contact information",
+        "default": "http://localhost:5000/trustgroup1/",
         "api_roots": [],
     })
 
