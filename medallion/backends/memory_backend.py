@@ -1,4 +1,5 @@
 import copy
+import io
 import json
 import uuid
 
@@ -107,7 +108,7 @@ class MemoryBackend(Backend):
 
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
-            with open(filename, "r") as infile:
+            with io.open(filename, "r", encoding="utf-8") as infile:
                 self.data = json.load(infile)
         else:
             self.data = json.load(filename)
@@ -115,7 +116,7 @@ class MemoryBackend(Backend):
     def save_data_to_file(self, filename, **kwargs):
         """The kwargs are passed to ``json.dump()`` if provided."""
         if isinstance(filename, string_types):
-            with open(filename, "w") as outfile:
+            with io.open(filename, "w", encoding="utf-8") as outfile:
                 json.dump(self.data, outfile, **kwargs)
         else:
             json.dump(self.data, filename, **kwargs)
