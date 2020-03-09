@@ -268,6 +268,11 @@ We also provide a Docker image to make it easier to run *medallion*::
 
     $ docker build . -t medallion
 
+The default Dockerfile is contained in the `docker_utils` folder, so the build
+command should be run with a file path argument::
+
+    $ docker build . -t medallion -f docker_utils/Dockerfile
+
 If operating behind a proxy, add the following option (replacing `<proxy>` with
 your proxy location and port): ``--build-arg https_proxy=<proxy>``.
 
