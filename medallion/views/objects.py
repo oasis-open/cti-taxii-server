@@ -114,14 +114,14 @@ def get_or_add_objects(api_root, collection_id):
         objects, headers = current_app.medallion_backend.get_objects(
             api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
         )
-        if objects or request.args:
-            return Response(
-                response=json.dumps(objects),
-                status=200,
-                headers=headers,
-                mimetype=MEDIA_TYPE_TAXII_V21,
-            )
-        raise ProcessingError("Collection '{}' has no objects available".format(collection_id), 404)
+
+        return Response(
+            response=json.dumps(objects),
+            status=200,
+            headers=headers,
+            mimetype=MEDIA_TYPE_TAXII_V21,
+        )
+
     elif request.method == "POST":
         validate_version_parameter_in_content_type_header()
         permission_to_write(api_root, collection_id)
