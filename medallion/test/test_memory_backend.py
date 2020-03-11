@@ -393,14 +393,18 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode="w+") as f:
             self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
                 headers=post_header,
             )
-            self.app.medallion_backend.save_data_to_file(f.name)
+            self.app.medallion_backend.save_data_to_file(f)
             assert os.path.isfile(f.name)
+
+            # seek(0) is needed to reset the file pointer so it's correctly
+            # read by the backend again
+            f.seek(0)
 
             configuration = copy.deepcopy(self.configuration)
             configuration["backend"]["filename"] = f.name
