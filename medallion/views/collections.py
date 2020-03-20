@@ -1,10 +1,10 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
 from .. import auth
 from ..exceptions import ProcessingError
-from .objects import (get_range_request_from_headers,
-                      get_response_status_and_headers)
+from .discovery import api_root_exists
+from .objects import (collection_exists, get_range_request_from_headers, get_response_status_and_headers)
 
 collections_bp = Blueprint("collections", __name__)
 
@@ -24,6 +24,9 @@ def get_collections(api_root):
 
     """
     # TODO: Check if user has access to the each collection's metadata - unrelated to can_read, can_write attributes
+    validate_taxii_version_parameter_in_accept_header()
+    api_root_exists(api_root)
+
     start_index, end_index = get_range_request_from_headers()
     total_count, result = current_app.medallion_backend.get_collections(api_root, start_index, end_index)
     if result:
@@ -53,6 +56,9 @@ def get_collection(api_root, collection_id):
 
     """
     # TODO: Check if user has access to the collection's metadata - unrelated to can_read, can_write attributes
+    validate_taxii_version_parameter_in_accept_header()
+    api_root_exists(api_root)
+    collection_exists(api_root, collection_id)
     collection = current_app.medallion_backend.get_collection(api_root, collection_id)
     if collection:
         return Response(

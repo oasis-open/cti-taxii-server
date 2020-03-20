@@ -2,7 +2,8 @@ import re
 
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20, validate_stix_version_parameter_in_accept_header, validate_taxii_version_parameter_in_accept_header
+from .discovery import api_root_exists
 from .. import auth
 from ..exceptions import ProcessingError
 from ..utils.common import get_timestamp
@@ -55,7 +56,7 @@ def get_custom_headers(headers, api_root, collection_id, start, end):
                 headers['X-TAXII-Date-Added-First'] = times[0]
                 headers['X-TAXII-Date-Added-Last'] = times[-1]
     except Exception as e:
-        print(e)
+        raise ProcessingError("Unable to build response headers", 400, e)
     return headers
 
 
@@ -107,29 +108,36 @@ def get_or_add_objects(api_root, collection_id):
     """
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
     request_time = get_timestamp()  # Can't I get this from the request itself?
-    if collection_exists(api_root, collection_id):
-        if request.method == "GET" and permission_to_read(api_root, collection_id):
-            start_index, end_index = get_range_request_from_headers()
-            total_count, objects = current_app.medallion_backend.get_objects(
-                api_root, collection_id, request.args, ("id", "type", "version"), start_index, end_index,
-            )
-            if objects:
-                status, headers = get_response_status_and_headers(start_index, total_count, objects["objects"])
-                headers = get_custom_headers(headers, api_root, collection_id, start_index, end_index)
-                return Response(
-                    response=json.dumps(objects),
-                    status=status,
-                    headers=headers,
-                    mimetype=MEDIA_TYPE_STIX_V20,
-                )
-            raise ProcessingError("Collection '{}' has no objects available".format(collection_id), 404)
-        elif request.method == "POST" and permission_to_write(api_root, collection_id):
-            status = current_app.medallion_backend.add_objects(api_root, collection_id, request.get_json(force=True), request_time)
+    if request.method == "GET":
+        validate_stix_version_parameter_in_accept_header()
+        api_root_exists(api_root)
+        collection_exists(api_root, collection_id)
+        permission_to_read(api_root, collection_id)
+        start_index, end_index = get_range_request_from_headers()
+        total_count, objects = current_app.medallion_backend.get_objects(
+            api_root, collection_id, request.args, ("id", "type", "version"), start_index, end_index,
+        )
+        if objects:
+            status, headers = get_response_status_and_headers(start_index, total_count, objects["objects"])
+            headers = get_custom_headers(headers, api_root, collection_id, start_index, end_index)
             return Response(
-                response=json.dumps(status),
-                status=202,
-                mimetype=MEDIA_TYPE_TAXII_V20,
+                response=json.dumps(objects),
+                status=status,
+                headers=headers,
+                mimetype=MEDIA_TYPE_STIX_V20,
             )
+        raise ProcessingError("Collection '{}' has no objects available".format(collection_id), 404)
+    elif request.method == "POST":
+        validate_taxii_version_parameter_in_accept_header()
+        api_root_exists(api_root)
+        collection_exists(api_root, collection_id)
+        permission_to_write(api_root, collection_id)
+        status = current_app.medallion_backend.add_objects(api_root, collection_id, request.get_json(force=True), request_time)
+        return Response(
+            response=json.dumps(status),
+            status=202,
+            mimetype=MEDIA_TYPE_TAXII_V20,
+        )
 
 
 @objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET"])
@@ -149,6 +157,10 @@ def get_object(api_root, collection_id, object_id):
 
     """
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
+    validate_stix_version_parameter_in_accept_header()
+    api_root_exists(api_root)
+    collection_exists(api_root, collection_id)
+    permission_to_read(api_root, collection_id)
 
     if collection_exists(api_root, collection_id) and permission_to_read(api_root, collection_id):
         objects = current_app.medallion_backend.get_object(api_root, collection_id, object_id, request.args, ("version",))

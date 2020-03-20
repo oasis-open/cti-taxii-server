@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_TAXII_V20
+from . import MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
 from .. import auth
 from ..exceptions import ProcessingError
 from .objects import (collection_exists, get_custom_headers,
