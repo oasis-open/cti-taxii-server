@@ -6,10 +6,10 @@ from ..exceptions import ProcessingError
 from .objects import (get_range_request_from_headers,
                       get_response_status_and_headers)
 
-mod = Blueprint("collections", __name__)
+collections_bp = Blueprint("collections", __name__)
 
 
-@mod.route("/<string:api_root>/collections/", methods=["GET"])
+@collections_bp.route("/<string:api_root>/collections/", methods=["GET"])
 @auth.login_required
 def get_collections(api_root):
     """
@@ -37,7 +37,7 @@ def get_collections(api_root):
     raise ProcessingError("No collections found", 404)
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/", methods=["GET"])
+@collections_bp.route("/<string:api_root>/collections/<string:collection_id>/", methods=["GET"])
 @auth.login_required
 def get_collection(api_root, collection_id):
     """

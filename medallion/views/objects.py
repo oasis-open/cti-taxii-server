@@ -7,7 +7,7 @@ from .. import auth
 from ..exceptions import ProcessingError
 from ..utils.common import get_timestamp
 
-mod = Blueprint("objects", __name__)
+objects_bp = Blueprint("objects", __name__)
 
 
 def permission_to_read(api_root, collection_id):
@@ -89,7 +89,7 @@ def get_response_status_and_headers(start_index, total_count, objects):
     return status, headers
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
+@objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, collection_id):
     """
@@ -132,7 +132,7 @@ def get_or_add_objects(api_root, collection_id):
             )
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET"])
+@objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET"])
 @auth.login_required
 def get_object(api_root, collection_id, object_id):
     """

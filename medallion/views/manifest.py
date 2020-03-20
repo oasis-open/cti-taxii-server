@@ -7,10 +7,10 @@ from .objects import (collection_exists, get_custom_headers,
                       get_range_request_from_headers,
                       get_response_status_and_headers, permission_to_read)
 
-mod = Blueprint("manifest", __name__)
+manifest_bp = Blueprint("manifest", __name__)
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/manifest/", methods=["GET"])
+@manifest_bp.route("/<string:api_root>/collections/<string:collection_id>/manifest/", methods=["GET"])
 @auth.login_required
 def get_object_manifest(api_root, collection_id):
     """
