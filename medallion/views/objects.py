@@ -12,22 +12,19 @@ mod = Blueprint("objects", __name__)
 
 def permission_to_read(api_root, collection_id):
     collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
-    if collection_info["can_read"]:
-        return True
-    raise ProcessingError("Forbidden to read collection '{}'".format(collection_id), 403)
+    if collection_info["can_read"] is False:
+        raise ProcessingError("Forbidden to read collection '{}'".format(collection_id), 403)
 
 
 def permission_to_write(api_root, collection_id):
     collection_info = current_app.medallion_backend.get_collection(api_root, collection_id)
-    if collection_info["can_write"]:
-        return True
-    raise ProcessingError("Forbidden to write collection '{}'".format(collection_id), 403)
+    if collection_info["can_write"] is False:
+        raise ProcessingError("Forbidden to write collection '{}'".format(collection_id), 403)
 
 
 def collection_exists(api_root, collection_id):
-    if current_app.medallion_backend.get_collection(api_root, collection_id):
-        return True
-    raise ProcessingError("Collection '{}' not found".format(collection_id), 404)
+    if not current_app.medallion_backend.get_collection(api_root, collection_id):
+        raise ProcessingError("Collection '{}' not found".format(collection_id), 404)
 
 
 def get_range_request_from_headers():
