@@ -13,6 +13,19 @@ mod = Blueprint("manifest", __name__)
 @mod.route("/<string:api_root>/collections/<string:collection_id>/manifest/", methods=["GET"])
 @auth.login_required
 def get_object_manifest(api_root, collection_id):
+    """
+    Defines TAXII API - Collections:
+    `Get Object Manifests Section (5.6) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542741>`__
+
+    Args:
+        api_root (str): the base URL of the API Root
+        collection_id (str): the `identifier` of the Collection being requested
+
+    Returns:
+        manifest: A Manifest Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542742>`__.
+
+    """
+    validate_taxii_version_parameter_in_accept_header()
 
     if collection_exists(api_root, collection_id) and permission_to_read(api_root, collection_id):
         start_index, end_index = get_range_request_from_headers()

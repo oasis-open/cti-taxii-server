@@ -95,6 +95,19 @@ def get_response_status_and_headers(start_index, total_count, objects):
 @mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, collection_id):
+    """
+    Defines TAXII API - Collections:
+    `Get Objects Section (5.3) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542738>`__ and `Add Objects Section (5.4) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542739>`__
+
+    Args:
+        api_root (str): the base URL of the API Root
+        collection_id (str): the `identifier` of the Collection being requested
+
+    Returns:
+        bundle: GET -> A STIX 2.0 Bundle upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/stix/v2.0/cs01/part1-stix-core/stix-v2.0-cs01-part1-stix-core.html#_Toc496709292>`__.
+        status: POST -> An Status Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
+
+    """
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
     request_time = get_timestamp()  # Can't I get this from the request itself?
     if collection_exists(api_root, collection_id):
@@ -125,6 +138,19 @@ def get_or_add_objects(api_root, collection_id):
 @mod.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET"])
 @auth.login_required
 def get_object(api_root, collection_id, object_id):
+    """
+    Defines TAXII API - Collections:
+    `Get Object Section (5.5) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542740>`__
+
+    Args:
+        api_root (str): the base URL of the API Root
+        collection_id (str): the `identifier` of the Collection being requested
+        object_id (str): the `identifier` of the object being requested
+
+    Returns:
+        bundle: GET -> A STIX 2.0 Bundle upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/stix/v2.0/cs01/part1-stix-core/stix-v2.0-cs01-part1-stix-core.html#_Toc496709292>`__.
+
+    """
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
 
     if collection_exists(api_root, collection_id) and permission_to_read(api_root, collection_id):

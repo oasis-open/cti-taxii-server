@@ -12,6 +12,17 @@ mod = Blueprint("collections", __name__)
 @mod.route("/<string:api_root>/collections/", methods=["GET"])
 @auth.login_required
 def get_collections(api_root):
+    """
+    Defines TAXII API - Collections:
+    `Get Collections Section (5.1) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542734>`__
+
+    Args:
+        api_root (str): the base URL of the API Root
+
+    Returns:
+        collections: A Collections Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542735>`__.
+
+    """
     # TODO: Check if user has access to the each collection's metadata - unrelated to can_read, can_write attributes
     start_index, end_index = get_range_request_from_headers()
     total_count, result = current_app.medallion_backend.get_collections(api_root, start_index, end_index)
@@ -29,6 +40,18 @@ def get_collections(api_root):
 @mod.route("/<string:api_root>/collections/<string:collection_id>/", methods=["GET"])
 @auth.login_required
 def get_collection(api_root, collection_id):
+    """
+    Defines TAXII API - Collections:
+    `Get Collection Section (5.2) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542736>`__
+
+    Args:
+        api_root (str): the base URL of the API Root
+        collection_id (str): the `identifier` of the Collection being requested
+
+    Returns:
+        collection: A Collection Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542737>`__.
+
+    """
     # TODO: Check if user has access to the collection's metadata - unrelated to can_read, can_write attributes
     collection = current_app.medallion_backend.get_collection(api_root, collection_id)
     if collection:
