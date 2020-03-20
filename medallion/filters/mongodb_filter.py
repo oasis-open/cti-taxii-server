@@ -1,4 +1,5 @@
-from ..utils.common import datetime_to_float, string_to_datetime
+from medallion.common import datetime_to_float, string_to_datetime
+
 from .basic_filter import BasicFilter
 
 

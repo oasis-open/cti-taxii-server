@@ -1,6 +1,8 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
+from . import (
+    MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
+)
 from .. import auth
 from ..exceptions import ProcessingError
 

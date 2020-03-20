@@ -8,7 +8,7 @@ import uuid
 import six
 from werkzeug.security import generate_password_hash
 
-from medallion.utils.common import format_datetime, get_timestamp
+from medallion.common import datetime_to_string, get_timestamp
 
 try:
     from pymongo import MongoClient
@@ -36,8 +36,8 @@ def add_auth_data_from_file(client, data):
 
     timestamp = get_timestamp()
 
-    data['user']['created'] = format_datetime(timestamp)
-    data['api_key']['created'] = format_datetime(timestamp)
+    data['user']['created'] = datetime_to_string(timestamp)
+    data['api_key']['created'] = datetime_to_string(timestamp)
 
     users.insert_one(data['user'])
     api_keys.insert_one(data['api_key'])
@@ -49,7 +49,7 @@ def add_api_key_for_user(client, email):
     api_key_obj = {
         "_id": api_key,
         "user_id": email,
-        "created": format_datetime(timestamp),
+        "created": datetime_to_string(timestamp),
         "last_used_at": "",
         "last_used_from": ""
     }
@@ -119,8 +119,8 @@ def main():
             "password": password_hash,
             "company_name": company_name,
             "contact_name": contact_name,
-            "created": format_datetime(timestamp),
-            "updated": format_datetime(timestamp),
+            "created": datetime_to_string(timestamp),
+            "updated": datetime_to_string(timestamp),
         }
 
         add_user(client, user)

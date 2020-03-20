@@ -2,11 +2,15 @@ import re
 
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20, validate_stix_version_parameter_in_accept_header, validate_taxii_version_parameter_in_accept_header
-from .discovery import api_root_exists
+from . import (
+    MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20,
+    validate_stix_version_parameter_in_accept_header,
+    validate_taxii_version_parameter_in_accept_header
+)
 from .. import auth
+from ..common import get_timestamp
 from ..exceptions import ProcessingError
-from ..utils.common import get_timestamp
+from .discovery import api_root_exists
 
 objects_bp = Blueprint("objects", __name__)
 
