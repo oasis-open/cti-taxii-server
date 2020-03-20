@@ -1,3 +1,16 @@
+Version 0.5.0
+2020-03-20
+- #60 Fixes to tests and Default Values
+- #58, #91,  Updating documentation, or configuration
+- #59 Directory Backend Plus Auth Improvements
+- #74, #104, #105 Update docker configuration
+- #77 mongo filters, example data, port methods that overlap with 2.1
+- #76, #78 Directory Backend changes and general improvements, checks
+- The MongoBackend has received changes in data representation, bug fixes, and filters.
+- The MemoryBacked has received changes in data representation, bug fixes, and filters.
+- JWT login support, API Key, heartbeat, and routes functionality via Endpoints.
+- Headers are being checked.
+
 Version 0.4.0
 2019-07-16
 - @jamesfitzsimons implemented Pagination support and fixed a couple of MongoDB errors
