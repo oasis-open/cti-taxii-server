@@ -33,11 +33,11 @@ def get_collections(api_root):
     api_root_exists(api_root)
 
     start_index, end_index = get_range_request_from_headers()
-    total_count, result = current_app.medallion_backend.get_collections(api_root, start_index, end_index)
-    if result:
-        status, headers = get_response_status_and_headers(start_index, total_count, result)
+    total_count, collections = current_app.medallion_backend.get_collections(api_root, start_index, end_index)
+    if collections:
+        status, headers = get_response_status_and_headers(start_index, total_count, collections)
         return Response(
-            response=json.dumps({"collections": result}),
+            response=json.dumps({"collections": collections}),
             status=status,
             headers=headers,
             mimetype=MEDIA_TYPE_TAXII_V20,
@@ -65,10 +65,9 @@ def get_collection(api_root, collection_id):
     api_root_exists(api_root)
     collection_exists(api_root, collection_id)
     collection = current_app.medallion_backend.get_collection(api_root, collection_id)
-    if collection:
-        return Response(
-            response=json.dumps(collection),
-            status=200,
-            mimetype=MEDIA_TYPE_TAXII_V20,
-        )
-    raise ProcessingError("Collection '{}' not found".format(collection_id), 404)
+
+    return Response(
+        response=json.dumps(collection),
+        status=200,
+        mimetype=MEDIA_TYPE_TAXII_V20,
+    )

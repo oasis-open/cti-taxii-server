@@ -166,12 +166,11 @@ def get_object(api_root, collection_id, object_id):
     collection_exists(api_root, collection_id)
     permission_to_read(api_root, collection_id)
 
-    if collection_exists(api_root, collection_id) and permission_to_read(api_root, collection_id):
-        objects = current_app.medallion_backend.get_object(api_root, collection_id, object_id, request.args, ("version",))
-        if objects:
-            return Response(
-                response=json.dumps(objects),
-                status=200,
-                mimetype=MEDIA_TYPE_STIX_V20,
-            )
-        raise ProcessingError("Object '{}' not found".format(object_id), 404)
+    objects = current_app.medallion_backend.get_object(api_root, collection_id, object_id, request.args, ("version",))
+    if objects:
+        return Response(
+            response=json.dumps(objects),
+            status=200,
+            mimetype=MEDIA_TYPE_STIX_V20,
+        )
+    raise ProcessingError("Object '{}' not found".format(object_id), 404)
