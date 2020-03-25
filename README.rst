@@ -1,4 +1,4 @@
-|Build_Status| |Coverage| |Version|
+|Build_Status| |Coverage| |Version| |Documentation_Status|
 
 medallion
 =========
@@ -31,14 +31,12 @@ somewhat more robust and makes use of a MongoDB server, installed independently.
 The MongoDB back-end can only be used if the pymongo python package is
 installed. An error message will result if it is used without that package.
 
-
 Installation
 ------------
 
 The easiest way to install *medallion* is with pip::
 
   $ pip install medallion
-
 
 Usage
 -----
@@ -354,7 +352,6 @@ Current Maintainers of this TC Open Repository
 -  `Jason Keirstead <mailto:Jason.Keirstead@ca.ibm.com>`__; GitHub ID:
    https://github.com/JasonKeirstead; WWW: `IBM <http://www.ibm.com/>`__
 
-
 About OASIS TC Open Repositories
 --------------------------------
 
@@ -385,3 +382,6 @@ any specific CLA-related questions to repository-cla@oasis-open.org.
    :target: https://codecov.io/gh/oasis-open/cti-taxii-server
 .. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/medallion/
+.. |Documentation_Status| image:: https://readthedocs.org/projects/medallion/badge/?version=latest
+   :target: https://medallion.readthedocs.io/en/latest/
+   :alt: Documentation Status
