@@ -1,6 +1,5 @@
 |Build_Status| |Coverage| |Version|
 
-=========
 medallion
 =========
 
@@ -34,7 +33,7 @@ installed. An error message will result if it is used without that package.
 
 
 Installation
-============
+------------
 
 The easiest way to install *medallion* is with pip::
 
@@ -42,7 +41,7 @@ The easiest way to install *medallion* is with pip::
 
 
 Usage
-=====
+-----
 
 As a script
 -----------
@@ -86,7 +85,7 @@ The <config_file> contains:
 
 To use the Memory backend plugin, include the following in the <config-file>:
 
-.. code:: json
+.. code-block:: json
 
     {
         "backend": {
@@ -98,7 +97,7 @@ To use the Memory backend plugin, include the following in the <config-file>:
 
 To use the directory features, include the following in the <config-file>:
 
-.. code:: json
+.. code-block:: json
 
     {
         "backend": {
@@ -117,7 +116,7 @@ into a single collection.
 
 To use the MongoDB backend plugin, include the following in the <config-file>:
 
-.. code:: json
+.. code-block:: json
 
     {
          "backend": {
@@ -137,7 +136,7 @@ API Token authorization and JWT authorization. When stored in the <config-file>,
 
 Here is an example:
 
-.. code:: json
+.. code-block:: json
 
     {
         "users": {
@@ -153,7 +152,7 @@ Here is an example:
 
 *Note: the plaintext passwords for the above example are:*
 
-.. code:: json
+.. code-block:: json
 
     {
         "users": {
@@ -165,7 +164,7 @@ Here is an example:
 
 If JWT authorization is used, a secret key is required in the config:
 
-.. code:: json
+.. code-block:: json
 
     {
         "flask": {
@@ -183,7 +182,7 @@ Authorization could be enhanced by changing the method "decorated" using
 
 Configs may also contain a "taxii" section as well, as shown below:
 
-.. code:: python
+.. code-block:: json
 
     {
         "taxii": {
@@ -198,7 +197,7 @@ The backend for authorization can also be configured in the <config-file>:
 
 To use the Memory Authorization backend plugin, include the following in the <config-file>:
 
-.. code:: json
+.. code-block:: json
 
     {
         "auth": {
@@ -211,7 +210,7 @@ To use the Memory Authorization backend plugin, include the following in the <co
 
 To use the Mongo DB Authorization backend plugin, include the following in the <config-file>:
 
-.. code:: json
+.. code-block:: json
 
     {
         "auth": {
@@ -224,7 +223,7 @@ To use the Mongo DB Authorization backend plugin, include the following in the <
 
 The structure expected by the mongo db authorization backend code is:
 
-.. code:: json
+.. code-block:: json
 
     {
         "user": {
@@ -248,7 +247,7 @@ A script for adding users and api-keys is included `auth_db_utils.py <https:meda
 
 Multiple authorization are supported by *medallion* at the same time and can be added to the <config-file>:
 
-.. code:: json
+.. code-block:: json
 
     {
         "multi-auth": [
@@ -262,7 +261,7 @@ Additional configurations can be seen in `example_configs <https:/example_config
 We welcome contributions for other back-end plugins.
 
 Docker
-======
+------
 
 We also provide a Docker image to make it easier to run *medallion*::
 
@@ -284,7 +283,7 @@ Replace ``<directory>`` with the full path to the directory containing your
 medallion configuration.
 
 Governance
-==========
+----------
 
 This GitHub public repository (
 **https://github.com/oasis-open/cti-taxii-client** ) was created at the request
@@ -341,7 +340,7 @@ additional or substitute Maintainers, per `consensus agreements
 <https://www.oasis-open.org/resources/open-repositories/maintainers-guide#additionalMaintainers>`__.
 
 Current Maintainers of this TC Open Repository
-----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID:
    https://github.com/clenk/; WWW: `MITRE
