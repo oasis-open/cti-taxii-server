@@ -23,7 +23,8 @@ def get_server_discovery():
     `Server Discovery Section (4.1) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542727>`__
 
     Returns:
-        discovery: A Discovery Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542728>`__.
+        discovery: A Discovery Resource upon successful requests. Additional information
+            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542728>`__.
 
     """
     # Having access to the discovery method is only related to having
@@ -52,7 +53,8 @@ def get_api_root_information(api_root):
         api_root (str): the base URL of the API Root
 
     Returns:
-        api-root: An API Root Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542730>`__.
+        api-root: An API Root Resource upon successful requests. Additional information
+            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542730>`__.
 
     """
     # TODO: Check if user has access to objects in collection.
@@ -79,7 +81,8 @@ def get_status(api_root, status_id):
         status_id (str): the `identifier` of the Status message being requested
 
     Returns:
-        status: A Status Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
+        status: A Status Resource upon successful requests. Additional information
+            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
 
     """
     # TODO: Check if user has access to the Status resource.

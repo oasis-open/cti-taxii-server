@@ -16,7 +16,7 @@ def validate_taxii_version_parameter_in_accept_header():
     found = False
 
     for item in accept_header:
-        result = re.match(r"^application\/vnd\.oasis\.taxii\+json(; version=(\d\.\d))?$", item)
+        result = re.match(r"^application/vnd\.oasis\.taxii\+json(;version=(\d\.\d))?$", item)
         if result:
             if len(result.groups()) >= 1:
                 version_str = result.group(2)
@@ -35,7 +35,7 @@ def validate_stix_version_parameter_in_accept_header():
     found = False
 
     for item in accept_header:
-        result = re.match(r"^application\/vnd\.oasis\.stix\+json(; version=(\d\.\d))?$", item)
+        result = re.match(r"^application/vnd\.oasis\.stix\+json(;version=(\d\.\d))?$", item)
         if result:
             if len(result.groups()) >= 1:
                 version_str = result.group(2)

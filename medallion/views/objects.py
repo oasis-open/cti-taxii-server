@@ -32,6 +32,24 @@ def collection_exists(api_root, collection_id):
         raise ProcessingError("Collection '{}' not found".format(collection_id), 404)
 
 
+def validate_version_parameter_in_content_type_header():
+    content_type = request.headers.get("content_type", "").replace(" ", "").split(",")
+    found = False
+
+    for item in content_type:
+        result = re.match(r"^application/vnd\.oasis\.stix\+json(;version=(\d\.\d))?$", item)
+        if result:
+            if len(result.groups()) >= 2:
+                version_str = result.group(2)
+                if version_str != "2.0":  # The server only supports 2.0 at the moment
+                    raise ProcessingError("The server does not support version {}".format(version_str), 415)
+            found = True
+            break
+
+    if found is False:
+        raise ProcessingError("Media type in the Content-Type header is invalid or not found", 415)
+
+
 def get_range_request_from_headers():
     if request.headers.get("Range") is not None:
         try:
@@ -99,15 +117,18 @@ def get_response_status_and_headers(start_index, total_count, objects):
 def get_or_add_objects(api_root, collection_id):
     """
     Defines TAXII API - Collections:
-    `Get Objects Section (5.3) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542738>`__ and `Add Objects Section (5.4) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542739>`__
+    `Get Objects Section (5.3) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542738>`__
+    and `Add Objects Section (5.4) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542739>`__.
 
     Args:
         api_root (str): the base URL of the API Root
         collection_id (str): the `identifier` of the Collection being requested
 
     Returns:
-        bundle: GET -> A STIX 2.0 Bundle upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/stix/v2.0/cs01/part1-stix-core/stix-v2.0-cs01-part1-stix-core.html#_Toc496709292>`__.
-        status: POST -> An Status Resource upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
+        bundle: GET -> A STIX 2.0 Bundle upon successful requests. Additional information
+             `here <http://docs.oasis-open.org/cti/stix/v2.0/cs01/part1-stix-core/stix-v2.0-cs01-part1-stix-core.html#_Toc496709292>`__.
+        status: POST -> An Status Resource upon successful requests. Additional information
+             `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
 
     """
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
@@ -133,9 +154,11 @@ def get_or_add_objects(api_root, collection_id):
         raise ProcessingError("Collection '{}' has no objects available".format(collection_id), 404)
     elif request.method == "POST":
         validate_taxii_version_parameter_in_accept_header()
+        validate_version_parameter_in_content_type_header()
         api_root_exists(api_root)
         collection_exists(api_root, collection_id)
         permission_to_write(api_root, collection_id)
+
         status = current_app.medallion_backend.add_objects(api_root, collection_id, request.get_json(force=True), request_time)
         return Response(
             response=json.dumps(status),
@@ -157,7 +180,8 @@ def get_object(api_root, collection_id, object_id):
         object_id (str): the `identifier` of the object being requested
 
     Returns:
-        bundle: GET -> A STIX 2.0 Bundle upon successful requests. Additional information `here <http://docs.oasis-open.org/cti/stix/v2.0/cs01/part1-stix-core/stix-v2.0-cs01-part1-stix-core.html#_Toc496709292>`__.
+        bundle: GET -> A STIX 2.0 Bundle upon successful requests. Additional information
+             `here <http://docs.oasis-open.org/cti/stix/v2.0/cs01/part1-stix-core/stix-v2.0-cs01-part1-stix-core.html#_Toc496709292>`__.
 
     """
     # TODO: Check if user has access to objects in collection - right now just check for permissions on the collection
