@@ -1,13 +1,13 @@
 import base64
 import os
-import unittest
+
 from flask import Flask
 
 from medallion import application_instance, register_blueprints, set_config
 from medallion.test.data.initialize_mongodb import reset_db
 
 
-class TaxiiTest(unittest.TestCase):
+class TaxiiTest():
     type = None
     DATA_FILE = os.path.join(
         os.path.dirname(__file__), "data", "default_data.json",
@@ -16,7 +16,7 @@ class TaxiiTest(unittest.TestCase):
         "objects": [
             {
                 "created": "2017-01-27T13:49:53.935Z",
-                "id": "indicator--%s",
+                "id": "indicator--68794cd5-28db-429d-ab1e-1256704ef906",
                 "labels": [
                     "url-watchlist",
                 ],
@@ -100,10 +100,9 @@ class TaxiiTest(unittest.TestCase):
     }
 
     def setUp(self):
-        self.app = Flask(self.type)
-        #self.app = application_instance
-        self.app_context = self.app.app_context()
-        #self.app_context = application_instance.app_context()
+        self.__name__ = self.type
+        self.app = application_instance
+        self.app_context = application_instance.app_context()
         self.app_context.push()
         self.app.testing = True
         register_blueprints(self.app)
@@ -125,8 +124,7 @@ class TaxiiTest(unittest.TestCase):
         set_config(self.app, "backend", self.configuration)
         set_config(self.app, "users", self.configuration)
         set_config(self.app, "taxii", self.configuration)
-        self.client = self.app.test_client()
-        #self.client = application_instance.test_client()
+        self.client = application_instance.test_client()
         if self.type == "memory_no_config" or self.type == "no_auth":
             encoded_auth = "Basic " + \
                 base64.b64encode(b"user:pass").decode("ascii")

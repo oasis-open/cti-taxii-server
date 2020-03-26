@@ -102,6 +102,17 @@
                 "objects": [],
                 "manifest": []
             },
+	    {
+                "id": "365fed99-08fa-fdcd-a1b3-fb247eb41d01",
+                "title": "This data collection is for testing adding objects",
+                "can_read": true,
+                "can_write": true,
+                "media_types": [
+                    "application/stix+json;version=2.1"
+                ],
+                "objects": [],
+                "manifest": []
+            },
             {
                 "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
                 "title": "High Value Indicator Collection",
@@ -147,7 +158,7 @@
                         "name": "Malicious site hosting downloader",
                         "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
                         "pattern_type": "stix",
-                        "spec_version": "2.1",
+                        "spec_version": "2.0",
                         "type": "indicator",
                         "valid_from": "2017-01-27T13:49:53.935382Z"
                     },
@@ -222,7 +233,7 @@
                     {
                         "date_added": "2016-11-03T12:30:59.001000Z",
                         "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
-                        "media_type": "application/stix+json;version=2.1",
+                        "media_type": "application/stix+json;version=2.0",
                         "version": "2016-11-03T12:30:59.000Z"
                     },
                     {
