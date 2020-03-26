@@ -57,7 +57,7 @@ Medallion provides a command-line interface to start the TAXII Server
         [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
         CONFIG_PATH
 
-    medallion v0.5.0
+    medallion v1.0.0
 
     positional arguments:
       CONFIG_PATH           The location of the JSON configuration file to use.
