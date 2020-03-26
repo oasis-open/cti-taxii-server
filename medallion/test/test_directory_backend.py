@@ -36,7 +36,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         os.removedirs(p)
 
     def test_server_discovery(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+        r = self.client.get(test.DISCOVERY_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -46,7 +46,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         assert server_info["api_roots"][-1] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
-        r = self.client.get(test.API_ROOT_EP, headers=self.auth)
+        r = self.client.get(test.API_ROOT_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -54,12 +54,12 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         assert api_root_metadata["title"] == "Malware Research Group"
 
     def test_get_api_root_information_not_existent(self):
-        r = self.client.get("/trustgroup2/", headers=self.auth)
+        r = self.client.get("/trustgroup2/", headers=self.common_headers)
 
         self.assertEqual(r.status_code, 404)
 
     def test_get_collections(self):
-        r = self.client.get(test.COLLECTIONS_EP, headers=self.auth)
+        r = self.client.get(test.COLLECTIONS_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -71,7 +71,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         assert "91a7b528-80eb-42ed-a74d-c6fbd5a26116" in collection_ids
 
     def test_get_collection(self):
-        r = self.client.get(test.GET_COLLECTION_EP_FOR_DIRECTORY_BACKEND, headers=self.auth)
+        r = self.client.get(test.GET_COLLECTION_EP_FOR_DIRECTORY_BACKEND, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -79,12 +79,14 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         assert collections_metadata["media_types"][0] == "application/vnd.oasis.stix+json; version=2.0"
 
     def test_get_collection_not_existent(self):
-        r = self.client.get(test.NON_EXISTENT_COLLECTION_EP, headers=self.auth)
+        r = self.client.get(test.NON_EXISTENT_COLLECTION_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 404)
 
     def test_get_objects(self):
-        r = self.client.get(test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP + "?match[type]=indicator", headers=self.auth)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP + "?match[type]=indicator", headers=get_header)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
@@ -97,15 +99,17 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
 
     def test_get_objects_not_existant(self):
         r = self.client.get(
-            test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP_NOT_EXISTANT + "?match[type]=indicator", headers=self.auth
+            test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP_NOT_EXISTANT + "?match[type]=indicator", headers=self.common_headers
         )
 
         self.assertEqual(r.status_code, 404)
 
     def test_get_object(self):
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
             test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP + "indicator--7d72d620-9720-4457-897d-7030d1a972df/",
-            headers=self.auth,
+            headers=get_header,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -114,7 +118,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         assert obj["objects"][0]["id"] == "indicator--7d72d620-9720-4457-897d-7030d1a972df"
 
     def test_get_object_not_existant(self):
-        r = self.client.get(test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP_NOT_EXISTANT, headers=self.auth)
+        r = self.client.get(test.GET_OBJECTS_FROM_DIRECTORY_BACKEND_EP_NOT_EXISTANT, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 404)
 
@@ -125,7 +129,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -142,7 +146,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
         # ------------- END: add object section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
@@ -160,7 +164,7 @@ class TestTAXIIServerWithDirectoryBackend(TaxiiTest):
 
         # This test assumes that the only file existing is 'very-simple-playbook.json'
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(

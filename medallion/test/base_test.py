@@ -4,6 +4,7 @@ import unittest
 from medallion import create_app
 from medallion.test import config as test_configs
 from medallion.test.data.initialize_mongodb import create_users, reset_db
+from medallion.views import MEDIA_TYPE_TAXII_V20
 
 
 class TaxiiTest(unittest.TestCase):
@@ -67,7 +68,10 @@ class TaxiiTest(unittest.TestCase):
 
         # TODO: It might be better to not reuse the test client.
         self.client = self.app.test_client()
-        self.auth = {'Authorization': 'Token abc123'}
+        self.common_headers = {
+            'Accept': MEDIA_TYPE_TAXII_V20,
+            'Authorization': 'Token abc123'
+        }
 
     def tearDown(self):
         self.app_context.pop()
