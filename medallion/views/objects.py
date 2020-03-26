@@ -50,6 +50,17 @@ def validate_version_parameter_in_content_type_header():
         raise ProcessingError("Media type in the Content-Type header is invalid or not found", 415)
 
 
+def validate_size_in_request_body(api_root):
+    api_root = current_app.medallion_backend.get_api_root_information(api_root)
+    max_length = api_root["max_content_length"]
+    try:
+        content_length = int(request.headers.get("content_length", ""))
+    except ValueError:
+        raise ProcessingError("The server did not understand the request or headers", 400)
+    if content_length > max_length or content_length <= 0:
+        raise ProcessingError("Content-Length header not valid or exceeds maximum!", 413)
+
+
 def get_range_request_from_headers():
     if request.headers.get("Range") is not None:
         try:
@@ -158,6 +169,7 @@ def get_or_add_objects(api_root, collection_id):
         api_root_exists(api_root)
         collection_exists(api_root, collection_id)
         permission_to_write(api_root, collection_id)
+        validate_size_in_request_body(api_root)
 
         status = current_app.medallion_backend.add_objects(api_root, collection_id, request.get_json(force=True), request_time)
         return Response(

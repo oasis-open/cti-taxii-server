@@ -34,7 +34,9 @@ installed. An error message will result if it is used without that package.
 Installation
 ------------
 
-The easiest way to install *medallion* is with pip::
+The easiest way to install *medallion* is with pip
+
+.. code-block:: bash
 
   $ pip install medallion
 
@@ -44,11 +46,16 @@ Usage
 As a script
 -----------
 
-Medallion provides a command-line interface to start the TAXII Server::
+Medallion provides a command-line interface to start the TAXII Server
 
-    usage: medallion [-h] [--host HOST] [--port PORT] [--debug-mode]
-                  [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
-                  CONFIG_PATH
+.. code-block:: text
+
+    usage: medallion [-h]
+        [--host HOST]
+        [--port PORT]
+        [--debug-mode]
+        [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
+        CONFIG_PATH
 
     medallion v0.5.0
 
@@ -67,11 +74,15 @@ Medallion provides a command-line interface to start the TAXII Server::
       --log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}
                             The logging output level for medallion.
 
-To run *medallion*::
+To run *medallion*
+
+.. code-block:: bash
 
     $ python medallion/scripts/run.py <config-file>
 
-Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example::
+Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example
+
+.. code-block:: bash
 
     $ medallion --port 80 config_file.json
 
@@ -261,19 +272,25 @@ We welcome contributions for other back-end plugins.
 Docker
 ------
 
-We also provide a Docker image to make it easier to run *medallion*::
+We also provide a Docker image to make it easier to run *medallion*
+
+.. code-block:: bash
 
     $ docker build . -t medallion
 
 The default Dockerfile is contained in the `docker_utils` folder, so the build
-command should be run with a file path argument::
+command should be run with a file path argument
+
+.. code-block:: bash
 
     $ docker build . -t medallion -f docker_utils/Dockerfile
 
 If operating behind a proxy, add the following option (replacing `<proxy>` with
 your proxy location and port): ``--build-arg https_proxy=<proxy>``.
 
-Then run the image::
+Then run the image
+
+.. code-block:: bash
 
     $ docker run --rm -p 5000:5000 -v <directory>:/var/taxii medallion
 
