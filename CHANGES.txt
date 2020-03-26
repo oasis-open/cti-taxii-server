@@ -1,3 +1,12 @@
+Version 1.0.0
+2020-03-26
+First major and stable release to support TAXII 2.0
+- #108, #109 Additional checks to Accept, Content-Type and Content-Length headers and API root existence
+- #108 Add or clean documentation for Endpoints defined in the spec
+- #108 Design change in validation procedures. These no longer used to evaluate True or raise Exception
+- #108 Update packaging, tests per new changes, code quality
+- #108 Bug under MemoryBackend that would cause a 400 Error when filtering under manifests
+
 Version 0.5.0
 2020-03-20
 - #60 Fixes to tests and Default Values
