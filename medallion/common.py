@@ -164,7 +164,7 @@ def generate_status(
 ):
     """
     Generate Status Resource as defined in
-    `TAXII 2.0 section (4.3.1) <https://docs.google.com/document/d/1Jv9ICjUNZrOnwUXtenB1QcnBLO35RnjQcJLsa1mGSkI/pub#h.21tzry6u9dbz>`__.
+    `TAXII 2.0 Section (4.3.1) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
     """
     status = {
         "id": str(uuid.uuid4()),

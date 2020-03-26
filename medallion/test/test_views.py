@@ -53,7 +53,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         self.app_context.push()
 
         self.client = self.app.test_client()
-        self.auth = {'Authorization': 'Token abc123'}
+        self.common_headers = {
+            'Accept': MEDIA_TYPE_TAXII_V20,
+            'Authorization': 'Token abc123'
+        }
 
     def tearDown(self):
         self.app_context.pop()
@@ -73,8 +76,8 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         self.app.medallion_backend = mock_backend()
 
         # ------------- BEGIN: test collection endpoint ------------- #
-        mock_backend.return_value.get_collections.return_value = (10, {'collections': []})
-        r = self.client.get(test.COLLECTIONS_EP, headers=self.auth)
+        mock_backend.return_value.get_collections.return_value = (10, {})
+        r = self.client.get(test.COLLECTIONS_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -82,10 +85,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         # ------------- END: test collection endpoint ------------- #
         # ------------- BEGIN: test manifests endpoint ------------- #
-        mock_backend.return_value.get_object_manifest.return_value = (10, {'objects': []})
+        mock_backend.return_value.get_object_manifest.return_value = (10, {})
         r = self.client.get(
             test.MANIFESTS_EP,
-            headers=self.auth,
+            headers=self.common_headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -95,9 +98,11 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         # ------------- END: test manifests endpoint ------------- #
         # ------------- BEGIN: test objects endpoint ------------- #
         mock_backend.return_value.get_objects.return_value = (10, {'objects': []})
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
             test.GET_OBJECTS_EP,
-            headers=self.auth,
+            headers=get_header,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -125,7 +130,9 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
             response['objects'].append(obj)
         mock_backend.return_value.get_objects.return_value = (10, response)
 
-        r = self.client.get(test.GET_OBJECT_EP, headers=self.auth)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_STIX_V20)
@@ -142,7 +149,9 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
             response['objects'].append(obj)
         mock_backend.return_value.get_objects.return_value = (100, response)
 
-        r = self.client.get(test.GET_OBJECT_EP, headers=self.auth)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -165,11 +174,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         # for this test so an empty set is returned.
         mock_backend.return_value.get_objects.return_value = (10, {'objects': []})
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 100-199',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        get_header["Range"] = "items 100-199"
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(416, r.status_code)
         self.assertEqual(r.headers.get('Content-Range'), 'items */10')
@@ -185,11 +193,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         # for this test so an empty set is returned.
         mock_backend.return_value.get_objects.return_value = (10, {'objects': []})
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items x-199',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        get_header["Range"] = "items x-199"
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(400, r.status_code)
 
@@ -202,11 +209,10 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
         # Set up the backend to return the total number of results = 0.
         mock_backend.return_value.get_objects.return_value = (0, {'objects': []})
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        get_header["Range"] = "items 0-10"
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(206, r.status_code)
         self.assertEqual(r.headers.get('Content-Range'), 'items 0-0/0')

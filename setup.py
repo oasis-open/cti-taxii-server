@@ -9,7 +9,7 @@ VERSION_FILE = os.path.join(BASE_DIR, "medallion", "version.py")
 
 
 def get_version():
-    with open(VERSION_FILE) as f:
+    with open(VERSION_FILE, encoding="utf-8") as f:
         for line in f.readlines():
             if line.startswith("__version__"):
                 version = line.split()[-1].strip("\"")
@@ -18,16 +18,17 @@ def get_version():
 
 
 def get_long_description():
-    with open("README.rst") as f:
+    with open("README.rst", encoding="utf-8") as f:
         return f.read()
 
 
 setup(
     name="medallion",
     version=get_version(),
-    description="A TAXII 2.0 Server.",
+    description="TAXII 2.0 Server implementing required endpoints",
     long_description=get_long_description(),
-    url="https://github.com/oasis-open/cti-taxii-server",
+    long_description_content_type="text/x-rst",
+    url="https://oasis-open.github.io/cti-documentation/",
     author="OASIS Cyber Threat Intelligence Technical Committee",
     author_email="cti-users@lists.oasis-open.org",
     maintainer="Emmanuelle Vargas-Gonzalez",
@@ -45,6 +46,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
     keywords="taxii taxii2 server json cti cyber threat intelligence",
     packages=find_packages(exclude=["*.test", "*.test.data"]),
@@ -76,5 +78,10 @@ setup(
         "mongo": [
             "pymongo",
         ],
+    },
+    project_urls={
+        'Documentation': 'https://medallion.readthedocs.io/',
+        'Source Code': 'https://github.com/oasis-open/cti-taxii-server/',
+        'Bug Tracker': 'https://github.com/oasis-open/cti-taxii-server/issues/',
     },
 )

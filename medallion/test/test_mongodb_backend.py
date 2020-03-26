@@ -4,10 +4,9 @@ import uuid
 
 import six
 
-from medallion import test
+from medallion import common, test
 from medallion.test.base_test import TaxiiTest
 from medallion.test.generic_initialize_mongodb import connect_to_client
-from medallion.utils import common
 from medallion.views import MEDIA_TYPE_STIX_V20, MEDIA_TYPE_TAXII_V20
 
 
@@ -22,7 +21,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         return json.load(io)
 
     def test_server_discovery(self):
-        r = self.client.get(test.DISCOVERY_EP, headers=self.auth)
+        r = self.client.get(test.DISCOVERY_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -32,7 +31,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         assert server_info["api_roots"][2] == "http://localhost:5000/trustgroup1/"
 
     def test_get_api_root_information(self):
-        r = self.client.get(test.API_ROOT_EP, headers=self.auth)
+        r = self.client.get(test.API_ROOT_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -40,11 +39,11 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         assert api_root_metadata["title"] == "Malware Research Group"
 
     def test_get_api_root_information_not_existent(self):
-        r = self.client.get("/trustgroup2/", headers=self.auth)
+        r = self.client.get("/trustgroup2/", headers=self.common_headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_collections(self):
-        r = self.client.get(test.COLLECTIONS_EP, headers=self.auth)
+        r = self.client.get(test.COLLECTIONS_EP, headers=self.common_headers)
 
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content_type, MEDIA_TYPE_TAXII_V20)
@@ -61,7 +60,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
     def test_get_collection(self):
         r = self.client.get(
             test.GET_COLLECTION_EP,
-            headers=self.auth,
+            headers=self.common_headers,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -72,14 +71,16 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
     def test_get_collection_not_existent(self):
         r = self.client.get(
             test.NON_EXISTENT_COLLECTION_EP,
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r.status_code, 404)
 
     def test_get_object(self):
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
            test.GET_OBJECT_EP + "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/",
-           headers=self.auth,
+           headers=get_header,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -88,9 +89,11 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         assert obj["objects"][0]["id"] == "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111"
 
     def test_get_objects(self):
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[type]=relationship",
-            headers=self.auth,
+            headers=get_header,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -101,7 +104,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test that all returned objects belong to the correct collection ------------- #
         r = self.client.get(
             test.GET_OBJECTS_EP + "?match[type]=indicator",
-            headers=self.auth,
+            headers=get_header,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -122,7 +125,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -138,7 +141,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: add object section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
@@ -156,7 +159,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.API_ROOT_EP + "status/%s/" % status_response["id"],
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
@@ -169,7 +172,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=%s" % new_id,
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
@@ -185,7 +188,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -214,7 +217,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: add object section ------------- #
         # ------------- BEGIN: get object section 1 ------------- #
 
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
@@ -279,7 +282,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.API_ROOT_EP + "status/%s/" % status_response["id"],
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
@@ -292,7 +295,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         r_get = self.client.get(
             test.GET_ADD_COLLECTION_EP + "manifest/?match[id]=%s" % new_id,
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r_get.status_code, 200)
         self.assertEqual(r_get.content_type, MEDIA_TYPE_TAXII_V20)
@@ -304,7 +307,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: get manifest section ------------- #
 
     def test_added_after_filtering(self):
-        get_header = copy.deepcopy(self.auth)
+        get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         # ------------- BEGIN: test with static data section ------------- #
@@ -326,7 +329,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         new_id = "indicator--%s" % uuid.uuid4()
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -351,9 +354,8 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(1, len(bundle['objects']))
         self.assertEqual(new_id, bundle['objects'][0]['id'])
 
-    def test_marking_defintions(self):
-        get_header = copy.deepcopy(self.auth)
-        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+    def test_marking_definitions(self):
+        get_header = copy.deepcopy(self.common_headers)
 
         # ------------- BEGIN: get manifest section 1 ------------- #
         r_get = self.client.get(
@@ -369,6 +371,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
         # ------------- END: get manifest section 1 ------------- #
         # ------------- BEGIN: get manifest section 2 ------------- #
+        get_header = copy.deepcopy(self.common_headers)
         r_get = self.client.get(
             test.GET_ADD_COLLECTION_EP + "manifest/?match[type]=marking-definition",
             headers=get_header,
@@ -382,6 +385,8 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(len(manifests["objects"]), 1, "Expected exactly one result")
         # ------------- END: get manifest section 2 ------------- #
         # ------------- BEGIN: get objects section 1 ------------- #
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r_get = self.client.get(
             test.GET_OBJECT_EP + "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da/",
             headers=get_header,
@@ -443,7 +448,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
     def test_get_collections_404(self):
         # note that api root "carbon1" is nonexistent
-        r = self.client.get("/carbon1/collections/", headers=self.auth)
+        r = self.client.get("/carbon1/collections/", headers=self.common_headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_status_401(self):
@@ -455,7 +460,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
      access control for Status resources"""
 
     def test_get_status_404(self):
-        r = self.client.get(test.API_ROOT_EP + "status/22101993/", headers=self.auth)
+        r = self.client.get(test.API_ROOT_EP + "status/22101993/", headers=self.common_headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_object_manifest_401(self):
@@ -466,13 +471,13 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
     def test_get_object_manifest_403(self):
         r = self.client.get(
             test.FORBIDDEN_COLLECTION_EP + "manifest/",
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r.status_code, 403)
 
     def test_get_object_manifest_404(self):
         # note that collection ID does not exist
-        r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=self.auth)
+        r = self.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=self.common_headers)
         self.assertEqual(r.status_code, 404)
 
     def test_get_object_401(self):
@@ -486,17 +491,21 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
            (i.e. we dont have access rights to the collection specified, not just the object)
         """
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
             test.FORBIDDEN_COLLECTION_EP + "objects/indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f/",
-            headers=self.auth,
+            headers=get_header,
         )
         self.assertEqual(r.status_code, 403)
 
     def test_get_object_404(self):
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         # TAXII spec allows for a 404 or empty bundle if object is not found
         r = self.client.get(
             test.GET_OBJECT_EP + "malware--cee60c30-a68c-11e3-b0c1-a01aac20d000/",
-            headers=self.auth,
+            headers=get_header,
         )
         objs = self.load_json_response(r.data)
 
@@ -536,7 +545,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # get_objects()
         r = self.client.get(
             test.FORBIDDEN_COLLECTION_EP + "objects/",
-            headers=self.auth,
+            headers=self.common_headers,
         )
         self.assertEqual(r.status_code, 403)
 
@@ -545,7 +554,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -558,9 +567,11 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
     def test_get_or_add_objects_404(self):
         # get_objects()
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
             test.NON_EXISTENT_COLLECTION_EP + "objects/",
-            headers=self.auth,
+            headers=get_header,
         )
         self.assertEqual(r.status_code, 404)
 
@@ -569,7 +580,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -599,7 +610,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
             "valid_from": "2017-01-27T13:51:53.935382Z",
         }
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -632,7 +643,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         new_bundle["objects"][0]["valid_until"] = valid_until
         new_bundle["objects"][0]["external_references"] = external_references
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -646,7 +657,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         self.assertEqual(r_post.content_type, MEDIA_TYPE_TAXII_V20)
 
         # get the indicator and check the valid_until date and external_references are returned
-        r = self.client.get(test.GET_OBJECT_EP + new_id + '/', headers=self.auth)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP + new_id + '/', headers=get_header)
         self.assertEqual(r.status_code, 200)
         event = self.load_json_response(r.data)
         self.assertEqual(event['objects'][0]['valid_until'], valid_until)
@@ -658,7 +671,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         new_bundle = copy.deepcopy(self.API_OBJECTS_2)
         new_bundle["objects"][0]["id"] = new_id
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -684,9 +697,11 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test that all returned objects belong to the correct collection ------------- #
         # now query for that object in one collection and confirm we don't recieve both
         # instances back
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(
             test.ADD_OBJECTS_EP + new_id + "/",
-            headers=self.auth,
+            headers=get_header,
         )
 
         self.assertEqual(r.status_code, 200)
@@ -708,7 +723,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
             obj['id'] = new_id
             bundle['objects'].append(obj)
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -723,11 +738,10 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: test request for subset of objects endpoint ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-10"
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -737,11 +751,10 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for subset of objects endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size on objects endpoint ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-100',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-100"
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         # should return a maximum of 20 objects as that is what we have set in the server configuration
@@ -752,11 +765,10 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for more than servers supported page size on objects endpoint ------------- #
         # ------------- BEGIN: test request for range beyond result set of objects endpoint ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 90-119',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 90-119"
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -766,11 +778,10 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for range beyond result set of objects endpoint ------------- #
         # ------------- BEGIN: test request for just the first item ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-0',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-0"
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -780,11 +791,10 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for just the first item ------------- #
         # ------------- BEGIN: test request for one item past the end of the range ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 100-100',
-        }
-        r = self.client.get(test.GET_OBJECT_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 100-100"
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         self.assertEqual(r.status_code, 416)
 
         # ------------- END: test request for one item past the end of the range ------------- #
@@ -799,7 +809,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
             obj['id'] = new_id
             bundle['objects'].append(obj)
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -814,11 +824,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: test request for subset of manifests endpoint------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10',
-        }
-        r = self.client.get(test.MANIFESTS_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-10"
+        r = self.client.get(test.MANIFESTS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -828,11 +836,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for subset of manifests endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size of manifests endpoint------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-100',
-        }
-        r = self.client.get(test.MANIFESTS_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-100"
+        r = self.client.get(test.MANIFESTS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -842,11 +848,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for more than servers supported page size of manifests endpoint ------------- #
         # ------------- BEGIN: test request for range beyond result set of manifests endpoint  ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 90-119',
-        }
-        r = self.client.get(test.MANIFESTS_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 90-119"
+        r = self.client.get(test.MANIFESTS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -878,11 +882,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: test request for subset of collections endpoint------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-10',
-        }
-        r = self.client.get(test.COLLECTIONS_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-10"
+        r = self.client.get(test.COLLECTIONS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -892,11 +894,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for subset of collections endpoint ------------- #
         # ------------- BEGIN: test request for more than servers supported page size of collections endpoint------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 0-100',
-        }
-        r = self.client.get(test.COLLECTIONS_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 0-100"
+        r = self.client.get(test.COLLECTIONS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -906,11 +906,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for more than servers supported page size of collections endpoint ------------- #
         # ------------- BEGIN: test request for range beyond result set of collections endpoint  ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-            'Range': 'items 90-119',
-        }
-        r = self.client.get(test.COLLECTIONS_EP, headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Range"] = "items 90-119"
+        r = self.client.get(test.COLLECTIONS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 206)
@@ -924,10 +922,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: test request for latest version, should return one result ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-        }
-        r = self.client.get(test.GET_COLLECTION_EP + 'objects/', headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_COLLECTION_EP + 'objects/', headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 200)
@@ -936,10 +933,9 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: test request for latest version, should return one result ------------- #
         # ------------- BEGIN: test request for all versions, should return two results ------------- #
 
-        headers = {
-            'Authorization': self.auth['Authorization'],
-        }
-        r = self.client.get(test.GET_COLLECTION_EP + 'objects/?match[version]=all', headers=headers)
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
+        r = self.client.get(test.GET_COLLECTION_EP + 'objects/?match[version]=all', headers=get_header)
         objs = self.load_json_response(r.data)
 
         self.assertEqual(r.status_code, 200)
@@ -962,7 +958,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
 
         # ------------- BEGIN: add object section ------------- #
 
-        post_header = copy.deepcopy(self.auth)
+        post_header = copy.deepcopy(self.common_headers)
         post_header["Content-Type"] = MEDIA_TYPE_STIX_V20
         post_header["Accept"] = MEDIA_TYPE_TAXII_V20
 
@@ -993,8 +989,8 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- END: add object again section ------------- #
         # ------------- BEGIN: get object section ------------- #
 
-        get_header = copy.deepcopy(self.auth)
-        get_header["Accept"] = MEDIA_TYPE_TAXII_V20
+        get_header = copy.deepcopy(self.common_headers)
+        get_header["Accept"] = MEDIA_TYPE_STIX_V20
 
         r_get = self.client.get(
             test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,

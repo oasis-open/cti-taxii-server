@@ -191,14 +191,19 @@ class BasicFilter(object):
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
             new_results = []
-            for obj in results:
-                info = None
-                for item in manifest_info:
-                    if item["id"] == obj["id"]:
-                        info = item
-                        break
-                if info:
-                    if info["date_added"] > added_after_date:
+            if manifest_info is not None:
+                for obj in results:
+                    info = None
+                    for item in manifest_info:
+                        if item["id"] == obj["id"]:
+                            info = item
+                            break
+                    if info:
+                        if info["date_added"] > added_after_date:
+                            new_results.append(obj)
+            else:
+                for obj in results:
+                    if obj["date_added"] > added_after_date:
                         new_results.append(obj)
             return new_results
         else:

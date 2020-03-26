@@ -105,10 +105,10 @@ def register_blueprints(app):
     from medallion.views.others.healthcheck import healthecheck_bp
 
     log.debug("Registering medallion blueprints into {}".format(app))
-    app.register_blueprint(collections.mod)
-    app.register_blueprint(discovery.mod)
-    app.register_blueprint(manifest.mod)
-    app.register_blueprint(objects.mod)
+    app.register_blueprint(collections.collections_bp)
+    app.register_blueprint(discovery.discovery_bp)
+    app.register_blueprint(manifest.manifest_bp)
+    app.register_blueprint(objects.objects_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(healthecheck_bp)
 
