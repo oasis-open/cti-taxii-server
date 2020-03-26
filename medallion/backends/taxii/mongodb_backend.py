@@ -5,7 +5,6 @@ from ...common import (
     datetime_to_string_stix, determine_spec_version, determine_version,
     float_to_datetime, generate_status, string_to_datetime
 )
-
 from ...exceptions import MongoBackendError, ProcessingError
 from ...filters.mongodb_filter import MongoDBFilter
 from .base import Backend
