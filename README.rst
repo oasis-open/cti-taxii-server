@@ -1,12 +1,11 @@
-|Build_Status| |Coverage| |Version| |Documentation_Status|
-
-medallion
-=========
+cti-taxii-server
+================
 
 This is an `OASIS TC Open Repository <https://www.oasis-open.org/resources/open-repositories/>`_.
 See the `Governance`_ section for more information.
 
-Trusted Automated Exchange of Intelligence Information (TAXII™) is an application layer protocol for the communication of cyber threat information in a simple and scalable manner.
+Trusted Automated Exchange of Intelligence Information (TAXII™) is an application layer
+protocol for the communication of cyber threat information in a simple and scalable manner.
 
 *Medallion* is a minimal implementation of a TAXII 2.1 Server in Python.
 
@@ -119,8 +118,7 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
 *Note: A Mongo DB should be available at some URL when using the Mongo DB back-end*
 
 A description of the Mongo DB structure expected by the mongo db backend code is
-described in `the documentation
-<https://medallion.readthedocs.io/en/latest/mongodb_schema.html>`_.
+described in `the documentation <https://medallion.readthedocs.io/en/latest/mongodb_schema.html>`_.
 
 As required by the TAXII specification, *medallion* supports HTTP Basic
 authorization.  However, the user names and passwords are currently stored in
@@ -183,16 +181,15 @@ Governance
 ----------
 
 This GitHub public repository (
-**https://github.com/oasis-open/cti-taxii-client** ) was created at the request
-of the `OASIS Cyber Threat Intelligence (CTI) TC
-<https://www.oasis-open.org/committees/cti/>`__ as an `OASIS TC Open Repository
-<https://www.oasis-open.org/resources/open-repositories/>`__ to support
+**https://github.com/oasis-open/cti-taxii-server** ) was created at the request
+of the `OASIS Cyber Threat Intelligence (CTI) TC <https://www.oasis-open.org/committees/cti/>`__
+as an `OASIS TC Open Repository <https://www.oasis-open.org/resources/open-repositories/>`__ to support
 development of open source resources related to Technical Committee work.
 
 While this TC Open Repository remains associated with the sponsor TC, its
 development priorities, leadership, intellectual property terms, participation
 rules, and other matters of governance are `separate and distinct
-<https://github.com/oasis-open/cti-taxii-client/blob/master/CONTRIBUTING.md#governance-distinct-from-oasis-tc-process>`__
+<https://github.com/oasis-open/cti-taxii-server/blob/master/CONTRIBUTING.md#governance-distinct-from-oasis-tc-process>`__
 from the OASIS TC Process and related policies.
 
 All contributions made to this TC Open Repository are subject to open source
@@ -202,68 +199,47 @@ That license was selected as the declared `"Applicable License"
 <https://www.oasis-open.org/resources/open-repositories/licenses>`__ when the
 TC Open Repository was created.
 
-As documented in `"Public Participation Invited
-<https://github.com/oasis-open/cti-taxii-client/blob/master/CONTRIBUTING.md#public-participation-invited>`__",
+As documented in `"Public Participation Invited <https://github.com/oasis-open/cti-taxii-server/blob/master/CONTRIBUTING.md#public-participation-invited>`__",
 contributions to this OASIS TC Open Repository are invited from all parties,
 whether affiliated with OASIS or not. Participants must have a GitHub account,
 but no fees or OASIS membership obligations are required. Participation is
-expected to be consistent with the `OASIS TC Open Repository Guidelines and
-Procedures
-<https://www.oasis-open.org/policies-guidelines/open-repositories>`__, the open
-source `LICENSE
-<https://github.com/oasis-open/cti-taxii-client/blob/master/LICENSE>`__
+expected to be consistent with the `OASIS TC Open Repository Guidelines and Procedures <https://www.oasis-open.org/policies-guidelines/open-repositories>`__, the open
+source `LICENSE <https://github.com/oasis-open/cti-taxii-server/blob/master/LICENSE>`__
 designated for this particular repository, and the requirement for an
-`Individual Contributor License Agreement
-<https://www.oasis-open.org/resources/open-repositories/cla/individual-cla>`__
+`Individual Contributor License Agreement <https://www.oasis-open.org/resources/open-repositories/cla/individual-cla>`__
 that governs intellectual property.
 
 Maintainers
 -----------
 
-TC Open Repository `Maintainers
-<https://www.oasis-open.org/resources/open-repositories/maintainers-guide>`__
+TC Open Repository `Maintainers <https://www.oasis-open.org/resources/open-repositories/maintainers-guide>`__
 are responsible for oversight of this project's community development
-activities, including evaluation of GitHub `pull requests
-<https://github.com/oasis-open/cti-taxii-client/blob/master/CONTRIBUTING.md#fork-and-pull-collaboration-model>`__
-and `preserving
-<https://www.oasis-open.org/policies-guidelines/open-repositories#repositoryManagement>`__
+activities, including evaluation of GitHub `pull requests <https://github.com/oasis-open/cti-taxii-server/blob/master/CONTRIBUTING.md#fork-and-pull-collaboration-model>`__
+and `preserving <https://www.oasis-open.org/policies-guidelines/open-repositories#repositoryManagement>`__
 open source principles of openness and fairness. Maintainers are recognized and
 trusted experts who serve to implement community goals and consensus design
 preferences.
 
 Initially, the associated TC members have designated one or more persons to
 serve as Maintainer(s); subsequently, participating community members may select
-additional or substitute Maintainers, per `consensus agreements
-<https://www.oasis-open.org/resources/open-repositories/maintainers-guide#additionalMaintainers>`__.
+additional or substitute Maintainers, per `consensus agreements <https://www.oasis-open.org/resources/open-repositories/maintainers-guide#additionalMaintainers>`__.
 
 Current Maintainers of this TC Open Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID:
-   https://github.com/clenk/; WWW: `MITRE
-   Corporation <https://www.mitre.org/>`__
--  `Rich Piazza <mailto:rpiazza@mitre.org>`__; GitHub ID:
-   https://github.com/rpiazza/; WWW: `MITRE
-   Corporation <https://www.mitre.org/>`__
--  `Emmanuelle Vargas-Gonzalez <mailto:emmanuelle@mitre.org>`__; GitHub ID:
-   https://github.com/emmanvg/; WWW: `MITRE
-   Corporation <https://www.mitre.org/>`__
--  `Jason Keirstead <mailto:Jason.Keirstead@ca.ibm.com>`__; GitHub ID:
-   https://github.com/JasonKeirstead; WWW: `IBM <http://www.ibm.com/>`__
+-  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID: https://github.com/clenk/; WWW: `MITRE Corporation <https://www.mitre.org/>`__
+-  `Rich Piazza <mailto:rpiazza@mitre.org>`__; GitHub ID: https://github.com/rpiazza/; WWW: `MITRE Corporation <https://www.mitre.org/>`__
+-  `Emmanuelle Vargas-Gonzalez <mailto:emmanuelle@mitre.org>`__; GitHub ID: https://github.com/emmanvg/; WWW: `MITRE Corporation <https://www.mitre.org/>`__
+-  `Jason Keirstead <mailto:Jason.Keirstead@ca.ibm.com>`__; GitHub ID: https://github.com/JasonKeirstead; WWW: `IBM <http://www.ibm.com/>`__
 
 About OASIS TC Open Repositories
 --------------------------------
 
--  `TC Open Repositories: Overview and
-   Resources <https://www.oasis-open.org/resources/open-repositories/>`__
--  `Frequently Asked
-   Questions <https://www.oasis-open.org/resources/open-repositories/faq>`__
--  `Open Source
-   Licenses <https://www.oasis-open.org/resources/open-repositories/licenses>`__
--  `Contributor License Agreements
-   (CLAs) <https://www.oasis-open.org/resources/open-repositories/cla>`__
--  `Maintainers' Guidelines and
-   Agreement <https://www.oasis-open.org/resources/open-repositories/maintainers-guide>`__
+-  `TC Open Repositories: Overview and Resources <https://www.oasis-open.org/resources/open-repositories/>`__
+-  `Frequently Asked Questions <https://www.oasis-open.org/resources/open-repositories/faq>`__
+-  `Open Source Licenses <https://www.oasis-open.org/resources/open-repositories/licenses>`__
+-  `Contributor License Agreements (CLAs) <https://www.oasis-open.org/resources/open-repositories/cla>`__
+-  `Maintainers' Guidelines and Agreement <https://www.oasis-open.org/resources/open-repositories/maintainers-guide>`__
 
 Feedback
 --------
