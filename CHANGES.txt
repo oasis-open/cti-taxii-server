@@ -1,3 +1,11 @@
+Version 2.0.0
+2020-03-27
+First major and stable release to support TAXII 2.1
+- Supports pagination
+- Supports all defined match filters (id, spec_version, version, type)
+- Header Validation for GET, POST requests
+- Updated tests (except view-level tests)
+
 Version 1.0.0
 2020-03-26
 First major and stable release to support TAXII 2.0
