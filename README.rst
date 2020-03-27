@@ -1,6 +1,5 @@
-|Build_Status| |Coverage| |Version|
+|Build_Status| |Coverage| |Version| |Documentation_Status|
 
-=========
 medallion
 =========
 
@@ -34,26 +33,32 @@ For more information, see `the documentation <https://medallion.readthedocs.io/>
 ReadTheDocs.
 
 Installation
-============
+------------
 
-The easiest way to install *medallion* is with pip::
+The easiest way to install *medallion* is with pip
+
+.. code-block:: bash
 
   $ pip install medallion
 
-
 Usage
-=====
+-----
 
 As a script
 -----------
 
-Medallion provides a command-line interface to start the TAXII Server::
+Medallion provides a command-line interface to start the TAXII Server
 
-    usage: medallion [-h] [--host HOST] [--port PORT] [--debug-mode]
-                  [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
-                  CONFIG_PATH
+.. code-block:: text
 
-    medallion v0.4.0
+    usage: medallion [-h]
+        [--host HOST]
+        [--port PORT]
+        [--debug-mode]
+        [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
+        CONFIG_PATH
+
+    medallion v1.0.0
 
     positional arguments:
       CONFIG_PATH           The location of the JSON configuration file to use.
@@ -70,11 +75,15 @@ Medallion provides a command-line interface to start the TAXII Server::
       --log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}
                             The logging output level for medallion.
 
-To run *medallion*::
+To run *medallion*
+
+.. code-block:: bash
 
     $ python medallion/scripts/run.py <config-file>
 
-Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example::
+Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example
+
+.. code-block:: bash
 
     $ medallion --port 80 config_file.json
 
@@ -85,25 +94,25 @@ The <config_file> contains:
 
 To use the Memory back-end plug, include the following in the <config-file>:
 
-.. code:: python
+.. code-block:: json
 
     {
         "backend": {
             "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
-            "filename": <path to json file with initial data>
+            "filename": "<path to json file with initial data>"
         }
     }
 
 To use the Mongo DB back-end plug, include the following in the <config-file>:
 
-.. code:: python
+.. code-block:: json
 
     {
          "backend": {
             "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
-            "uri": <Mongo DB server url>  # e.g., "mongodb://localhost:27017/"
+            "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
          }
     }
 
@@ -119,7 +128,7 @@ the <config_file> in plain text.
 
 Here is an example:
 
-.. code:: python
+.. code-block:: json
 
     {
         "users": {
@@ -136,7 +145,7 @@ Authorization could be enhanced by changing the method "decorated" using
 
 Configs may also contain a "taxii" section as well, as shown below:
 
-.. code:: python
+.. code-block:: json
 
     {
         "taxii": {
@@ -150,16 +159,20 @@ are missing, they will be filled with default values.
 We welcome contributions for other back-end plugins.
 
 Docker
-======
+------
 
-We also provide a Docker image to make it easier to run *medallion*::
+We also provide a Docker image to make it easier to run *medallion*
+
+.. code-block:: bash
 
     $ docker build . -t medallion
 
 If operating behind a proxy, add the following option (replacing `<proxy>` with
 your proxy location and port): ``--build-arg https_proxy=<proxy>``.
 
-Then run the image::
+Then run the image
+
+.. code-block:: bash
 
     $ docker run --rm -p 5000:5000 -v <directory>:/var/taxii medallion
 
@@ -167,7 +180,7 @@ Replace ``<directory>`` with the full path to the directory containing your
 medallion configuration.
 
 Governance
-==========
+----------
 
 This GitHub public repository (
 **https://github.com/oasis-open/cti-taxii-client** ) was created at the request
@@ -224,7 +237,7 @@ additional or substitute Maintainers, per `consensus agreements
 <https://www.oasis-open.org/resources/open-repositories/maintainers-guide#additionalMaintainers>`__.
 
 Current Maintainers of this TC Open Repository
-----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID:
    https://github.com/clenk/; WWW: `MITRE
@@ -237,7 +250,6 @@ Current Maintainers of this TC Open Repository
    Corporation <https://www.mitre.org/>`__
 -  `Jason Keirstead <mailto:Jason.Keirstead@ca.ibm.com>`__; GitHub ID:
    https://github.com/JasonKeirstead; WWW: `IBM <http://www.ibm.com/>`__
-
 
 About OASIS TC Open Repositories
 --------------------------------
@@ -269,3 +281,7 @@ any specific CLA-related questions to repository-cla@oasis-open.org.
    :target: https://codecov.io/gh/oasis-open/cti-taxii-server
 .. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/medallion/
+   :alt: Version 1.0.0
+.. |Documentation_Status| image:: https://readthedocs.org/projects/medallion/badge/?version=latest
+   :target: https://medallion.readthedocs.io/en/latest/
+   :alt: Documentation Status
