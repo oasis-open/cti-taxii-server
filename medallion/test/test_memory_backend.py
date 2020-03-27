@@ -8,7 +8,7 @@ import uuid
 from flask import current_app
 import six
 
-from medallion import common, set_config, test
+from medallion import common, test
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
