@@ -23,22 +23,22 @@ We recommend using a `virtualenv <https://virtualenv.pypa.io/en/stable/>`_.
 1. Clone the repository. If you're planning to make pull request, you should fork
 the repository on GitHub and clone your fork instead of the main repo:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    git clone https://github.com/yourusername/cti-taxii-server.git
+    $ git clone https://github.com/yourusername/cti-taxii-server.git
 
 2. Install develoment-related dependencies:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    cd cti-taxii-server
-    pip install -r requirements.txt
+    $ cd cti-taxii-server
+    $ pip install -r requirements.txt
 
 3. Install `pre-commit <http://pre-commit.com/#usage>`_ git hooks:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    pre-commit install
+    $ pre-commit install
 
 At this point you should be able to make changes to the code.
 
@@ -67,17 +67,17 @@ updated tests.
 To run the tests in your current Python environment, use the ``pytest`` command
 from the root project directory:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    pytest
+    $ pytest
 
 This should show all of the tests that ran, along with their status.
 
 You can run a specific test file by passing it on the command line:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    pytest medallion/test/test_<xxx>.py
+    $ pytest medallion/test/test_<xxx>.py
 
 To ensure that the test you wrote is running, you can deliberately add an
 ``assert False`` statement at the beginning of the test. This is another benefit
@@ -89,9 +89,9 @@ across multiple versions of Python. Setting up multiple Python environments is
 beyond the scope of this guide, but feel free to ask for help setting them up.
 Tox should be run from the root directory of the project:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    tox
+    $ tox
 
 We aim for high test coverage, using the `coverage.py
 <http://coverage.readthedocs.io/en/latest/>`_ library. Though it's not an
@@ -99,10 +99,10 @@ absolute requirement to maintain 100% coverage, all code contributions must
 be accompanied by tests. To run coverage and look for untested lines of code,
 run:
 
-.. prompt:: bash
+.. code-block:: bash
 
-    pytest --cov=medallion
-    coverage html
+    $ pytest --cov=medallion
+    $ coverage html
 
 then look at the resulting report in ``htmlcov/index.html``.
 

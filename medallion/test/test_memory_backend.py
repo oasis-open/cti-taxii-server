@@ -8,7 +8,7 @@ import uuid
 from flask import current_app
 import six
 
-from medallion import common, set_config, test
+from medallion import common, test
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
@@ -632,30 +632,23 @@ class TestTAXIIServerWithMemoryBackend(TaxiiTest):
         post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
         post_header["Accept"] = MEDIA_TYPE_TAXII_V21
 
-        with tempfile.NamedTemporaryFile(mode="w+") as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             self.client.post(
                 test.ADD_OBJECTS_EP,
                 data=json.dumps(new_bundle),
                 headers=post_header,
             )
             self.app.medallion_backend.save_data_to_file(f)
-            assert os.path.isfile(f.name)
+        assert os.path.isfile(f.name)
 
-            # seek(0) is needed to reset the file pointer so it's correctly
-            # read by the backend again
-            f.seek(0)
-
-            configuration = copy.deepcopy(self.configuration)
-            configuration["backend"]["filename"] = f.name
-
-            set_config(self.app, "backend", configuration)
-
-            r_get = self.client.get(
-                test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
-                headers=self.headers,
-            )
-            objs = self.load_json_response(r_get.data)
-            assert objs["objects"][0]["id"] == new_id
+        self.app.medallion_backend.load_data_from_file(f.name)
+        r_get = self.client.get(
+            test.GET_OBJECTS_EP + "?match[id]=%s" % new_id,
+            headers=self.headers,
+        )
+        objs = self.load_json_response(r_get.data)
+        assert objs["objects"][0]["id"] == new_id
+        os.remove(f.name)
 
     def test_get_collections_401(self):
         r = self.client.get(test.COLLECTIONS_EP)
