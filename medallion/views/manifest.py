@@ -14,14 +14,15 @@ mod = Blueprint("manifest", __name__)
 def get_object_manifest(api_root, collection_id):
     """
     Defines TAXII API - Collections:
-    Get Object Manifests section (5.3) <link here>`__
+    Get Object Manifests section (5.3) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107537>`__
 
     Args:
         api_root (str): the base URL of the API Root
         collection_id (str): the `identifier` of the Collection being requested
 
     Returns:
-        manifest: A Manifest Resource upon successful requests. Additional information here <link here>`__.
+        manifest: A Manifest Resource upon successful requests. Additional information
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107538>`__.
 
     """
     validate_version_parameter_in_accept_header()

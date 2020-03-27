@@ -90,7 +90,8 @@ def validate_limit_parameter():
 def get_or_add_objects(api_root, collection_id):
     """
     Defines TAXII API - Collections:
-    Get Objects section (5.4 <link here>`__) and Add Objects section (5.5 <link here>`__)
+        Get Objects section (`5.4 <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107539>`__)
+        and Add Objects section (`5.5 <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107540>`__)
 
     Args:
         api_root (str): the base URL of the API Root
@@ -98,8 +99,8 @@ def get_or_add_objects(api_root, collection_id):
 
     Returns:
         resource:
-            GET -> An Envelope Resource upon successful requests. Additional information here <link here>`__.
-            POST -> An Status Resource upon successful requests. Additional information here <link here>`__.
+            GET -> An Envelope Resource upon successful requests.
+            POST -> An Status Resource upon successful requests.
 
     """
     # TODO: Check if user has access to read or write objects in collection - right now just check for permissions on the collection.
@@ -141,7 +142,8 @@ def get_or_add_objects(api_root, collection_id):
 def get_or_delete_object(api_root, collection_id, object_id):
     """
     Defines TAXII API - Collections:
-    Get Object section (5.6 <link here>`__) and Delete Object section (5.7 <link here>`__)
+        Get Object section (`5.6 <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107541>`__)
+        and Delete Object section (`5.7 <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107542>`__)
 
     Args:
         api_root (str): the base URL of the API Root
@@ -150,7 +152,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
 
     Returns:
         resource:
-            GET -> An Envelope Resource upon successful requests. Additional information here <link here>`__.
+            GET -> An Envelope Resource upon successful requests.
             DELETE -> Upon successful request nothing (status code 200).
 
     """
@@ -188,7 +190,8 @@ def get_or_delete_object(api_root, collection_id, object_id):
 @auth.login_required
 def get_object_versions(api_root, collection_id, object_id):
     """
-    Defines TAXII API - Collections: Get Object Versions section (5.8) <link here>`__.
+    Defines TAXII API - Collections: Get Object Versions section
+    `(5.8) <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107543>`__.
 
     Args:
         api_root (str): the base URL of the API Root
@@ -196,7 +199,8 @@ def get_object_versions(api_root, collection_id, object_id):
         object_id (str): the `identifier` of the object being requested
 
     Returns:
-        versions: A Versions Resource upon successful requests. Additional information here <link here>`__.
+        versions: A Versions Resource upon successful requests. Additional information
+            `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107544>`__.
 
     """
     # TODO: Check if user has access to read objects in collection - right now just check for permissions on the collection.

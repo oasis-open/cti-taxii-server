@@ -18,10 +18,11 @@ def api_root_exists(api_root):
 def get_server_discovery():
     """
     Defines TAXII API - Server Information:
-    Server Discovery section (4.1) <link here>`__
+    Server Discovery section (4.1) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107526>`__
 
     Returns:
-        discovery: A Discovery Resource upon successful requests. Additional information here <link here>`__.
+        discovery: A Discovery Resource upon successful requests. Additional information
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107527>`__.
 
     """
     # Having access to the discovery method is only related to having
@@ -44,13 +45,14 @@ def get_server_discovery():
 def get_api_root_information(api_root):
     """
     Defines TAXII API - Server Information:
-    Get API Root Information section (4.2) <link here>`__
+    Get API Root Information section (4.2) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107528>`__
 
     Args:
         api_root (str): the base URL of the API Root
 
     Returns:
-        api-root: An API Root Resource upon successful requests. Additional information here <link here>`__.
+        api-root: An API Root Resource upon successful requests. Additional information
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107529>`__.
 
     """
     # TODO: Check if user has access to objects in collection.
@@ -69,14 +71,15 @@ def get_api_root_information(api_root):
 def get_status(api_root, status_id):
     """
     Defines TAXII API - Server Information:
-    Get Status section (4.3) <link here>`__
+    Get Status section (4.3) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107530>`__
 
     Args:
         api_root (str): the base URL of the API Root
         status_id (str): the `identifier` of the Status message being requested
 
     Returns:
-        status: A Status Resource upon successful requests. Additional information here <link here>`__.
+        status: A Status Resource upon successful requests. Additional information
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107531>`__.
 
     """
     # TODO: Check if user has access to the Status resource.

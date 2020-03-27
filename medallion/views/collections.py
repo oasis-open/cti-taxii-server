@@ -14,13 +14,14 @@ mod = Blueprint("collections", __name__)
 def get_collections(api_root):
     """
     Defines TAXII API - Collections:
-    Get Collection section (5.2) <link here>`__
+    Get Collection section (5.1) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107533>`__
 
     Args:
         api_root (str): the base URL of the API Root
 
     Returns:
-        collections: A Collections Resource upon successful requests. Additional information here <link here>`__.
+        collections: A Collections Resource upon successful requests. Additional information
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107534>`__.
 
     """
     # TODO: Check if user has access to the each collection's metadata - unrelated to can_read, can_write attributes
@@ -42,14 +43,15 @@ def get_collections(api_root):
 def get_collection(api_root, collection_id):
     """
     Defines TAXII API - Collections:
-    Get Collection section (5.2) <link here>`__
+    Get Collection section (5.2) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107535>`__
 
     Args:
         api_root (str): the base URL of the API Root
         collection_id (str): the `identifier` of the Collection being requested
 
     Returns:
-        collection: A Collection Resource upon successful requests. Additional information here <link here>`__.
+        collection: A Collection Resource upon successful requests. Additional information
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107536>`__.
 
     """
     # TODO: Check if user has access to the collection's metadata - unrelated to can_read, can_write attributes
