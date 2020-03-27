@@ -204,14 +204,7 @@ class BasicFilter(object):
         return match_objects
 
     def process_filter(self, data, allowed, manifest_info, limit):
-        filtered_by_type = []
-        filtered_by_id = []
         filtered_by_spec_version = []
-        filtered_by_added_after = []
-        filtered_by_version = []
-        final_match = []
-        save_next = []
-        headers = {}
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
