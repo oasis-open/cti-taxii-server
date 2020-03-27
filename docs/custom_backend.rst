@@ -13,19 +13,19 @@ How to load your custom Backend
 
 New changes made to the library makes it easy to dynamically load a new backend into your medallion server. You only need to provide the module path and the class you wish to instantiate for the medallion server. Any other key value pairs found under the ``backend`` value can be used to pass arguments to your custom backend. For example,
 
-.. code:: json
+.. code-block:: json
 
     {
         "backend": {
             "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
             "filename": "../test/data/default_data.json"
-        },
+        }
     }
 
 Another way to provide a custom backend using flask proxy could be,
 
-.. code:: python
+.. code-block:: python
 
     import MyCustomBackend
     from flask import current_app
@@ -37,17 +37,15 @@ Another way to provide a custom backend using flask proxy could be,
         current_app.medallion_backend = MyCustomBackend
 
     #  Do some other stuff...
-
     set_config(application_instance, {...})
     application_instance.run()
-
 
 How to use a different authentication library
 ---------------------------------------------
 
 If you need or prefer a library different from ``Flask-HTTPAuth``, you can override it by modifying the ``auth`` global to your preference. Now, if you want to keep changes at a minimum throughout the library. You can wrap the behavior inside another class, but remember all changes need to be performed before the call to ``run()``. For example,
 
-.. code:: python
+.. code-block:: python
 
     from flask import current_app
     from medallion import application_instance, auth, set_config, init_backend
@@ -71,13 +69,12 @@ If you need or prefer a library different from ``Flask-HTTPAuth``, you can overr
     init_backend(application_instance, {...})
     application_instance.run()
 
-
 How to use a different backend to control users
 -----------------------------------------------
 
 Our implementation of a users authentication system is not suitable for a production environment. Thus requiring to write custom code to handle credential authentication, sessions, etc. Most likely you will require the changes described in the section above on `How to use a different authentication library`_, plus changing the ``users_backend``.
 
-.. code:: python
+.. code-block:: python
 
     import MyCustomDBforUsers
     from flask import current_app
