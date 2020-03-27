@@ -8,8 +8,9 @@ import uuid
 import pytest
 import six
 
-from medallion import (application_instance, register_blueprints, set_config,
-                       test)
+from medallion import (
+    application_instance, register_blueprints, set_config, test
+)
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 if sys.version_info < (3, 3, 0):

@@ -5,10 +5,11 @@ import uuid
 
 from six import string_types
 
-from ..common import (SessionChecker, create_resource, datetime_to_float,
-                      datetime_to_string, determine_spec_version,
-                      determine_version, find_att, generate_status,
-                      generate_status_details, get_timestamp, iterpath)
+from ..common import (
+    SessionChecker, create_resource, datetime_to_float, datetime_to_string,
+    determine_spec_version, determine_version, find_att, generate_status,
+    generate_status_details, get_timestamp, iterpath
+)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from .base import Backend
