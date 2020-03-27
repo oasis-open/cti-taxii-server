@@ -6,10 +6,10 @@ from .discovery import api_root_exists
 from .objects import (collection_exists, permission_to_read,
                       validate_limit_parameter)
 
-mod = Blueprint("manifest", __name__)
+manifest_bp = Blueprint("manifest", __name__)
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/manifest/", methods=["GET"])
+@manifest_bp.route("/<string:api_root>/collections/<string:collection_id>/manifest/", methods=["GET"])
 @auth.login_required
 def get_object_manifest(api_root, collection_id):
     """

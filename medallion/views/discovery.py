@@ -4,7 +4,7 @@ from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
 from ..exceptions import ProcessingError
 
-mod = Blueprint("discovery", __name__)
+discovery_bp = Blueprint("discovery", __name__)
 
 
 def api_root_exists(api_root):
@@ -13,7 +13,7 @@ def api_root_exists(api_root):
         raise ProcessingError("API root '{}' information not found".format(api_root), 404)
 
 
-@mod.route("/taxii2/", methods=["GET"])
+@discovery_bp.route("/taxii2/", methods=["GET"])
 @auth.login_required
 def get_server_discovery():
     """
@@ -40,7 +40,7 @@ def get_server_discovery():
     raise ProcessingError("Server discovery information not available", 404)
 
 
-@mod.route("/<string:api_root>/", methods=["GET"])
+@discovery_bp.route("/<string:api_root>/", methods=["GET"])
 @auth.login_required
 def get_api_root_information(api_root):
     """
@@ -66,7 +66,7 @@ def get_api_root_information(api_root):
     )
 
 
-@mod.route("/<string:api_root>/status/<string:status_id>/", methods=["GET"])
+@discovery_bp.route("/<string:api_root>/status/<string:status_id>/", methods=["GET"])
 @auth.login_required
 def get_status(api_root, status_id):
     """

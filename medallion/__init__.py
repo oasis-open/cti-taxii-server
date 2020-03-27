@@ -87,10 +87,10 @@ def register_blueprints(flask_application_instance):
 
     with flask_application_instance.app_context():
         log.debug("Registering medallion blueprints into {}".format(current_app))
-        current_app.register_blueprint(collections.mod)
-        current_app.register_blueprint(discovery.mod)
-        current_app.register_blueprint(manifest.mod)
-        current_app.register_blueprint(objects.mod)
+        current_app.register_blueprint(collections.collections_bp)
+        current_app.register_blueprint(discovery.discovery_bp)
+        current_app.register_blueprint(manifest.manifest_bp)
+        current_app.register_blueprint(objects.objects_bp)
 
 
 @auth.get_password

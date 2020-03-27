@@ -9,7 +9,7 @@ from ..common import get_timestamp
 from ..exceptions import ProcessingError
 from .discovery import api_root_exists
 
-mod = Blueprint("objects", __name__)
+objects_bp = Blueprint("objects", __name__)
 
 # Module-level logger
 log = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def validate_size_in_request_body(api_root):
     except ValueError:
         raise ProcessingError("The server did not understand the request or headers", 400)
     if content_length > max_length or content_length <= 0:
-        raise ProcessingError("Content-Type header not valid or exceeds maximum!", 413)
+        raise ProcessingError("Content-Length header not valid or exceeds maximum!", 413)
 
 
 def validate_version_parameter_in_content_type_header():
@@ -58,7 +58,7 @@ def validate_version_parameter_in_content_type_header():
     found = False
 
     for item in content_type:
-        result = re.match(r"^application\/taxii\+json(;version=(\d\.\d))?$", item)
+        result = re.match(r"^application/taxii\+json(;version=(\d\.\d))?$", item)
         if result:
             if len(result.groups()) >= 2:
                 version_str = result.group(2)
@@ -85,7 +85,7 @@ def validate_limit_parameter():
     return limit
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
+@objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
 @auth.login_required
 def get_or_add_objects(api_root, collection_id):
     """
@@ -137,7 +137,7 @@ def get_or_add_objects(api_root, collection_id):
         )
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET", "DELETE"])
+@objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET", "DELETE"])
 @auth.login_required
 def get_or_delete_object(api_root, collection_id, object_id):
     """
@@ -186,7 +186,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
         )
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/versions/", methods=["GET"])
+@objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/versions/", methods=["GET"])
 @auth.login_required
 def get_object_versions(api_root, collection_id, object_id):
     """

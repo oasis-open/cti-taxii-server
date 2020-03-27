@@ -2,14 +2,13 @@ from flask import Blueprint, Response, current_app, json
 
 from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
-from ..exceptions import ProcessingError
 from .discovery import api_root_exists
 from .objects import collection_exists
 
-mod = Blueprint("collections", __name__)
+collections_bp = Blueprint("collections", __name__)
 
 
-@mod.route("/<string:api_root>/collections/", methods=["GET"])
+@collections_bp.route("/<string:api_root>/collections/", methods=["GET"])
 @auth.login_required
 def get_collections(api_root):
     """
@@ -29,16 +28,14 @@ def get_collections(api_root):
     validate_version_parameter_in_accept_header()
     api_root_exists(api_root)
     collections = current_app.medallion_backend.get_collections(api_root)
-    if collections:
-        return Response(
-            response=json.dumps(collections),
-            status=200,
-            mimetype=MEDIA_TYPE_TAXII_V21,
-        )
-    raise ProcessingError("No collections found", 404)
+    return Response(
+        response=json.dumps(collections),
+        status=200,
+        mimetype=MEDIA_TYPE_TAXII_V21,
+    )
 
 
-@mod.route("/<string:api_root>/collections/<string:collection_id>/", methods=["GET"])
+@collections_bp.route("/<string:api_root>/collections/<string:collection_id>/", methods=["GET"])
 @auth.login_required
 def get_collection(api_root, collection_id):
     """
