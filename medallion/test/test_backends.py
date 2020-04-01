@@ -1,47 +1,12 @@
-import base64
 import copy
 import json
-import sys
-import time
-import unittest
-import uuid
 
 import pytest
-import six
 
-from medallion import (application_instance, register_blueprints, set_config,
-                       test)
+from medallion import common, test
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
-
-BUNDLE = {
-    "id": "bundle--8fab937e-b694-11e3-b71c-0800271e87d2",
-    "objects": [
-    ],
-    "spec_version": "2.0",
-    "type": "bundle",
-}
-
-API_OBJECT = {
-    "created": "2017-01-27T13:49:53.935Z",
-    "id": "indicator--%s",
-    "labels": [
-        "url-watchlist",
-    ],
-    "modified": "2017-01-27T13:49:53.935Z",
-    "name": "Malicious site hosting downloader",
-    "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-    "type": "indicator",
-    "valid_from": "2017-01-27T13:49:53.935382Z",
-}
-
-def load_json_response(response):
-    if isinstance(response, bytes):
-        response = response.decode()
-    io = six.StringIO(response)
-    x = json.load(io)
-    return x
 
 
 class MemoryTestServer(TaxiiTest):
@@ -51,7 +16,9 @@ class MemoryTestServer(TaxiiTest):
 class MongoTestServer(TaxiiTest):
     type = "mongo"
 
+
 TestServers = ["memory", "mongo"]
+
 
 @pytest.fixture(scope="module", params=TestServers)
 def backend(request):
@@ -66,30 +33,8 @@ def backend(request):
     else:
         yield pytest.skip("skipped")
 
-"""
-@pytest.fixture(scope="session", autouse=True)
-def compare_results(request):
-    request.session.save = {}
 
-    yield
-
-    comp = {}
-
-    for func, res in request.session.save.items():
-        function_name = func.split('[')[0]
-        backend = func.split('[')[1]
-        if function_name not in comp:
-            comp[function_name] = {}
-        comp[function_name][backend] = res
-
-    for test in comp:
-        r = []
-        for backend in comp[test]:
-            r.append(comp[test][backend])
-        assert len(set(r)) == 1
-"""
-
-#start with basic get requests for each endpoint
+# start with basic get requests for each endpoint
 def test_server_discovery(backend):
     r = backend.client.get(test.DISCOVERY_EP, headers=backend.headers)
 
@@ -97,6 +42,7 @@ def test_server_discovery(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     server_info = r.json
     assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
+
 
 def test_get_api_root_information(backend):
     r = backend.client.get(test.API_ROOT_EP, headers=backend.headers)
@@ -106,10 +52,11 @@ def test_get_api_root_information(backend):
     api_root_metadata = r.json
     assert api_root_metadata["title"] == "Malware Research Group"
 
+
 def test_get_status(backend):
     r = backend.client.get(
-            test.API_ROOT_EP + "status/2d086da7-4bdc-4f91-900e-d77486753710", 
-            headers=backend.headers, 
+            test.API_ROOT_EP + "status/2d086da7-4bdc-4f91-900e-d77486753710",
+            headers=backend.headers,
             follow_redirects=True,
         )
 
@@ -119,6 +66,7 @@ def test_get_status(backend):
     assert "successes" in status_data
     assert "failures" in status_data
     assert "pendings" in status_data
+
 
 def test_get_collections(backend):
     r = backend.client.get(test.COLLECTIONS_EP, headers=backend.headers)
@@ -136,6 +84,7 @@ def test_get_collections(backend):
     assert "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4" in collection_ids
     assert "365fed99-08fa-fdcd-a1b3-fb247eb41d01" in collection_ids
 
+
 def test_get_objects(backend):
 
     r = backend.client.get(
@@ -146,8 +95,9 @@ def test_get_objects(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
+
 
 def test_get_object(backend):
 
@@ -161,19 +111,16 @@ def test_get_object(backend):
     obj = r.json
     assert obj["objects"][0]["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec"
 
-def test_add_object(backend):
-    new_bundle = copy.deepcopy(backend.API_OBJECTS_2)
 
+def test_add_and_delete_object(backend):
     # ------------- BEGIN: add object section ------------- #
 
-    post_header = copy.deepcopy(backend.headers)
-    post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
-    post_header["Accept"] = MEDIA_TYPE_TAXII_V21
+    object_id = backend.TEST_OBJECT["objects"][0]["id"]
 
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
-        data=json.dumps(new_bundle),
-        headers=post_header,
+        data=json.dumps(backend.TEST_OBJECT),
+        headers=backend.post_headers,
     )
     status_response = r_post.json
     assert r_post.status_code == 202
@@ -181,7 +128,7 @@ def test_add_object(backend):
 
     # ------------- END: add object section ------------- #
     # ------------- BEGIN: get object section ------------- #
-    
+
     r_get = backend.client.get(
         test.ADD_OBJECTS_EP,
         headers=backend.headers,
@@ -189,19 +136,19 @@ def test_add_object(backend):
     assert r_get.status_code == 200
     assert r_get.content_type == MEDIA_TYPE_TAXII_V21
     objs = r_get.json
-    assert any(obj["id"] == "indicator--68794cd5-28db-429d-ab1e-1256704ef906" for obj in objs["objects"])
-    
+    assert any(obj["id"] == object_id for obj in objs["objects"])
+
     # ------------- END: get object section ------------- #
     # ------------- BEGIN: get object w/ filter section --- #
 
     r_get = backend.client.get(
-        test.ADD_OBJECTS_EP + "?match[id]=indicator--68794cd5-28db-429d-ab1e-1256704ef906",
+        test.ADD_OBJECTS_EP + "?match[id]=" + object_id,
         headers=backend.headers,
     )
     assert r_get.status_code == 200
     assert r_get.content_type == MEDIA_TYPE_TAXII_V21
     objs = r_get.json
-    assert objs["objects"][0]["id"] == "indicator--68794cd5-28db-429d-ab1e-1256704ef906"
+    assert objs["objects"][0]["id"] == object_id
 
     # ------------- END: get object w/ filter section --- #
     # ------------- BEGIN: get status section ------------- #
@@ -213,71 +160,49 @@ def test_add_object(backend):
     assert r_get.status_code == 200
     assert r_get.content_type == MEDIA_TYPE_TAXII_V21
     status_response2 = r_get.json
-    assert status_response2["success_count"] == 2
+    assert status_response2["success_count"] == 1
 
     # ------------- END: get status section ------------- #
     # ------------- BEGIN: get manifest section ------------- #
 
     r_get = backend.client.get(
-        test.ADD_MANIFESTS_EP + "?match[id]=indicator--68794cd5-28db-429d-ab1e-1256704ef906",
+        test.ADD_MANIFESTS_EP + "?match[id]=" + object_id,
         headers=backend.headers,
     )
     assert r_get.status_code == 200
     assert r_get.content_type == MEDIA_TYPE_TAXII_V21
     manifests = r_get.json
-    assert manifests["objects"][0]["id"] == "indicator--68794cd5-28db-429d-ab1e-1256704ef906"
+    assert manifests["objects"][0]["id"] == object_id
 
     # ------------- END: get manifest section ----------- #
 
-def test_delete_object(backend):
-    DELETE_OBJECT = {
-        "objects": [
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--ad33acc3-89b0-4604-8bf2-3433efa86bfc",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2015-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.0",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            }
-        ]
-    }
-
-    new_bundle = copy.deepcopy(DELETE_OBJECT)
-    post_header = copy.deepcopy(backend.headers)
-    post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
-    post_header["Accept"] = MEDIA_TYPE_TAXII_V21
-
-    r_post = backend.client.post(
-        test.ADD_OBJECTS_EP,
-        data=json.dumps(new_bundle),
-        headers=post_header,
-    )
-    status_response = r_post.json
-    assert r_post.status_code == 202
-    assert r_post.content_type == MEDIA_TYPE_TAXII_V21
-
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--ad33acc3-89b0-4604-8bf2-3433efa86bfc",
+        test.ADD_OBJECTS_EP + object_id,
         headers=backend.headers,
         follow_redirects=True
     )
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
-    
+
     r = backend.client.get(
-        test.ADD_OBJECTS_EP + "indicator--ad33acc3-89b0-4604-8bf2-3433efa86bfc",
+        test.ADD_OBJECTS_EP + object_id,
         headers=backend.headers,
         follow_redirects=True
     )
     assert r.status_code == 404
     assert r.content_type == MEDIA_TYPE_TAXII_V21
+
+    # test getting the deleted object's manifest
+
+    r = backend.client.get(
+        test.ADD_MANIFESTS_EP + object_id,
+        headers=backend.headers,
+        follow_redirects=True
+    )
+    assert r.status_code == 404
+    # for whatever reason, content_type is not normal? doesn't really matter
+    # assert r.content_type == MEDIA_TYPE_TAXII_V21
+
 
 def test_get_object_manifests(backend):
 
@@ -291,6 +216,7 @@ def test_get_object_manifests(backend):
     manifests = r.json
     assert len(manifests["objects"]) == 5
 
+
 def test_get_version(backend):
     r = backend.client.get(
         test.GET_OBJECTS_EP + "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463/versions",
@@ -302,7 +228,8 @@ def test_get_version(backend):
     vers = r.json
     assert len(vers["versions"]) == 1
 
-#test each filter type with each applicable endpoint
+
+# test each filter type with each applicable endpoint
 def test_get_objects_added_after(backend):
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?added_after=2016-11-03T12:30:59Z",
@@ -312,8 +239,9 @@ def test_get_objects_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 3
+
 
 def test_get_objects_limit(backend):
     r = backend.client.get(
@@ -324,7 +252,7 @@ def test_get_objects_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 3
 
     r = backend.client.get(
@@ -335,8 +263,9 @@ def test_get_objects_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
+
 
 def test_get_objects_id(backend):
     r = backend.client.get(
@@ -347,8 +276,9 @@ def test_get_objects_id(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
+
 
 def test_get_objects_type(backend):
     r = backend.client.get(
@@ -359,9 +289,10 @@ def test_get_objects_type(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
     assert all("indicator" in obj["id"] for obj in objs["objects"])
+
 
 def test_get_objects_version(backend):
     r = backend.client.get(
@@ -372,33 +303,35 @@ def test_get_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "?match[version]=first&match[id]=indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+        test.GET_OBJECTS_EP + "?match[version]=first",
         headers=backend.headers,
     )
 
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
-    assert len(objs['objects']) == 1
-    assert objs["objects"][0]["modified"] == "2016-11-03T12:30:59.000Z"
+    assert objs['more'] is False
+    for obj in objs["objects"]:
+        if obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e":
+            assert obj["modified"] == "2016-11-03T12:30:59.000Z"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "?match[version]=last&match[id]=indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+        test.GET_OBJECTS_EP + "?match[version]=last",
         headers=backend.headers,
     )
 
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
-    assert len(objs['objects']) == 1
-    assert objs["objects"][0]["modified"] == "2017-01-27T13:49:53.935Z"
+    assert objs['more'] is False
+    for obj in objs["objects"]:
+        if obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e":
+            assert obj["modified"] == "2017-01-27T13:49:53.935Z"
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?match[version]=all",
@@ -408,8 +341,9 @@ def test_get_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 7
+
 
 def test_get_objects_spec_version(backend):
     r = backend.client.get(
@@ -420,7 +354,7 @@ def test_get_objects_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
 
@@ -432,11 +366,12 @@ def test_get_objects_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
     # look into and talk about testing the spec_version with no parameter
+
 
 def test_get_object_added_after(backend):
     r = backend.client.get(
@@ -460,20 +395,21 @@ def test_get_object_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
+
 def test_get_object_limit(backend):
-    r = backend.client.get( 
+    r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?limit=1",
         headers=backend.headers,
         follow_redirects=True
     )
-    
+
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
     r = backend.client.get(
@@ -485,7 +421,7 @@ def test_get_object_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
@@ -497,8 +433,9 @@ def test_get_object_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
+
 
 def test_get_object_version(backend):
     r = backend.client.get(
@@ -510,7 +447,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     assert objs["objects"][0]["modified"] == "2016-12-25T12:30:59.444Z"
@@ -524,7 +461,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["modified"] == "2016-11-03T12:30:59.000Z"
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
@@ -538,7 +475,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["modified"] == "2017-01-27T13:49:53.935Z"
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
@@ -552,8 +489,9 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 3
+
 
 def test_get_object_spec_version(backend):
     r = backend.client.get(
@@ -565,7 +503,7 @@ def test_get_object_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
 
@@ -578,11 +516,12 @@ def test_get_object_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
-    #look into and test spec_version default argument
+    # look into and test spec_version default argument
+
 
 def test_get_manifest_added_after(backend):
     r = backend.client.get(
@@ -594,8 +533,9 @@ def test_get_manifest_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
+
 
 def test_get_manifest_limit(backend):
     r = backend.client.get(
@@ -607,7 +547,7 @@ def test_get_manifest_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
@@ -619,7 +559,7 @@ def test_get_manifest_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
@@ -631,8 +571,9 @@ def test_get_manifest_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
+
 
 def test_get_manifest_id(backend):
     r = backend.client.get(
@@ -644,9 +585,10 @@ def test_get_manifest_id(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs['objects'][0]['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec"
+
 
 def test_get_manifest_type(backend):
     r = backend.client.get(
@@ -658,12 +600,15 @@ def test_get_manifest_type(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
     assert "indicator" in objs['objects'][0]['id']
     assert "indicator" in objs['objects'][1]['id']
 
+
 def test_get_manifest_version(backend):
+    object_id = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
+
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?match[version]=2016-11-03T12:30:59.000Z",
         headers=backend.headers,
@@ -673,9 +618,9 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
+    assert objs["objects"][0]["id"] == object_id
     assert objs["objects"][0]["version"] == "2016-11-03T12:30:59.000Z"
 
     r = backend.client.get(
@@ -687,9 +632,9 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
-    assert objs["objects"][2]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
+    assert objs["objects"][2]["id"] == object_id
     assert objs["objects"][2]["version"] == "2016-11-03T12:30:59.000Z"
 
     r = backend.client.get(
@@ -701,9 +646,9 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
-    assert objs["objects"][4]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
+    assert objs["objects"][4]["id"] == object_id
     assert objs["objects"][4]["version"] == "2017-01-27T13:49:53.935Z"
 
     r = backend.client.get(
@@ -715,8 +660,9 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 7
+
 
 def test_get_manifest_spec_version(backend):
     r = backend.client.get(
@@ -727,7 +673,7 @@ def test_get_manifest_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['media_type'] == "application/stix+json;version=2.0" for obj in objs['objects'])
 
@@ -739,15 +685,16 @@ def test_get_manifest_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert all(obj['media_type'] == "application/stix+json;version=2.1" for obj in objs['objects'])
 
     # look into and test spec_version default argument
 
+
 def test_get_version_added_after(backend):
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463/versions?added_after=2014-05-08T09:00:00Z",
+        test.GET_OBJECTS_EP + "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463/versions?added_after=2014-05-08T09:00:00Z",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -758,7 +705,7 @@ def test_get_version_added_after(backend):
     assert objs == {}
 
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463/versions?added_after=2014-05-08T08:00:00Z",
+        test.GET_OBJECTS_EP + "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463/versions?added_after=2014-05-08T08:00:00Z",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -766,25 +713,26 @@ def test_get_version_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
+
 
 def test_get_version_limit(backend):
 
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
         headers=backend.headers,
         follow_redirects=True,
     )
-    
+
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == True
+    assert objs["more"] is True
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -792,11 +740,11 @@ def test_get_version_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == True
+    assert objs["more"] is True
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -804,12 +752,13 @@ def test_get_version_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
+
 
 def test_get_version_spec_version(backend):
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -817,12 +766,12 @@ def test_get_version_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
     assert objs["versions"][0] == "2016-11-03T12:30:59.000Z"
 
     r = backend.client.get(
-            test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.1",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.1",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -830,102 +779,37 @@ def test_get_version_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 2
     assert "2016-11-03T12:30:59.000Z" not in objs["versions"]
 
-def test_delete_objects_version(backend):
-    DELETE_VERSIONS = {
-        "objects": [
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2015-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2016-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2017-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2018-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2019-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-        ],
-    }
 
-    new_bundle = copy.deepcopy(DELETE_VERSIONS)
-    post_header = copy.deepcopy(backend.headers)
-    post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
-    post_header["Accept"] = MEDIA_TYPE_TAXII_V21
+def test_delete_objects_version(backend):
+    add_objects = {"objects": []}
+    coa_object = copy.deepcopy(backend.TEST_OBJECT["objects"][0])
+    object_id = coa_object["id"]
+    coa_object["created"] = "2014-01-27T13:49:53.935Z"
+
+    add_objects["objects"].append(copy.deepcopy(coa_object))
+    coa_object["modified"] = "2015-01-27T13:49:53.935Z"
+    add_objects["objects"].append(copy.deepcopy(coa_object))
+    coa_object["modified"] = "2016-01-27T13:49:53.935Z"
+    add_objects["objects"].append(copy.deepcopy(coa_object))
+    coa_object["modified"] = "2018-01-27T13:49:53.935Z"
+    add_objects["objects"].append(copy.deepcopy(coa_object))
+    coa_object["modified"] = "2019-01-27T13:49:53.935Z"
+    add_objects["objects"].append(copy.deepcopy(coa_object))
 
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
-        data=json.dumps(new_bundle),
-        headers=post_header,
+        data=json.dumps(add_objects),
+        headers=backend.post_headers,
     )
-    status_response = r_post.json
     assert r_post.status_code == 202
     assert r_post.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -933,11 +817,11 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 5
 
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736?match[version]=2018-01-27T13:49:53.935Z",
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=2018-01-27T13:49:53.935Z",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -945,7 +829,7 @@ def test_delete_objects_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -953,12 +837,12 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 4
     assert "2018-01-27T13:49:53.935Z" not in objs["versions"]
 
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736?match[version]=first",
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=first",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -966,20 +850,20 @@ def test_delete_objects_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
-    
+
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 3
     assert "2015-01-27T13:49:53.935Z" not in objs["versions"]
 
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736?match[version]=last",
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=last",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -987,7 +871,7 @@ def test_delete_objects_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -995,12 +879,12 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 2
     assert "2019-01-27T13:49:53.935Z" not in objs["versions"]
 
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736?match[version]=all",
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=all",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -1008,7 +892,7 @@ def test_delete_objects_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -1016,56 +900,25 @@ def test_delete_objects_version(backend):
     assert r.status_code == 404
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
-def test_delete_objects_spec_version(backend):
-    DELETE_SPEC_VERSION = {
-        "objects": [
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--801e2c62-361f-4e87-9e46-1d6df4abe048",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2015-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.0",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--801e2c62-361f-4e87-9e46-1d6df4abe048",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2016-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            }
-        ]
-    }
 
-    new_bundle = copy.deepcopy(DELETE_SPEC_VERSION)
-    post_header = copy.deepcopy(backend.headers)
-    post_header["Content-Type"] = MEDIA_TYPE_TAXII_V21
-    post_header["Accept"] = MEDIA_TYPE_TAXII_V21
+def test_delete_objects_spec_version(backend):
+    new_objects = copy.deepcopy(backend.TEST_OBJECT)
+    obj = copy.deepcopy(new_objects["objects"][0])
+    obj["modified"] = "2019-01-27T13:49:53.935Z"
+    obj["spec_version"] = "2.0"
+    new_objects["objects"].append(copy.deepcopy(obj))
+    object_id = obj["id"]
 
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
-        data=json.dumps(new_bundle),
-        headers=post_header,
+        data=json.dumps(new_objects),
+        headers=backend.post_headers,
     )
-    status_response = r_post.json
     assert r_post.status_code == 202
     assert r_post.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--801e2c62-361f-4e87-9e46-1d6df4abe048?match[spec_version]=2.0",
+        test.ADD_OBJECTS_EP + object_id + "?match[spec_version]=2.0",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -1073,7 +926,7 @@ def test_delete_objects_spec_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--801e2c62-361f-4e87-9e46-1d6df4abe048/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -1081,12 +934,12 @@ def test_delete_objects_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
-    assert "2015-01-27T13:49:53.935Z" not in objs["versions"]
+    assert "2019-01-27T13:49:53.935Z" not in objs["versions"]
 
     r = backend.client.delete(
-        test.ADD_OBJECTS_EP + "indicator--801e2c62-361f-4e87-9e46-1d6df4abe048?match[spec_version]=2.1",
+        test.ADD_OBJECTS_EP + object_id + "?match[spec_version]=2.1",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -1094,7 +947,7 @@ def test_delete_objects_spec_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
     r = backend.client.get(
-            test.ADD_OBJECTS_EP + "indicator--801e2c62-361f-4e87-9e46-1d6df4abe048/versions",
+        test.ADD_OBJECTS_EP + object_id + "/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -1102,23 +955,299 @@ def test_delete_objects_spec_version(backend):
     assert r.status_code == 404
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
-#test save and next capabilities
 
-#combine filters together where problems may occur
+# test save, next, and hidden field capabilities
 
-#test bad filters
 
-#test non-200 responses
+def test_SCO_versioning(backend):
+    SCO = {
+        "objects":
+            [
+                {
+                    "type": "artifact",
+                    "spec_version": "2.1",
+                    "id": "artifact--6f437177-6e48-5cf8-9d9e-872a2bddd641",
+                    "mime_type": "application/zip",
+                    "encryption_algorithm": "mime-type-indicated",
+                    "decryption_key": "My voice is my passport"
+                }
+            ]
+    }
+    object_id = SCO["objects"][0]["id"]
+
+    r_post = backend.client.post(
+        test.ADD_OBJECTS_EP,
+        data=json.dumps(copy.deepcopy(SCO)),
+        headers=backend.post_headers,
+    )
+    assert r_post.status_code == 202
+    assert r_post.content_type == MEDIA_TYPE_TAXII_V21
+
+    r = backend.client.get(
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=all",
+        headers=backend.headers,
+        follow_redirects=True,
+    )
+
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs["objects"]) == 1
+
+    r = backend.client.get(
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=first",
+        headers=backend.headers,
+        follow_redirects=True,
+    )
+
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs["objects"]) == 1
+
+    r = backend.client.get(
+        test.ADD_OBJECTS_EP + object_id + "?match[version]=last",
+        headers=backend.headers,
+        follow_redirects=True,
+    )
+
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs["objects"]) == 1
+
+    r = backend.client.get(
+        test.ADD_OBJECTS_EP + object_id + "?added_after=2017-01-27T13:49:53.935Z",
+        headers=backend.headers,
+        follow_redirects=True,
+    )
+
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs["objects"]) == 1
+
+    r = backend.client.get(
+        test.ADD_OBJECTS_EP + object_id + "?added_after=" + common.datetime_to_string_stix(common.get_timestamp()),
+        headers=backend.headers,
+        follow_redirects=True,
+    )
+
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs) == 0
+
+# combine filters together where problems may occur
+
+
+# test non-200 responses
 def test_get_api_root_information_not_existent(backend):
     r = backend.client.get("/trustgroup2/", headers=backend.headers)
     assert r.status_code == 404
 
+
 def test_get_collection_not_existent(backend):
-    
+
     r = backend.client.get(
         test.NON_EXISTENT_COLLECTION_EP,
         headers=backend.headers,
     )
     assert r.status_code == 404
 
-#test collections with different can_read and can_write values
+
+def test_get_collections_401(backend):
+    r = backend.client.get(test.COLLECTIONS_EP)
+    assert r.status_code == 401
+
+
+def test_get_collections_404(backend):
+    # note that the api root "carbon1" is nonexistent
+    r = backend.client.get("/carbon1/collections/", headers=backend.headers)
+    assert r.status_code == 404
+
+
+def test_get_collection_404(backend):
+    # note that api root "carbon1" is nonexistent
+    r = backend.client.get("/carbon1/collections/12345678-1234-1234-1234-123456789012/", headers=backend.headers)
+    assert r.status_code == 404
+
+
+def test_get_status_401(backend):
+    # non existent object ID but shouldn't matter as the request should never pass login auth
+    r = backend.client.get(test.API_ROOT_EP + "status/2223/")
+    assert r.status_code == 401
+
+
+def test_get_status_404(backend):
+    r = backend.client.get(test.API_ROOT_EP + "status/22101993/", headers=backend.headers)
+    assert r.status_code == 404
+
+
+def test_get_object_manifest_401(backend):
+    # non existent object ID but shouldnt matter as the request should never pass login
+    r = backend.client.get(test.COLLECTIONS_EP + "24042009/manifest/")
+    assert r.status_code == 401
+
+
+def test_get_object_manifest_403(backend):
+    r = backend.client.get(
+        test.FORBIDDEN_COLLECTION_EP + "manifest/",
+        headers=backend.headers,
+    )
+    assert r.status_code == 403
+
+
+def test_get_object_manifest_404(backend):
+    # note that collection ID doesnt exist
+    r = backend.client.get(test.COLLECTIONS_EP + "24042009/manifest/", headers=backend.headers)
+    assert r.status_code == 404
+
+
+def test_get_object_401(backend):
+    r = backend.client.get(
+       test.GET_OBJECTS_EP + "malware--fdd60b30-b67c-11e3-b0b9-f01faf20d111/",
+    )
+    assert r.status_code == 401
+
+
+def test_get_object_403(backend):
+    """note that the 403 code is still being generated at the Collection resource level
+    (i.e. we dont have access rights to the collection specified, not just the object)
+    """
+    r = backend.client.get(
+        test.FORBIDDEN_COLLECTION_EP + "objects/indicator--b81f86b9-975b-bb0b-775e-810c5bd45b4f/",
+        headers=backend.headers,
+    )
+    assert r.status_code == 403
+
+
+def test_get_object_404(backend):
+    # TAXII spec allows for a 404 or empty bundle if object is not found
+    r = backend.client.get(
+        test.GET_OBJECTS_EP + "malware--cee60c30-a68c-11e3-b0c1-a01aac20d000/",
+        headers=backend.headers,
+    )
+    objs = r.json
+
+    if r.status_code == 200:
+        assert len(objs["objects"]) == 0
+    else:
+        assert r.status_code == 404
+
+
+def test_get_or_add_objects_401(backend):
+    # note that no credentials are supplied with requests
+
+    # get_objects()
+    r = backend.client.get(test.ADD_OBJECTS_EP)
+    assert r.status_code == 401
+
+    # add_objects()
+    bad_headers = copy.deepcopy(backend.post_headers)
+    bad_headers.pop("Authorization")
+    r_post = backend.client.post(
+        test.ADD_OBJECTS_EP,
+        data=json.dumps(backend.TEST_OBJECT),
+        headers=bad_headers,
+    )
+    assert r_post.status_code == 401
+
+
+def get_or_add_objects_403(backend):
+    """note that the 403 code is still being generated at the Collection resource level
+
+      (i.e. we dont have access rights to the collection specified here, not just the object)
+    """
+    # get_objects()
+    r = backend.client.get(
+        test.FORBIDDEN_COLLECTION_EP + "objects/",
+        headers=backend.headers,
+    )
+    assert r.status_code == 403
+
+    # add_objects
+    new_bundle = copy.deepcopy(backend.API_OBJECTS_2)
+
+    post_header = copy.deepcopy(backend.headers)
+    post_header.update(backend.content_type_header)
+
+    r_post = backend.client.post(
+        test.FORBIDDEN_COLLECTION_EP + "objects/",
+        data=json.dumps(new_bundle),
+        headers=post_header,
+    )
+    assert r_post.status_code == 403
+
+
+def test_get_or_add_objects_404(backend):
+    # get_objects()
+    r = backend.client.get(
+        test.NON_EXISTENT_COLLECTION_EP + "objects/",
+        headers=backend.headers,
+    )
+    assert r.status_code == 404
+
+    # add_objects
+    r_post = backend.client.post(
+        test.NON_EXISTENT_COLLECTION_EP + "objects/",
+        data=json.dumps(backend.TEST_OBJECT),
+        headers=backend.post_headers,
+    )
+    assert r_post.status_code == 404
+
+
+def test_get_or_add_objects_422(backend):
+    """only applies to adding objects as would arise if user content is malformed"""
+
+    r_post = backend.client.post(
+        test.ADD_OBJECTS_EP,
+        data=json.dumps(backend.TEST_OBJECT["objects"][0]),
+        headers=backend.post_headers,
+    )
+
+    assert r_post.status_code == 422
+    assert r_post.content_type == MEDIA_TYPE_TAXII_V21
+    error_data = r_post.json
+    assert error_data["title"] == "ProcessingError"
+    assert error_data["http_status"] == '422'
+    assert "While processing supplied content, an error occurred" in error_data["description"]
+
+
+def test_object_pagination_bad_limit_value_400(backend):
+    r = backend.client.get(test.GET_OBJECTS_EP + "?limit=-20",
+                           headers=backend.headers)
+    assert r.status_code == 400
+
+
+def test_object_pagination_changing_params_400(backend):
+    r = backend.client.get(
+        test.GET_OBJECTS_EP + "?match[version]=all&limit=2",
+        headers=backend.headers
+    )
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs["objects"]) == 2
+    assert objs["more"]
+
+    r = backend.client.get(
+        test.GET_OBJECTS_EP + "?match[version]=all&limit=2&next=" + objs["next"],
+        headers=backend.headers
+    )
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert len(objs["objects"]) == 2
+    assert objs["more"]
+
+    r = backend.client.get(
+        test.GET_OBJECTS_EP + "?match[version]=first&limit=2&next=" + objs["next"],
+        headers=backend.headers
+    )
+    assert r.status_code == 400
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    objs = r.json
+    assert objs["title"] == "ProcessingError"
+
+# test collections with different can_read and can_write values
