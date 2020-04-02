@@ -857,6 +857,20 @@ def test_delete_objects_version(backend):
                 "labels": [
                     "url-watchlist",
                 ],
+                "modified": "2019-01-27T13:49:53.935Z",
+                "name": "Malicious site hosting downloader",
+                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
+                "pattern_type": "stix",
+                "spec_version": "2.1",
+                "type": "indicator",
+                "valid_from": "2017-01-27T13:49:53.935382Z",
+            },
+            {
+                "created": "2014-01-27T13:49:53.935Z",
+                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
+                "labels": [
+                    "url-watchlist",
+                ],
                 "modified": "2016-01-27T13:49:53.935Z",
                 "name": "Malicious site hosting downloader",
                 "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
@@ -893,20 +907,6 @@ def test_delete_objects_version(backend):
                 "type": "indicator",
                 "valid_from": "2017-01-27T13:49:53.935382Z",
             },
-            {
-                "created": "2014-01-27T13:49:53.935Z",
-                "id": "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2019-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
-                "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
         ],
     }
 
@@ -923,6 +923,7 @@ def test_delete_objects_version(backend):
     status_response = r_post.json
     assert r_post.status_code == 202
     assert r_post.content_type == MEDIA_TYPE_TAXII_V21
+    assert status_response["success_count"] == 5  # Simple check to assert objects got successfully added to backend
 
     r = backend.client.get(
             test.ADD_OBJECTS_EP + "indicator--3aa5ad42-ff70-4442-a44c-055bea7b7736/versions",
