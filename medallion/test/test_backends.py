@@ -807,6 +807,8 @@ def test_delete_objects_version(backend):
     )
     assert r_post.status_code == 202
     assert r_post.content_type == MEDIA_TYPE_TAXII_V21
+    status_response = r_post.json
+    assert status_response["success_count"] == 5  # Simple check to assert objects got successfully added to backend
 
     r = backend.client.get(
         test.ADD_OBJECTS_EP + object_id + "/versions",

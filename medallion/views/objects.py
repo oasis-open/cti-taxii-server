@@ -54,11 +54,11 @@ def validate_size_in_request_body(api_root):
 
 
 def validate_version_parameter_in_content_type_header():
-    content_type = request.headers.get("content_type", "").strip().split(",")
+    content_type = request.headers.get("content_type", "").replace(" ", "").split(",")
     found = False
 
     for item in content_type:
-        result = re.match(r"^application\/taxii\+json(;version=(\d\.\d))?$", item)
+        result = re.match(r"^application/taxii\+json(;version=(\d\.\d))?$", item)
         if result:
             if len(result.groups()) >= 2:
                 version_str = result.group(2)
