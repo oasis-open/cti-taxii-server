@@ -14,7 +14,7 @@ def validate_version_parameter_in_accept_header():
     found = False
 
     for item in accept_header:
-        result = re.match(r"^application\/taxii\+json(;version=(\d\.\d))?$", item)
+        result = re.match(r"^application/taxii\+json(;version=(\d\.\d))?$", item)
         if result:
             if len(result.groups()) >= 1:
                 version_str = result.group(2)
