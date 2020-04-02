@@ -146,7 +146,7 @@ def test_get_objects(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
 
 def test_get_object(backend):
@@ -312,7 +312,7 @@ def test_get_objects_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 3
 
 def test_get_objects_limit(backend):
@@ -324,7 +324,7 @@ def test_get_objects_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 3
 
     r = backend.client.get(
@@ -335,7 +335,7 @@ def test_get_objects_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
 
 def test_get_objects_id(backend):
@@ -347,7 +347,7 @@ def test_get_objects_id(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
 def test_get_objects_type(backend):
@@ -359,7 +359,7 @@ def test_get_objects_type(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
     assert all("indicator" in obj["id"] for obj in objs["objects"])
 
@@ -372,7 +372,7 @@ def test_get_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
@@ -384,7 +384,7 @@ def test_get_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["modified"] == "2016-11-03T12:30:59.000Z"
 
@@ -396,7 +396,7 @@ def test_get_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["modified"] == "2017-01-27T13:49:53.935Z"
 
@@ -408,7 +408,7 @@ def test_get_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 7
 
 def test_get_objects_spec_version(backend):
@@ -420,7 +420,7 @@ def test_get_objects_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
 
@@ -432,7 +432,7 @@ def test_get_objects_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
@@ -460,7 +460,7 @@ def test_get_object_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
 def test_get_object_limit(backend):
@@ -473,7 +473,7 @@ def test_get_object_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
     r = backend.client.get(
@@ -485,7 +485,7 @@ def test_get_object_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
@@ -497,7 +497,7 @@ def test_get_object_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
 def test_get_object_version(backend):
@@ -510,7 +510,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     assert objs["objects"][0]["modified"] == "2016-12-25T12:30:59.444Z"
@@ -524,7 +524,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["modified"] == "2016-11-03T12:30:59.000Z"
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
@@ -538,7 +538,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["modified"] == "2017-01-27T13:49:53.935Z"
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
@@ -552,7 +552,7 @@ def test_get_object_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 3
 
 def test_get_object_spec_version(backend):
@@ -565,7 +565,7 @@ def test_get_object_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
 
@@ -578,7 +578,7 @@ def test_get_object_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
@@ -594,7 +594,7 @@ def test_get_manifest_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
 
 def test_get_manifest_limit(backend):
@@ -607,7 +607,7 @@ def test_get_manifest_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
@@ -619,7 +619,7 @@ def test_get_manifest_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == True
+    assert objs['more'] is True
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
@@ -631,7 +631,7 @@ def test_get_manifest_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
 
 def test_get_manifest_id(backend):
@@ -644,7 +644,7 @@ def test_get_manifest_id(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs['objects'][0]['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec"
 
@@ -658,7 +658,7 @@ def test_get_manifest_type(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 2
     assert "indicator" in objs['objects'][0]['id']
     assert "indicator" in objs['objects'][1]['id']
@@ -673,7 +673,7 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     assert objs["objects"][0]["version"] == "2016-11-03T12:30:59.000Z"
@@ -687,7 +687,7 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert objs["objects"][2]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     assert objs["objects"][2]["version"] == "2016-11-03T12:30:59.000Z"
@@ -701,7 +701,7 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert objs["objects"][4]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     assert objs["objects"][4]["version"] == "2017-01-27T13:49:53.935Z"
@@ -715,7 +715,7 @@ def test_get_manifest_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 7
 
 def test_get_manifest_spec_version(backend):
@@ -727,7 +727,7 @@ def test_get_manifest_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert all(obj['media_type'] == "application/stix+json;version=2.0" for obj in objs['objects'])
 
@@ -739,7 +739,7 @@ def test_get_manifest_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs['more'] == False
+    assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert all(obj['media_type'] == "application/stix+json;version=2.1" for obj in objs['objects'])
 
@@ -766,7 +766,7 @@ def test_get_version_added_after(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
 
 def test_get_version_limit(backend):
@@ -780,7 +780,7 @@ def test_get_version_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == True
+    assert objs["more"] is True
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
@@ -792,7 +792,7 @@ def test_get_version_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == True
+    assert objs["more"] is True
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
@@ -804,7 +804,7 @@ def test_get_version_limit(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
 
 def test_get_version_spec_version(backend):
@@ -817,7 +817,7 @@ def test_get_version_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
     assert objs["versions"][0] == "2016-11-03T12:30:59.000Z"
 
@@ -830,7 +830,7 @@ def test_get_version_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 2
     assert "2016-11-03T12:30:59.000Z" not in objs["versions"]
 
@@ -933,7 +933,7 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 5
 
     r = backend.client.delete(
@@ -953,7 +953,7 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 4
     assert "2018-01-27T13:49:53.935Z" not in objs["versions"]
 
@@ -974,7 +974,7 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 3
     assert "2015-01-27T13:49:53.935Z" not in objs["versions"]
 
@@ -995,7 +995,7 @@ def test_delete_objects_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 2
     assert "2019-01-27T13:49:53.935Z" not in objs["versions"]
 
@@ -1081,7 +1081,7 @@ def test_delete_objects_spec_version(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
-    assert objs["more"] == False
+    assert objs["more"] is False
     assert len(objs["versions"]) == 1
     assert "2015-01-27T13:49:53.935Z" not in objs["versions"]
 
