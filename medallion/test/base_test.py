@@ -1,8 +1,6 @@
 import base64
 import os
 
-from flask import Flask
-
 from medallion import application_instance, register_blueprints, set_config
 from medallion.test.data.initialize_mongodb import reset_db
 
@@ -12,30 +10,17 @@ class TaxiiTest():
     DATA_FILE = os.path.join(
         os.path.dirname(__file__), "data", "default_data.json",
     )
-    API_OBJECTS_2 = {
+    TEST_OBJECT = {
         "objects": [
             {
-                "created": "2017-01-27T13:49:53.935Z",
-                "id": "indicator--68794cd5-28db-429d-ab1e-1256704ef906",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2017-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
+                "type": "course-of-action",
                 "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "type": "marking-definition",
-                "created": "2017-01-20T00:00:00.000Z",
-                "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
-                "definition": {"tlp": "white"},
-                "definition_type": "tlp"
-            },
-        ],
+                "id": "course-of-action--68794cd5-28db-429d-ab1e-1256704ef906",
+                "created": "2017-01-27T13:49:53.935Z",
+                "modified": "2017-01-27T13:49:53.935Z",
+                "name": "Test object"
+            }
+        ]
     }
 
     no_config = {}
@@ -135,7 +120,11 @@ class TaxiiTest():
             encoded_auth = "Basic " + \
                 base64.b64encode(b"admin:Password0").decode("ascii")
         self.headers = {"Accept": "application/taxii+json;version=2.1", "Authorization": encoded_auth}
-        self.content_type_header = {"Content-Type": "application/taxii+json;version=2.1"}
+        self.post_headers = {
+            "Content-Type": "application/taxii+json;version=2.1",
+            "Accept": "application/taxii+json;version=2.1",
+            "Authorization": encoded_auth
+        }
 
     def tearDown(self):
         self.app_context.pop()

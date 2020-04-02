@@ -301,7 +301,7 @@ class MongoBackend(Backend):
                     successes.append(status_detail)
                     succeeded += 1
         except Exception as e:
-            log.exception(e)
+            # log.exception(e)
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(

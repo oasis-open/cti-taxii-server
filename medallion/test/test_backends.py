@@ -119,7 +119,7 @@ def test_add_and_delete_object(backend):
 
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
-        data=json.dumps(backend.TEST_OBJECT),
+        data=json.dumps(copy.deepcopy(backend.TEST_OBJECT)),
         headers=backend.post_headers,
     )
     status_response = r_post.json
@@ -1150,7 +1150,7 @@ def test_get_or_add_objects_401(backend):
     bad_headers.pop("Authorization")
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
-        data=json.dumps(backend.TEST_OBJECT),
+        data=json.dumps(copy.deepcopy(backend.TEST_OBJECT)),
         headers=bad_headers,
     )
     assert r_post.status_code == 401
@@ -1169,15 +1169,10 @@ def get_or_add_objects_403(backend):
     assert r.status_code == 403
 
     # add_objects
-    new_bundle = copy.deepcopy(backend.API_OBJECTS_2)
-
-    post_header = copy.deepcopy(backend.headers)
-    post_header.update(backend.content_type_header)
-
     r_post = backend.client.post(
         test.FORBIDDEN_COLLECTION_EP + "objects/",
-        data=json.dumps(new_bundle),
-        headers=post_header,
+        data=json.dumps(copy.deepcopy(backend.TEST_OBJECT)),
+        headers=backend.post_headers,
     )
     assert r_post.status_code == 403
 
@@ -1193,7 +1188,7 @@ def test_get_or_add_objects_404(backend):
     # add_objects
     r_post = backend.client.post(
         test.NON_EXISTENT_COLLECTION_EP + "objects/",
-        data=json.dumps(backend.TEST_OBJECT),
+        data=json.dumps(copy.deepcopy(backend.TEST_OBJECT)),
         headers=backend.post_headers,
     )
     assert r_post.status_code == 404
@@ -1204,7 +1199,7 @@ def test_get_or_add_objects_422(backend):
 
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
-        data=json.dumps(backend.TEST_OBJECT["objects"][0]),
+        data=json.dumps(copy.deepcopy(backend.TEST_OBJECT["objects"][0])),
         headers=backend.post_headers,
     )
 
@@ -1251,5 +1246,79 @@ def test_object_pagination_changing_params_400(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs["title"] == "ProcessingError"
+
+
+# test other config values
+# this may warrant some cleanup and organization later
+class TestTAXIIWithNoConfig(TaxiiTest):
+    type = "memory_no_config"
+
+
+@pytest.fixture(scope="module")
+def no_config():
+    server = TestTAXIIWithNoConfig()
+    server.setUp()
+    yield server
+    server.tearDown()
+
+
+def test_default_userpass_no_config(no_config):
+    assert no_config.app.users_backend.get("user") == "pass"
+
+
+def test_default_backend_no_config(no_config):
+    assert no_config.app.medallion_backend.data == {}
+
+
+def test_default_taxii_config_no_config(no_config):
+    assert no_config.app.taxii_config['max_page_size'] == 100
+
+
+class TestTAXIIWithNoTAXIISection(TaxiiTest):
+    type = "no_taxii"
+
+
+@pytest.fixture(scope="module")
+def no_taxii_section():
+    server = TestTAXIIWithNoTAXIISection()
+    server.setUp()
+    yield server
+    server.tearDown()
+
+
+def test_default_taxii_no_taxii_section(no_taxii_section):
+    assert no_taxii_section.app.taxii_config['max_page_size'] == 100
+
+
+class TestTAXIIWithNoAuthSection(TaxiiTest):
+    type = "no_auth"
+
+
+@pytest.fixture(scope="module")
+def no_auth_section():
+    server = TestTAXIIWithNoAuthSection()
+    server.setUp()
+    yield server
+    server.tearDown()
+
+
+def test_default_userpass_no_auth_section(no_auth_section):
+    assert no_auth_section.app.users_backend.get("user") == "pass"
+
+
+class TestTAXIIWithNoBackendSection(TaxiiTest):
+    type = "no_backend"
+
+
+@pytest.fixture(scope="module")
+def no_backend_section():
+    server = TestTAXIIWithNoBackendSection()
+    server.setUp()
+    yield server
+    server.tearDown()
+
+
+def test_default_backend_no_backend_section(no_backend_section):
+    assert no_backend_section.app.medallion_backend.data == {}
 
 # test collections with different can_read and can_write values
