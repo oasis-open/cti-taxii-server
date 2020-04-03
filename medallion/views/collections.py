@@ -1,14 +1,9 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import (
-    MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
-)
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
 from .discovery import api_root_exists
-from .objects import (
-    collection_exists, get_range_request_from_headers,
-    get_response_status_and_headers
-)
+from .objects import collection_exists
 
 collections_bp = Blueprint("collections", __name__)
 
@@ -18,28 +13,25 @@ collections_bp = Blueprint("collections", __name__)
 def get_collections(api_root):
     """
     Defines TAXII API - Collections:
-    `Get Collections Section (5.1) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542734>`__
+    Get Collection section (5.1) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107533>`__
 
     Args:
         api_root (str): the base URL of the API Root
 
     Returns:
         collections: A Collections Resource upon successful requests. Additional information
-            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542735>`__.
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107534>`__.
 
     """
     # TODO: Check if user has access to the each collection's metadata - unrelated to can_read, can_write attributes
-    validate_taxii_version_parameter_in_accept_header()
-    api_root_exists(api_root)
 
-    start_index, end_index = get_range_request_from_headers()
-    total_count, collections = current_app.medallion_backend.get_collections(api_root, start_index, end_index)
-    status, headers = get_response_status_and_headers(start_index, total_count, collections)
+    validate_version_parameter_in_accept_header()
+    api_root_exists(api_root)
+    collections = current_app.medallion_backend.get_collections(api_root)
     return Response(
-        response=json.dumps({"collections": collections} if collections else {}),
-        status=status,
-        headers=headers,
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        response=json.dumps(collections),
+        status=200,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )
 
 
@@ -48,7 +40,7 @@ def get_collections(api_root):
 def get_collection(api_root, collection_id):
     """
     Defines TAXII API - Collections:
-    `Get Collection Section (5.2) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542736>`__
+    Get Collection section (5.2) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107535>`__
 
     Args:
         api_root (str): the base URL of the API Root
@@ -56,11 +48,12 @@ def get_collection(api_root, collection_id):
 
     Returns:
         collection: A Collection Resource upon successful requests. Additional information
-            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542737>`__.
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107536>`__.
 
     """
     # TODO: Check if user has access to the collection's metadata - unrelated to can_read, can_write attributes
-    validate_taxii_version_parameter_in_accept_header()
+
+    validate_version_parameter_in_accept_header()
     api_root_exists(api_root)
     collection_exists(api_root, collection_id)
     collection = current_app.medallion_backend.get_collection(api_root, collection_id)
@@ -68,5 +61,5 @@ def get_collection(api_root, collection_id):
     return Response(
         response=json.dumps(collection),
         status=200,
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )

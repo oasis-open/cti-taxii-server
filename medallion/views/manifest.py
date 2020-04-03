@@ -1,12 +1,10 @@
 from flask import Blueprint, Response, current_app, json, request
 
-from . import (
-    MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
-)
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
+from .discovery import api_root_exists
 from .objects import (
-    collection_exists, get_custom_headers, get_range_request_from_headers,
-    get_response_status_and_headers, permission_to_read
+    collection_exists, permission_to_read, validate_limit_parameter
 )
 
 manifest_bp = Blueprint("manifest", __name__)
@@ -17,7 +15,7 @@ manifest_bp = Blueprint("manifest", __name__)
 def get_object_manifest(api_root, collection_id):
     """
     Defines TAXII API - Collections:
-    `Get Object Manifests Section (5.6) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542741>`__
+    Get Object Manifests section (5.3) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107537>`__
 
     Args:
         api_root (str): the base URL of the API Root
@@ -25,23 +23,22 @@ def get_object_manifest(api_root, collection_id):
 
     Returns:
         manifest: A Manifest Resource upon successful requests. Additional information
-        `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542742>`__.
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107538>`__.
 
     """
-    validate_taxii_version_parameter_in_accept_header()
+    validate_version_parameter_in_accept_header()
+    api_root_exists(api_root)
     collection_exists(api_root, collection_id)
     permission_to_read(api_root, collection_id)
 
-    start_index, end_index = get_range_request_from_headers()
-    total_count, manifest = current_app.medallion_backend.get_object_manifest(
-        api_root, collection_id, request.args, ("id", "type", "version"), start_index, end_index,
+    limit = validate_limit_parameter()
+    manifests, headers = current_app.medallion_backend.get_object_manifest(
+        api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
     )
 
-    status, headers = get_response_status_and_headers(start_index, total_count, manifest)
-    headers = get_custom_headers(headers, api_root, collection_id, start_index, end_index)
     return Response(
-        response=json.dumps({"objects": manifest} if manifest else {}),
-        status=status,
+        response=json.dumps(manifests),
+        status=200,
         headers=headers,
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )

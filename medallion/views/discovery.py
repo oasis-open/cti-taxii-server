@@ -1,8 +1,6 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import (
-    MEDIA_TYPE_TAXII_V20, validate_taxii_version_parameter_in_accept_header
-)
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
 from .. import auth
 from ..exceptions import ProcessingError
 
@@ -15,29 +13,29 @@ def api_root_exists(api_root):
         raise ProcessingError("API root '{}' information not found".format(api_root), 404)
 
 
-@discovery_bp.route("/taxii/", methods=["GET"])
+@discovery_bp.route("/taxii2/", methods=["GET"])
 @auth.login_required
 def get_server_discovery():
     """
     Defines TAXII API - Server Information:
-    `Server Discovery Section (4.1) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542727>`__
+    Server Discovery section (4.1) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107526>`__
 
     Returns:
         discovery: A Discovery Resource upon successful requests. Additional information
-            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542728>`__.
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107527>`__.
 
     """
     # Having access to the discovery method is only related to having
     # credentials on the server. The metadata returned might be different
     # depending upon the credentials.
-    validate_taxii_version_parameter_in_accept_header()
+    validate_version_parameter_in_accept_header()
     server_discovery = current_app.medallion_backend.server_discovery()
 
     if server_discovery:
         return Response(
             response=json.dumps(server_discovery),
             status=200,
-            mimetype=MEDIA_TYPE_TAXII_V20,
+            mimetype=MEDIA_TYPE_TAXII_V21,
         )
     raise ProcessingError("Server discovery information not available", 404)
 
@@ -47,25 +45,24 @@ def get_server_discovery():
 def get_api_root_information(api_root):
     """
     Defines TAXII API - Server Information:
-    `Get API Root Information Section (4.2) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542729>`__
+    Get API Root Information section (4.2) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107528>`__
 
     Args:
         api_root (str): the base URL of the API Root
 
     Returns:
         api-root: An API Root Resource upon successful requests. Additional information
-            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542730>`__.
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107529>`__.
 
     """
     # TODO: Check if user has access to objects in collection.
-    validate_taxii_version_parameter_in_accept_header()
+    validate_version_parameter_in_accept_header()
     api_root_exists(api_root)
     root_info = current_app.medallion_backend.get_api_root_information(api_root)
-
     return Response(
         response=json.dumps(root_info),
         status=200,
-        mimetype=MEDIA_TYPE_TAXII_V20,
+        mimetype=MEDIA_TYPE_TAXII_V21,
     )
 
 
@@ -74,7 +71,7 @@ def get_api_root_information(api_root):
 def get_status(api_root, status_id):
     """
     Defines TAXII API - Server Information:
-    `Get Status Section (4.3) <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542731>`__
+    Get Status section (4.3) `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107530>`__
 
     Args:
         api_root (str): the base URL of the API Root
@@ -82,11 +79,11 @@ def get_status(api_root, status_id):
 
     Returns:
         status: A Status Resource upon successful requests. Additional information
-            `here <http://docs.oasis-open.org/cti/taxii/v2.0/cs01/taxii-v2.0-cs01.html#_Toc496542732>`__.
+        `here <https://docs.oasis-open.org/cti/taxii/v2.1/cs01/taxii-v2.1-cs01.html#_Toc31107531>`__.
 
     """
     # TODO: Check if user has access to the Status resource.
-    validate_taxii_version_parameter_in_accept_header()
+    validate_version_parameter_in_accept_header()
     api_root_exists(api_root)
     status = current_app.medallion_backend.get_status(api_root, status_id)
 
@@ -94,6 +91,6 @@ def get_status(api_root, status_id):
         return Response(
             response=json.dumps(status),
             status=200,
-            mimetype=MEDIA_TYPE_TAXII_V20,
+            mimetype=MEDIA_TYPE_TAXII_V21,
         )
     raise ProcessingError("Status '{}' not found".format(status_id), 404)

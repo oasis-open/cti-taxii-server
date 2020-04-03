@@ -1,10 +1,11 @@
-#!/usr/bin/env python
-
 import argparse
+import json
 import logging
 import textwrap
 
-from medallion import __version__, create_app
+from medallion import (
+    __version__, application_instance, register_blueprints, set_config
+)
 
 log = logging.getLogger("medallion")
 
@@ -43,7 +44,7 @@ def _get_argparser():
 
     parser.add_argument(
         "--debug-mode",
-        default=None,
+        default=False,
         action="store_true",
         help="If set, start application in debug mode.",
     )
@@ -71,10 +72,19 @@ def main():
     medallion_args = medallion_parser.parse_args()
     log.setLevel(medallion_args.log_level)
 
-    app = create_app(medallion_args.CONFIG_PATH)
-    app.run(host=medallion_args.host,
-            port=medallion_args.port,
-            debug=medallion_args.debug_mode)
+    with open(medallion_args.CONFIG_PATH, "r") as f:
+        configuration = json.load(f)
+
+    set_config(application_instance, "users", configuration)
+    set_config(application_instance, "taxii", configuration)
+    set_config(application_instance, "backend", configuration)
+    register_blueprints(application_instance)
+
+    application_instance.run(
+        host=medallion_args.host,
+        port=medallion_args.port,
+        debug=medallion_args.debug_mode,
+    )
 
 
 if __name__ == "__main__":

@@ -1,18 +1,17 @@
+import base64
 import os
 import unittest
 
-from medallion import create_app
-from medallion.test import config as test_configs
-from medallion.test.data.initialize_mongodb import create_users, reset_db
-from medallion.views import MEDIA_TYPE_TAXII_V20
+from medallion import application_instance, register_blueprints, set_config
+from medallion.test.data.initialize_mongodb import reset_db
 
 
 class TaxiiTest(unittest.TestCase):
     type = None
     DATA_FILE = os.path.join(
-        os.path.dirname(__file__), "data", "default_data.json")
+        os.path.dirname(__file__), "data", "default_data.json",
+    )
     API_OBJECTS_2 = {
-        "id": "bundle--8fab937e-b694-11e3-b71c-0800271e87d2",
         "objects": [
             {
                 "created": "2017-01-27T13:49:53.935Z",
@@ -23,34 +22,93 @@ class TaxiiTest(unittest.TestCase):
                 "modified": "2017-01-27T13:49:53.935Z",
                 "name": "Malicious site hosting downloader",
                 "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
+                "pattern_type": "stix",
+                "spec_version": "2.1",
                 "type": "indicator",
                 "valid_from": "2017-01-27T13:49:53.935382Z",
             },
+            {
+                "type": "marking-definition",
+                "created": "2017-01-20T00:00:00.000Z",
+                "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+                "definition": {"tlp": "white"},
+                "definition_type": "tlp"
+            },
         ],
-        "spec_version": "2.0",
-        "type": "bundle",
     }
-
-    memory_config = test_configs.memory_config(DATA_FILE)
-    directory_config = test_configs.directory_config()
-    mongodb_config = test_configs.mongodb_config()
 
     no_config = {}
 
-    config_no_taxii = {k: v for k, v in memory_config.items() if k != "taxii"}
-    config_no_auth = {k: v for k, v in memory_config.items() if k != "auth"}
-    config_no_backend = {k: v for k, v in memory_config.items() if k != "backend"}
+    config_no_taxii = {
+        "backend": {
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "filename": DATA_FILE,
+        },
+        "users": {
+            "admin": "Password0",
+        },
+    }
+
+    config_no_auth = {
+        "backend": {
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "filename": DATA_FILE,
+        },
+        "taxii": {
+            "max_page_size": 20,
+        },
+    }
+
+    config_no_backend = {
+        "users": {
+            "admin": "Password0",
+        },
+        "taxii": {
+            "max_page_size": 20,
+        },
+    }
+
+    memory_config = {
+        "backend": {
+            "module": "medallion.backends.memory_backend",
+            "module_class": "MemoryBackend",
+            "filename": DATA_FILE,
+        },
+        "users": {
+            "admin": "Password0",
+        },
+        "taxii": {
+            "max_page_size": 20,
+        },
+    }
+
+    mongodb_config = {
+        "backend": {
+            "module": "medallion.backends.mongodb_backend",
+            "module_class": "MongoBackend",
+            "uri": "mongodb://travis:test@127.0.0.1:27017/",
+        },
+        "users": {
+            "admin": "Password0",
+        },
+        "taxii": {
+            "max_page_size": 20,
+        },
+    }
 
     def setUp(self):
+        self.app = application_instance
+        self.app_context = application_instance.app_context()
+        self.app_context.push()
+        self.app.testing = True
+        register_blueprints(self.app)
         if self.type == "mongo":
-            reset_db()
-            create_users()
+            reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config
         elif self.type == "memory":
-            self.memory_config['backend']['filename'] = self.DATA_FILE
             self.configuration = self.memory_config
-        elif self.type == "directory":
-            self.configuration = self.directory_config
         elif self.type == "memory_no_config":
             self.configuration = self.no_config
         elif self.type == "no_taxii":
@@ -61,17 +119,18 @@ class TaxiiTest(unittest.TestCase):
             self.configuration = self.config_no_backend
         else:
             raise RuntimeError("Unknown backend!")
-
-        self.app = create_app(self.configuration)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-
-        # TODO: It might be better to not reuse the test client.
-        self.client = self.app.test_client()
-        self.common_headers = {
-            'Accept': MEDIA_TYPE_TAXII_V20,
-            'Authorization': 'Token abc123'
-        }
+        set_config(self.app, "backend", self.configuration)
+        set_config(self.app, "users", self.configuration)
+        set_config(self.app, "taxii", self.configuration)
+        self.client = application_instance.test_client()
+        if self.type == "memory_no_config" or self.type == "no_auth":
+            encoded_auth = "Basic " + \
+                base64.b64encode(b"user:pass").decode("ascii")
+        else:
+            encoded_auth = "Basic " + \
+                base64.b64encode(b"admin:Password0").decode("ascii")
+        self.headers = {"Accept": "application/taxii+json;version=2.1", "Authorization": encoded_auth}
+        self.content_type_header = {"Content-Type": "application/taxii+json;version=2.1"}
 
     def tearDown(self):
         self.app_context.pop()
