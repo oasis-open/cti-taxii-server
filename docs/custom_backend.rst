@@ -4,7 +4,7 @@ Custom Backends and Users
 How to create your custom Backend
 ---------------------------------
 
-To create a custom Backend compatible with medallion you need to subclass ``medallion.backends.base.Backend``. This object provides the basic skeleton used to handle each of the endpoint requests.
+To create a custom Backend compatible with medallion you need to subclass ``medallion.backends.taxii.base.Backend``. This object provides the basic skeleton used to handle each of the endpoint requests.
 
 For further examples of on how to build a custom backend look under the ``\medallion\backends\`` directory.
 
@@ -17,7 +17,7 @@ New changes made to the library makes it easy to dynamically load a new backend 
 
     {
         "backend": {
-            "module": "medallion.backends.memory_backend",
+            "module": "medallion.backends.taxii.memory_backend",
             "module_class": "MemoryBackend",
             "filename": "../test/data/default_data.json"
         }

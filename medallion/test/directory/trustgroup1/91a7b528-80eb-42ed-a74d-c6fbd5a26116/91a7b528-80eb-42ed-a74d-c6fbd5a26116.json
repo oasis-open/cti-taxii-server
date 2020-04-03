@@ -1,0 +1,1 @@
+{"id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116", "title": "High Value Indicator Collection", "description": "This data collection is for collecting high value IOCs", "can_read": true, "can_write": true, "media_types": ["application/vnd.oasis.stix+json; version=2.0", "application/vnd.oasis.stix+json; version=2.1"]}
