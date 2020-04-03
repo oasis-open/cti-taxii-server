@@ -1,40 +1,26 @@
 import base64
 import os
-import unittest
 
 from medallion import application_instance, register_blueprints, set_config
 from medallion.test.data.initialize_mongodb import reset_db
 
 
-class TaxiiTest(unittest.TestCase):
+class TaxiiTest():
     type = None
     DATA_FILE = os.path.join(
         os.path.dirname(__file__), "data", "default_data.json",
     )
-    API_OBJECTS_2 = {
+    TEST_OBJECT = {
         "objects": [
             {
-                "created": "2017-01-27T13:49:53.935Z",
-                "id": "indicator--%s",
-                "labels": [
-                    "url-watchlist",
-                ],
-                "modified": "2017-01-27T13:49:53.935Z",
-                "name": "Malicious site hosting downloader",
-                "pattern": "[url:value = 'http://x4z9arb.cn/5000']",
-                "pattern_type": "stix",
+                "type": "course-of-action",
                 "spec_version": "2.1",
-                "type": "indicator",
-                "valid_from": "2017-01-27T13:49:53.935382Z",
-            },
-            {
-                "type": "marking-definition",
-                "created": "2017-01-20T00:00:00.000Z",
-                "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
-                "definition": {"tlp": "white"},
-                "definition_type": "tlp"
-            },
-        ],
+                "id": "course-of-action--68794cd5-28db-429d-ab1e-1256704ef906",
+                "created": "2017-01-27T13:49:53.935Z",
+                "modified": "2017-01-27T13:49:53.935Z",
+                "name": "Test object"
+            }
+        ]
     }
 
     no_config = {}
@@ -91,7 +77,7 @@ class TaxiiTest(unittest.TestCase):
             "uri": "mongodb://travis:test@127.0.0.1:27017/",
         },
         "users": {
-            "admin": "Password0",
+            "root": "example",
         },
         "taxii": {
             "max_page_size": 20,
@@ -99,6 +85,7 @@ class TaxiiTest(unittest.TestCase):
     }
 
     def setUp(self):
+        self.__name__ = self.type
         self.app = application_instance
         self.app_context = application_instance.app_context()
         self.app_context.push()
@@ -126,11 +113,18 @@ class TaxiiTest(unittest.TestCase):
         if self.type == "memory_no_config" or self.type == "no_auth":
             encoded_auth = "Basic " + \
                 base64.b64encode(b"user:pass").decode("ascii")
+        elif self.type == "mongo":
+            encoded_auth = "Basic " + \
+                base64.b64encode(b"root:example").decode("ascii")
         else:
             encoded_auth = "Basic " + \
                 base64.b64encode(b"admin:Password0").decode("ascii")
         self.headers = {"Accept": "application/taxii+json;version=2.1", "Authorization": encoded_auth}
-        self.content_type_header = {"Content-Type": "application/taxii+json;version=2.1"}
+        self.post_headers = {
+            "Content-Type": "application/taxii+json;version=2.1",
+            "Accept": "application/taxii+json;version=2.1",
+            "Authorization": encoded_auth
+        }
 
     def tearDown(self):
         self.app_context.pop()

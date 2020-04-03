@@ -15,6 +15,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "title": "Some TAXII Server",
         "description": "This TAXII Server contains a listing of",
         "contact": "string containing contact information",
+        "default": "http://localhost:5000/trustgroup1/",
         "api_roots": [],
     })
 
@@ -113,7 +114,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         {
             "date_added": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.001000Z")),
             "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
-            "media_type": "application/stix+json;version=2.1",
+            "media_type": "application/stix+json;version=2.0",
             "version": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
             "_type": "indicator",
@@ -156,6 +157,16 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "id": "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4",
         "title": "This data collection is for testing querying across collections",
         "can_read": False,
+        "can_write": True,
+        "media_types": [
+            "application/stix+json;version=2.1",
+        ],
+    })
+
+    api_root_db["collections"].insert_one({
+        "id": "365fed99-08fa-fdcd-a1b3-fb247eb41d01",
+        "title": "This data collection is for testing querying across collections",
+        "can_read": True,
         "can_write": True,
         "media_types": [
             "application/stix+json;version=2.1",
@@ -233,7 +244,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "name": "Malicious site hosting downloader",
             "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
             "pattern_type": "stix",
-            "spec_version": "2.1",
+            "spec_version": "2.0",
             "type": "indicator",
             "valid_from": "2017-01-27T13:49:53.935382Z",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",

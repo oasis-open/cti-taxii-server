@@ -169,42 +169,27 @@ class BasicFilter(object):
 
     @staticmethod
     def filter_by_spec_version(data, spec_):
+        spec_ = spec_.split(",")
+
         match_objects = []
 
-        if spec_:
-            spec_ = spec_.split(",")
-            for obj in data:
-                if "spec_version" in obj and any(s == obj["spec_version"] for s in spec_):
-                    match_objects.append(obj)
-                elif "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
-                    match_objects.append(obj)
-        else:
-            for obj in data:
-                add = True
-                if "spec_version" in obj:
-                    s1 = obj["spec_version"]
-                elif "media_type" in obj:
-                    s1 = obj["media_type"].split("version=")[1]
-                else:
-                    # version cannot be determined, so it must be added
-                    match_objects.append(obj)
-                    continue
-                for match in data:
-                    if "spec_version" in match:
-                        s2 = match["spec_version"]
-                    elif "media_type" in match:
-                        s2 = match["media_type"].split("version=")[1]
-                    else:
-                        # version cannot be determined, so disregard
-                        continue
-                    if obj["id"] == match["id"] and s2 > s1:
-                        add = False
-                if add:
-                    match_objects.append(obj)
+        for obj in data:
+            if "spec_version" in obj and any(s == obj["spec_version"] for s in spec_):
+                match_objects.append(obj)
+            elif "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
+                match_objects.append(obj)
+
         return match_objects
 
     def process_filter(self, data, allowed, manifest_info, limit):
+        filtered_by_type = []
+        filtered_by_id = []
         filtered_by_spec_version = []
+        filtered_by_added_after = []
+        filtered_by_version = []
+        final_match = []
+        save_next = []
+        headers = {}
 
         # match for type and id filters first
         match_type = self.filter_args.get("match[type]")
@@ -219,24 +204,26 @@ class BasicFilter(object):
         else:
             filtered_by_id = filtered_by_type
 
+        # match for spec_version
+        match_spec_version = self.filter_args.get("match[spec_version]")
+        if match_spec_version and "spec_version" in allowed:
+            filtered_by_spec_version = self.filter_by_spec_version(filtered_by_id, match_spec_version)
+        else:
+            filtered_by_spec_version = filtered_by_id
+
         # match for added_after
         added_after_date = self.filter_args.get("added_after")
         if added_after_date:
-            filtered_by_added_after = self.filter_by_added_after(filtered_by_id, manifest_info, added_after_date)
+            filtered_by_added_after = self.filter_by_added_after(filtered_by_spec_version, manifest_info, added_after_date)
         else:
-            filtered_by_added_after = filtered_by_id
-
-        # match for spec_version
-        match_spec_version = self.filter_args.get("match[spec_version]")
-        if "spec_version" in allowed:
-            filtered_by_spec_version = self.filter_by_spec_version(filtered_by_added_after, match_spec_version)
+            filtered_by_added_after = filtered_by_spec_version
 
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
-            filtered_by_version = self.filter_by_version(filtered_by_spec_version, match_version)
+            filtered_by_version = self.filter_by_version(filtered_by_added_after, match_version)
         else:
-            filtered_by_version = filtered_by_spec_version
+            filtered_by_version = filtered_by_added_after
 
         # sort objects by date_added of manifest and paginate as necessary
         final_match, save_next, headers = self.sort_and_paginate(filtered_by_version, limit, manifest_info)

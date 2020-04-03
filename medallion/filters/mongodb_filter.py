@@ -92,8 +92,8 @@ class MongoDBFilter(BasicFilter):
                 if len(actual_dates) > 0:
                     pipeline[0]["$match"]["$and"].append({"version": {"$in": actual_dates}})
 
+                pipeline.append({"$sort": {"version": pymongo.ASCENDING}})
                 pipeline.append({"$group": {"_id": "$id", "versions": {"$push": "$$ROOT"}}})
-                pipeline.append({"$sort": {"versions.version": pymongo.ASCENDING}})
 
                 # The versions array in the mongodb document is ordered oldest to newest, so the 'last'
                 # (most recent date) is in last position in the list and the oldest 'first' is in
