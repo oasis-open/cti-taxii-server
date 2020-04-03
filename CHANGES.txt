@@ -1,3 +1,9 @@
+Version 2.0.1
+2020-04-03
+- #112 Test revamp for consistency across backends
+- Resolves an issue with MongoBackend delete object where wrong version would be removed
+- Resolved an issue with Content-Type header validation causing 415 Response for valid content
+
 Version 2.0.0
 2020-03-27
 First major and stable release to support TAXII 2.1
