@@ -1,3 +1,33 @@
+Version 2.0.0
+2020-03-27
+First major and stable release to support TAXII 2.1
+- Supports pagination
+- Supports all defined match filters (id, spec_version, version, type)
+- Header Validation for GET, POST requests
+- Updated tests (except view-level tests)
+
+Version 1.0.0
+2020-03-26
+First major and stable release to support TAXII 2.0
+- #108, #109 Additional checks to Accept, Content-Type and Content-Length headers and API root existence
+- #108 Add or clean documentation for Endpoints defined in the spec
+- #108 Design change in validation procedures. These no longer used to evaluate True or raise Exception
+- #108 Update packaging, tests per new changes, code quality
+- #108 Bug under MemoryBackend that would cause a 400 Error when filtering under manifests
+
+Version 0.5.0
+2020-03-20
+- #60 Fixes to tests and Default Values
+- #58, #91,  Updating documentation, or configuration
+- #59 Directory Backend Plus Auth Improvements
+- #74, #104, #105 Update docker configuration
+- #77 mongo filters, example data, port methods that overlap with 2.1
+- #76, #78 Directory Backend changes and general improvements, checks
+- The MongoBackend has received changes in data representation, bug fixes, and filters.
+- The MemoryBacked has received changes in data representation, bug fixes, and filters.
+- JWT login support, API Key, heartbeat, and routes functionality via Endpoints.
+- Headers are being checked.
+
 Version 0.4.0
 2019-07-16
 - @jamesfitzsimons implemented Pagination support and fixed a couple of MongoDB errors

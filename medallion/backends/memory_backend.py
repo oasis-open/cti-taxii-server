@@ -1,11 +1,15 @@
 import copy
+import io
 import json
 import uuid
 
-from ..common import (SessionChecker, create_resource, datetime_to_float,
-                      datetime_to_string, determine_spec_version,
-                      determine_version, find_att, generate_status,
-                      generate_status_details, get_timestamp, iterpath)
+from six import string_types
+
+from ..common import (
+    SessionChecker, create_resource, datetime_to_float, datetime_to_string,
+    determine_spec_version, determine_version, find_att, generate_status,
+    generate_status_details, get_timestamp, iterpath
+)
 from ..exceptions import ProcessingError
 from ..filters.basic_filter import BasicFilter
 from .base import Backend
@@ -104,13 +108,19 @@ class MemoryBackend(Backend):
             self.next.pop(item)
 
     def load_data_from_file(self, filename):
-        with open(filename, "r") as infile:
-            self.data = json.load(infile)
+        if isinstance(filename, string_types):
+            with io.open(filename, "r", encoding="utf-8") as infile:
+                self.data = json.load(infile)
+        else:
+            self.data = json.load(filename)
 
     def save_data_to_file(self, filename, **kwargs):
         """The kwargs are passed to ``json.dump()`` if provided."""
-        with open(filename, "w") as outfile:
-            json.dump(self.data, outfile, **kwargs)
+        if isinstance(filename, string_types):
+            with io.open(filename, "w", encoding="utf-8") as outfile:
+                json.dump(self.data, outfile, **kwargs)
+        else:
+            json.dump(self.data, filename, **kwargs)
 
     def _get(self, key):
         for ancestors, item in iterpath(self.data):

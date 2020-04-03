@@ -4,13 +4,13 @@ import uuid
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
-from ..common import (SessionChecker, create_resource, datetime_to_float,
-                      datetime_to_string, datetime_to_string_stix,
-                      determine_spec_version, determine_version,
-                      find_version_attribute, float_to_datetime,
-                      generate_status, generate_status_details,
-                      get_custom_headers, get_timestamp,
-                      parse_request_parameters, string_to_datetime)
+from ..common import (
+    SessionChecker, create_resource, datetime_to_float, datetime_to_string,
+    datetime_to_string_stix, determine_spec_version, determine_version,
+    find_version_attribute, float_to_datetime, generate_status,
+    generate_status_details, get_custom_headers, get_timestamp,
+    parse_request_parameters, string_to_datetime
+)
 from ..exceptions import MongoBackendError, ProcessingError
 from ..filters.mongodb_filter import MongoDBFilter
 from .base import Backend
