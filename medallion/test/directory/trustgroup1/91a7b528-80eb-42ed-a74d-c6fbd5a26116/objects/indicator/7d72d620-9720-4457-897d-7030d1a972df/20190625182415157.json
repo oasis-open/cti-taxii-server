@@ -1,1 +1,0 @@
-{"type":"indicator","id":"indicator--7d72d620-9720-4457-897d-7030d1a972df","created":"2019-06-25T18:15:42.452Z","modified":"2019-06-25T18:24:15.157Z","name":"https://dailymemes.net","pattern":"[url:value = 'https://dailymemes.net']","valid_from":"2019-06-25T18:15:42.452Z","labels":["malicious-activity"]}

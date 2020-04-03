@@ -1,1 +1,0 @@
-{"type":"relationship","id":"relationship--5d399937-d736-413f-a6ec-f77cdf824032","created":"2019-06-25T18:15:42.578Z","modified":"2019-06-26T13:44:48.412Z","relationship_type":"uses","description":"Cat pictures with bonus malware","source_ref":"indicator--7d72d620-9720-4457-897d-7030d1a972df","target_ref":"attack-pattern--20138b9d-1aac-4a26-8654-a36b6bbf2bba"}

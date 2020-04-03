@@ -1,8 +1,0 @@
-{
-    "title": "Malware Research Group",
-    "description": "A trust group setup for malware researchers",
-    "versions": [
-    	"taxii-2.0"
-    ],
-    "max_content_length": 9765625
-}
