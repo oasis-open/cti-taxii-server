@@ -318,7 +318,7 @@ def test_get_objects_version(backend):
     assert objs['more'] is False
     for obj in objs["objects"]:
         if obj["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e":
-            assert obj["modified"] == "2016-11-03T12:30:59.000Z"
+            assert obj["modified"] == "2016-12-25T12:30:59.444Z"
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?match[version]=last",
@@ -342,7 +342,7 @@ def test_get_objects_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 7
+    assert len(objs['objects']) == 6
 
 
 def test_get_objects_spec_version(backend):
@@ -463,7 +463,7 @@ def test_get_object_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert objs["objects"][0]["modified"] == "2016-11-03T12:30:59.000Z"
+    assert objs["objects"][0]["modified"] == "2016-12-25T12:30:59.444Z"
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
@@ -490,7 +490,7 @@ def test_get_object_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 3
+    assert len(objs['objects']) == 2
 
 
 def test_get_object_spec_version(backend):
@@ -610,7 +610,7 @@ def test_get_manifest_version(backend):
     object_id = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
-        test.GET_MANIFESTS_EP + "?match[version]=2016-11-03T12:30:59.000Z",
+        test.GET_MANIFESTS_EP + "?match[version]=2016-12-25T12:30:59.444Z",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -621,7 +621,7 @@ def test_get_manifest_version(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == object_id
-    assert objs["objects"][0]["version"] == "2016-11-03T12:30:59.000Z"
+    assert objs["objects"][0]["version"] == "2016-12-25T12:30:59.444Z"
 
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?match[version]=first",
@@ -635,7 +635,7 @@ def test_get_manifest_version(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 5
     assert objs["objects"][2]["id"] == object_id
-    assert objs["objects"][2]["version"] == "2016-11-03T12:30:59.000Z"
+    assert objs["objects"][2]["version"] == "2016-12-25T12:30:59.444ZZ"
 
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?match[version]=last",
@@ -661,7 +661,7 @@ def test_get_manifest_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 7
+    assert len(objs['objects']) == 6
 
 
 def test_get_manifest_spec_version(backend):
@@ -721,18 +721,6 @@ def test_get_version_limit(backend):
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
-        headers=backend.headers,
-        follow_redirects=True,
-    )
-
-    assert r.status_code == 200
-    assert r.content_type == MEDIA_TYPE_TAXII_V21
-    objs = r.json
-    assert objs["more"] is True
-    assert len(objs["versions"]) == 1
-
-    r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
