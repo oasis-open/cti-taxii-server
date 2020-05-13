@@ -158,7 +158,7 @@
                         "name": "Malicious site hosting downloader",
                         "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
                         "pattern_type": "stix",
-                        "spec_version": "2.0",
+                        "spec_version": "2.1",
                         "type": "indicator",
                         "valid_from": "2017-01-27T13:49:53.935382Z"
                     },
@@ -202,6 +202,19 @@
                         "name": "TLP:GREEN",
                         "spec_version": "2.1",
                         "type": "marking-definition"
+                    },
+			{
+                        "created": "2017-01-27T13:49:53.997Z",
+                        "description": "Poison Ivy",
+                        "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                        "is_family": true,
+                        "malware_types": [
+                            "remote-access-trojan"
+                        ],
+                        "modified": "2018-02-23T18:30:00.000Z",
+                        "name": "Poison Ivy",
+                        "spec_version": "2.0",
+                        "type": "malware"
                     },
                     {
                         "created": "2017-01-27T13:49:53.997Z",
