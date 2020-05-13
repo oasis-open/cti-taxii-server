@@ -885,7 +885,6 @@ def test_get_version_spec_version(backend):
     objs = r.json
     assert objs["more"] is False
     assert len(objs["versions"]) == 2
-    assert objs["versions"][0] == "2017-01-27T13:49:53.997Z"
 
     # testing default value for spec_version
     r = backend.client.get(
@@ -899,7 +898,6 @@ def test_get_version_spec_version(backend):
     objs = r.json
     assert objs["more"] is False
     assert len(objs["versions"]) == 2
-    assert objs["versions"][0] == "2017-01-27T13:49:53.997Z"
 
 
 def test_delete_objects_version(backend):
