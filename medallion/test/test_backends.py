@@ -399,7 +399,7 @@ def test_get_objects_spec_version(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 5
     for obj in objs["objects"]:
-        if obj["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec"
+        if obj["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
             assert obj["modified"] == "2018-02-23T18:30:00.000Z"
 
 
