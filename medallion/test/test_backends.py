@@ -348,7 +348,7 @@ def test_get_objects_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 8
+    assert len(objs['objects']) == 7
 
 
 def test_get_objects_spec_version(backend):
@@ -400,7 +400,7 @@ def test_get_objects_spec_version(backend):
     assert len(objs['objects']) == 5
     for obj in objs["objects"]:
         if obj["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj["modified"] == "2018-02-23T18:30:00.000Z"
+            assert obj["modified"] == "2017-01-27T13:49:53.997Z"
 
 
 def test_get_object_added_after(backend):
@@ -759,7 +759,11 @@ def test_get_manifest_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 5
-    assert all(obj['media_type'] == "application/stix+json;version=2.1" for obj in objs['objects'])
+    for obj in objs['objects']:
+        if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
+            obj['media_type'] == "application/stix+json;version=2.0"
+        else:
+            obj['media_type'] == "application/stix+json;version=2.1"
     
     # testing default value
     r = backend.client.get(
@@ -772,6 +776,11 @@ def test_get_manifest_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 5
+    for obj in objs['objects']:
+        if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
+            obj['media_type'] == "application/stix+json;version=2.0"
+        else:
+            obj['media_type'] == "application/stix+json;version=2.1"
 
 
 def test_get_version_added_after(backend):
@@ -853,7 +862,7 @@ def test_get_version_spec_version(backend):
     assert objs["versions"][0] == "2018-02-23T18:30:00.000Z"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.1",
+        test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions?match[spec_version]=2.1",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -866,7 +875,7 @@ def test_get_version_spec_version(backend):
     assert objs["versions"][0] == "2017-01-27T13:49:53.997Z"
     
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1",
+        test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions?match[spec_version]=2.0,2.1",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -880,7 +889,7 @@ def test_get_version_spec_version(backend):
     
     #testing default value for spec_version
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions",
+        test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions",
         headers=backend.headers,
         follow_redirects=True,
     )
