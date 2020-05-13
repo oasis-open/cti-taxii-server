@@ -246,7 +246,7 @@
                     {
                         "date_added": "2016-11-03T12:30:59.001000Z",
                         "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
-                        "media_type": "application/stix+json;version=2.0",
+                        "media_type": "application/stix+json;version=2.1",
                         "version": "2016-11-03T12:30:59.000Z"
                     },
                     {
@@ -266,6 +266,12 @@
                         "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
                         "media_type": "application/stix+json;version=2.1",
                         "version": "2017-01-27T13:49:53.997Z"
+                    },
+		    {
+                        "date_added": "2017-01-27T13:49:59.997000Z",
+                        "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                        "media_type": "application/stix+json;version=2.0",
+                        "version": "2018-02-23T18:30:00.000Z"
                     },
                     {
                         "date_added": "2017-12-31T13:49:53.935000Z",
