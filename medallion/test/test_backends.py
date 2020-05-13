@@ -897,7 +897,7 @@ def test_get_version_spec_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs["more"] is False
-    assert len(objs["versions"]) == 2
+    assert len(objs["versions"]) == 1
 
 
 def test_delete_objects_version(backend):
