@@ -308,7 +308,7 @@ def test_get_objects_version(backend):
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "?match[version]=first",
+        test.GET_OBJECTS_EP + "?match[spec_version]=2.0,2.1&match[version]=first",
         headers=backend.headers,
     )
 
@@ -334,7 +334,7 @@ def test_get_objects_version(backend):
             assert obj["modified"] == "2017-01-27T13:49:53.935Z"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "?match[version]=all",
+        test.GET_OBJECTS_EP + "?match[spec_version]=2.0,2.1&match[version]=all",
         headers=backend.headers,
     )
 
@@ -356,7 +356,6 @@ def test_get_objects_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?match[spec_version]=2.1",
@@ -413,7 +412,7 @@ def test_get_object_limit(backend):
     assert len(objs['objects']) == 1
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all&limit=2",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=all&limit=2",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -425,7 +424,7 @@ def test_get_object_limit(backend):
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all&limit=2&next=" + objs['next'],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=all&limit=2&next=" + objs['next'],
         headers=backend.headers,
         follow_redirects=True
     )
@@ -439,7 +438,7 @@ def test_get_object_limit(backend):
 
 def test_get_object_version(backend):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=2016-12-25T12:30:59.444Z",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=2016-12-25T12:30:59.444Z",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -453,7 +452,7 @@ def test_get_object_version(backend):
     assert objs["objects"][0]["modified"] == "2016-12-25T12:30:59.444Z"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=first",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=first",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -481,7 +480,7 @@ def test_get_object_version(backend):
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=all",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -505,7 +504,6 @@ def test_get_object_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.1",
@@ -610,7 +608,7 @@ def test_get_manifest_version(backend):
     object_id = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
-        test.GET_MANIFESTS_EP + "?match[version]=2016-11-03T12:30:59.000Z",
+        test.GET_MANIFESTS_EP + "?match[spec_version]=2.0,2.1&match[version]=2016-11-03T12:30:59.000Z",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -624,7 +622,7 @@ def test_get_manifest_version(backend):
     assert objs["objects"][0]["version"] == "2016-11-03T12:30:59.000Z"
 
     r = backend.client.get(
-        test.GET_MANIFESTS_EP + "?match[version]=first",
+        test.GET_MANIFESTS_EP + "?match[spec_version]=2.0,2.1&match[version]=first",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -638,7 +636,7 @@ def test_get_manifest_version(backend):
     assert objs["objects"][2]["version"] == "2016-11-03T12:30:59.000Z"
 
     r = backend.client.get(
-        test.GET_MANIFESTS_EP + "?match[version]=last",
+        test.GET_MANIFESTS_EP + "?match[spec_version]=2.0,2.1&match[version]=last",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -652,7 +650,7 @@ def test_get_manifest_version(backend):
     assert objs["objects"][4]["version"] == "2017-01-27T13:49:53.935Z"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "?match[version]=all",
+        test.GET_OBJECTS_EP + "?match[spec_version]=2.0,2.1&match[version]=all",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -720,7 +718,7 @@ def test_get_version_added_after(backend):
 def test_get_version_limit(backend):
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1&limit=1",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -732,7 +730,7 @@ def test_get_version_limit(backend):
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1&limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -744,7 +742,7 @@ def test_get_version_limit(backend):
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1&limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
