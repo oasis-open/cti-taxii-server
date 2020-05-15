@@ -95,7 +95,7 @@ class MongoBackend(Backend):
 
     def _get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit, internal=False):
         api_root_db = self.client[api_root]
-        manifest_info = api_root_db["manifests"]
+        objects_info = api_root_db["objects"]
         next_id, record = self._process_params(filter_args, limit)
 
         full_filter = MongoDBFilter(
@@ -105,9 +105,9 @@ class MongoBackend(Backend):
             record
         )
         count, objects_found = full_filter.process_filter(
-            manifest_info,
+            objects_info,
             allowed_filters,
-            None,
+            "manifests",
         )
 
         for obj in objects_found:
@@ -123,25 +123,9 @@ class MongoBackend(Backend):
             return manifest_resource, headers
 
     @catch_mongodb_error
-    def _update_manifest(self, new_obj, api_root, collection_id, obj_version, request_time):
+    def _update_manifest(self, api_root, collection_id, media_type):
         api_root_db = self.client[api_root]
-        manifest_info = api_root_db["manifests"]
         collection_info = api_root_db["collections"]
-        media_type_fmt = "application/stix+json;version={}"
-
-        media_type = media_type_fmt.format(determine_spec_version(new_obj))
-
-        # version is a single value now, therefore a new manifest is created always
-        manifest_info.insert_one(
-            {
-                "id": new_obj["id"],
-                "date_added": datetime_to_float(request_time),
-                "version": datetime_to_float(string_to_datetime(obj_version)),
-                "media_type": media_type,
-                "_collection_id": collection_id,
-                "_type": new_obj["type"],
-            },
-        )
 
         # update media_types in collection if a new one is present.
         info = collection_info.find_one({"id": collection_id})
@@ -228,7 +212,6 @@ class MongoBackend(Backend):
     def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        manifest_info = api_root_db["manifests"]
         next_id, record = self._process_params(filter_args, limit)
 
         full_filter = MongoDBFilter(
@@ -242,7 +225,7 @@ class MongoBackend(Backend):
         count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
-            manifest_info
+            "objects"
         )
 
         for obj in objects_found:
@@ -261,7 +244,6 @@ class MongoBackend(Backend):
     def add_objects(self, api_root, collection_id, objs, request_time):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        manifest_info = api_root_db["manifests"]
         failed = 0
         succeeded = 0
         pending = 0
@@ -272,10 +254,10 @@ class MongoBackend(Backend):
         try:
             for new_obj in objs["objects"]:
                 media_type = media_fmt.format(determine_spec_version(new_obj))
-                mongo_query = {"_collection_id": collection_id, "id": new_obj["id"], "media_type": media_type}
+                mongo_query = {"_collection_id": collection_id, "id": new_obj["id"], "_manifest.media_type": media_type}
                 if "modified" in new_obj:
-                    mongo_query["version"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
-                existing_entry = manifest_info.find_one(mongo_query)
+                    mongo_query["_manifest.version"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
+                existing_entry = objects_info.find_one(mongo_query)
                 obj_version = determine_version(new_obj, request_time)
                 if existing_entry:
                     status_detail = generate_status_details(
@@ -286,14 +268,19 @@ class MongoBackend(Backend):
                     failed += 1
                 else:
                     new_obj.update({"_collection_id": collection_id})
-                    if all(prop not in new_obj for prop in ("modified", "created")):
-                        new_obj["_date_added"] = datetime_to_float(string_to_datetime(obj_version))  # Special case for un-versioned objects
                     if "modified" in new_obj:
                         new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
                     if "created" in new_obj:
                         new_obj["created"] = datetime_to_float(string_to_datetime(new_obj["created"]))
+                    _manifest = {
+                        "id": new_obj["id"],
+                        "date_added": datetime_to_float(request_time),
+                        "version": datetime_to_float(string_to_datetime(obj_version)),
+                        "media_type": media_type,
+                    }
+                    new_obj.update({"_manifest": _manifest})
                     objects_info.insert_one(new_obj)
-                    self._update_manifest(new_obj, api_root, collection_id, obj_version, request_time)
+                    self._update_manifest(api_root, collection_id, media_type)
                     status_detail = generate_status_details(
                         new_obj["id"], obj_version,
                         message="Successfully added object to collection '{}'.".format(collection_id)
@@ -316,12 +303,11 @@ class MongoBackend(Backend):
     def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        manifest_info = api_root_db["manifests"]
         # set manually to properly retrieve manifests, and early to not break the pagination checks
         filter_args["match[id]"] = object_id
         next_id, record = self._process_params(filter_args, limit)
 
-        self._validate_object_id(manifest_info, collection_id, object_id)
+        self._validate_object_id(objects_info, collection_id, object_id)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -332,7 +318,7 @@ class MongoBackend(Backend):
         count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
-            manifest_info
+            "objects"
         )
 
         for obj in objects_found:
@@ -351,9 +337,8 @@ class MongoBackend(Backend):
     def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        manifest_info = api_root_db["manifests"]
 
-        self._validate_object_id(manifest_info, collection_id, object_id)
+        self._validate_object_id(objects_info, collection_id, object_id)
 
         # Currently it will delete the object and the matching manifest from the backend
         full_filter = MongoDBFilter(
@@ -364,17 +349,13 @@ class MongoBackend(Backend):
         count, objects_found = full_filter.process_filter(
             objects_info,
             allowed_filters,
-            manifest_info
+            "raw"
         )
         if objects_found:
             for obj in objects_found:
-                attr = find_version_attribute(obj)
+                obj_version = obj["_manifest"]["version"]
                 objects_info.delete_one(
-                    {"_collection_id": collection_id, "id": object_id, attr: obj[attr]}
-                )
-                obj_version = obj.get("modified", obj.get("created", obj.get("_date_added")))
-                manifest_info.delete_one(
-                    {"_collection_id": collection_id, "id": object_id, "version": obj_version}
+                    {"_collection_id": collection_id, "id": object_id, "_manifest.version": obj_version}
                 )
         else:
             raise ProcessingError("Object '{}' not found".format(object_id), 404)
@@ -382,13 +363,13 @@ class MongoBackend(Backend):
     @catch_mongodb_error
     def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
-        manifest_info = api_root_db["manifests"]
+        objects_info = api_root_db["objects"]
         # set manually to properly retrieve manifests, and early to not break the pagination checks
         filter_args["match[id]"] = object_id
         filter_args["match[version]"] = "all"
         next_id, record = self._process_params(filter_args, limit)
 
-        self._validate_object_id(manifest_info, collection_id, object_id)
+        self._validate_object_id(objects_info, collection_id, object_id)
 
         full_filter = MongoDBFilter(
             filter_args,
@@ -397,9 +378,9 @@ class MongoBackend(Backend):
             record
         )
         count, manifests_found = full_filter.process_filter(
-            manifest_info,
+            objects_info,
             allowed_filters,
-            None,
+            "manifests",
         )
 
         manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, ("id", "type", "version", "spec_version"), limit, True)
