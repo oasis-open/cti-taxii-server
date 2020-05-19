@@ -564,7 +564,7 @@ def test_get_object_spec_version(backend):
     assert len(objs['objects']) == 1
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            obj['modified'] == "2018-02-23T18:30:00.000Z"
+            assert obj['modified'] == "2018-02-23T18:30:00.000Z"
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
@@ -579,7 +579,7 @@ def test_get_object_spec_version(backend):
     assert len(objs['objects']) == 1
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            obj['modified'] == "2018-02-23T18:30:00.000Z"
+            assert obj['modified'] == "2018-02-23T18:30:00.000Z"
 
 
 def test_get_manifest_added_after(backend):
@@ -761,9 +761,9 @@ def test_get_manifest_spec_version(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            obj['media_type'] == "application/stix+json;version=2.0"
+            assert obj['media_type'] == "application/stix+json;version=2.0"
         else:
-            obj['media_type'] == "application/stix+json;version=2.1"
+            assert obj['media_type'] == "application/stix+json;version=2.1"
 
     # testing default value
     r = backend.client.get(
@@ -778,9 +778,9 @@ def test_get_manifest_spec_version(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            obj['media_type'] == "application/stix+json;version=2.0"
+            assert obj['media_type'] == "application/stix+json;version=2.0"
         else:
-            obj['media_type'] == "application/stix+json;version=2.1"
+            assert obj['media_type'] == "application/stix+json;version=2.1"
 
 
 def test_get_version_added_after(backend):
