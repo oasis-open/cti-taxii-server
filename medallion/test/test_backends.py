@@ -362,7 +362,7 @@ def test_get_objects_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
+    assert all("spec_version" not in obj for obj in objs['objects'])
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?match[spec_version]=2.1",
@@ -399,8 +399,7 @@ def test_get_objects_spec_version(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 5
     for obj in objs["objects"]:
-        if obj["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj["modified"] == "2017-01-27T13:49:53.997Z"
+        assert obj["spec_version"] == "2.1"
 
 
 def test_get_object_added_after(backend):
@@ -535,7 +534,7 @@ def test_get_object_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert all(obj['spec_version'] == "2.0" for obj in objs['objects'])
+    assert all(['spec_version'] not in obj for obj in objs['objects'])
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec?match[spec_version]=2.1",
@@ -578,8 +577,7 @@ def test_get_object_spec_version(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 1
     for obj in objs['objects']:
-        if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj['modified'] == "2018-02-23T18:30:00.000Z"
+        assert obj['spec_version'] == "2.1"
 
 
 def test_get_manifest_added_after(backend):
@@ -761,9 +759,7 @@ def test_get_manifest_spec_version(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj['media_type'] == "application/stix+json;version=2.0"
-        else:
-            assert obj['media_type'] == "application/stix+json;version=2.1"
+            assert obj['version'] == "2018-02-23T18:30:00.000Z"
 
     # testing default value
     r = backend.client.get(
@@ -777,10 +773,7 @@ def test_get_manifest_spec_version(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
-        if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj['media_type'] == "application/stix+json;version=2.0"
-        else:
-            assert obj['media_type'] == "application/stix+json;version=2.1"
+        assert obj['media_type'] == "application/stix+json;version=2.1"
 
 
 def test_get_version_added_after(backend):
@@ -898,6 +891,7 @@ def test_get_version_spec_version(backend):
     objs = r.json
     assert objs["more"] is False
     assert len(objs["versions"]) == 1
+    assert objs["versions"][0] == "2017-01-27T13:49:53.997Z"
 
 
 def test_delete_objects_version(backend):
