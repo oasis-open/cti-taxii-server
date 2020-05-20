@@ -174,8 +174,9 @@ class BasicFilter(object):
         if spec_:
             spec_ = spec_.split(",")
             for obj in data:
-                if "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
-                    match_objects.append(obj)
+                if "media_type" in obj:
+                    if any(s == obj["media_type"].split("version=")[1] for s in spec_):
+                        match_objects.append(obj)
                 elif any(s == determine_spec_version(obj) for s in spec_):
                     match_objects.append(obj)
         else:
