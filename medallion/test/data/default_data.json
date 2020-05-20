@@ -203,7 +203,7 @@
                         "spec_version": "2.1",
                         "type": "marking-definition"
                     },
-			{
+		    {
                         "created": "2017-01-27T13:49:53.997Z",
                         "description": "Poison Ivy",
                         "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
