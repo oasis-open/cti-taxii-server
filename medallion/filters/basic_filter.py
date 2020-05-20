@@ -230,6 +230,8 @@ class BasicFilter(object):
         match_spec_version = self.filter_args.get("match[spec_version]")
         if "spec_version" in allowed:
             filtered_by_spec_version = self.filter_by_spec_version(filtered_by_added_after, match_spec_version)
+        else:
+            filtered_by_spec_version = filtered_by_added_after
 
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
