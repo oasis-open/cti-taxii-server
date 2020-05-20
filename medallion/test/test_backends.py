@@ -534,8 +534,9 @@ def test_get_object_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert all(['spec_version'] not in obj for obj in objs['objects'])
-
+    for obj in objs['objects']:
+        assert ['spec_version'] not in obj
+    
     r = backend.client.get(
         test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec?match[spec_version]=2.1",
         headers=backend.headers,
@@ -744,7 +745,8 @@ def test_get_manifest_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 5
-    assert all(obj['media_type'] == "application/stix+json;version=2.1" for obj in objs['objects'])
+    for obj in objs['objects']:
+        assert obj['media_type'] == "application/stix+json;version=2.1" 
 
     # though the spec_version filter is getting all objects, the automatic filtering by version only gets the latest objects
     r = backend.client.get(
