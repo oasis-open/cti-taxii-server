@@ -189,7 +189,7 @@ class BasicFilter(object):
                     if "media_type" in match:
                         s2 = match["media_type"].split("version=")[1]
                     else:
-                        s2 = determine_spec_version(obj)
+                        s2 = determine_spec_version(match)
                     if obj["id"] == match["id"] and s2 > s1:
                         add = False
                 if add:
