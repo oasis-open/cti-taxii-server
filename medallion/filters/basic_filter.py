@@ -2,7 +2,7 @@ import bisect
 import copy
 import operator
 
-from ..common import find_att, string_to_datetime
+from ..common import determin_spec_version, find_att, string_to_datetime
 
 
 def check_for_dupes(final_match, final_track, res):
@@ -174,29 +174,22 @@ class BasicFilter(object):
         if spec_:
             spec_ = spec_.split(",")
             for obj in data:
-                if "spec_version" in obj and any(s == obj["spec_version"] for s in spec_):
+                if "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
                     match_objects.append(obj)
-                elif "media_type" in obj and any(s == obj["media_type"].split("version=")[1] for s in spec_):
+                elif any(s == determine_spec_version(obj) for s in spec_):
                     match_objects.append(obj)
         else:
             for obj in data:
                 add = True
-                if "spec_version" in obj:
-                    s1 = obj["spec_version"]
-                elif "media_type" in obj:
+                if "media_type" in obj:
                     s1 = obj["media_type"].split("version=")[1]
                 else:
-                    # version cannot be determined, so it must be added
-                    match_objects.append(obj)
-                    continue
+                    s1 = determine_spec_version(obj)
                 for match in data:
-                    if "spec_version" in match:
-                        s2 = match["spec_version"]
-                    elif "media_type" in match:
+                    if "media_type" in match:
                         s2 = match["media_type"].split("version=")[1]
                     else:
-                        # version cannot be determined, so disregard
-                        continue
+                        s2 = determine_spec_version(obj)
                     if obj["id"] == match["id"] and s2 > s1:
                         add = False
                 if add:
