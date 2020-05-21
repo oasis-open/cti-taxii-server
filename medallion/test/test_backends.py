@@ -442,7 +442,7 @@ def test_get_object_limit(backend):
     assert len(objs['objects']) == 1
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=all&limit=2",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all&limit=2",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -454,7 +454,7 @@ def test_get_object_limit(backend):
     assert len(objs['objects']) == 2
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=all&limit=2&next=" + objs['next'],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all&limit=2&next=" + objs['next'],
         headers=backend.headers,
         follow_redirects=True
     )
@@ -468,7 +468,7 @@ def test_get_object_limit(backend):
 
 def test_get_object_version(backend):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=2016-12-25T12:30:59.444Z",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=2016-12-25T12:30:59.444Z",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -482,7 +482,7 @@ def test_get_object_version(backend):
     assert objs["objects"][0]["modified"] == "2016-12-25T12:30:59.444Z"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=first",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=first",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -510,7 +510,7 @@ def test_get_object_version(backend):
     assert objs["objects"][0]["id"] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[spec_version]=2.0,2.1&match[version]=all",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all",
         headers=backend.headers,
         follow_redirects=True
     )
@@ -805,7 +805,7 @@ def test_get_version_added_after(backend):
 def test_get_version_limit(backend):
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1&limit=1",
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1",
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -817,7 +817,7 @@ def test_get_version_limit(backend):
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1&limit=1&next=" + objs["next"],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -829,7 +829,7 @@ def test_get_version_limit(backend):
     assert len(objs["versions"]) == 1
 
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?match[spec_version]=2.0,2.1&limit=1&next=" + objs["next"],
+        test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
         headers=backend.headers,
         follow_redirects=True,
     )
