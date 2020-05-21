@@ -54,18 +54,13 @@ class MongoDBFilter(BasicFilter):
             {"$match": {"$and": [self.full_query]}},
         ]
 
-        latest_pipeline = []
-        latest_op = {}
-
         # when no filter is provided only latest is considered.
         match_spec_version = self.filter_args.get("match[spec_version]")
         if not match_spec_version and "spec_version" in allowed:
-            latest_op = {"$group": {"_id": "$id", "media_type": {"$last": "$_manifest.media_type"}}}
             latest_pipeline = list(pipeline)
             latest_pipeline.append({"$sort": {"_manifest.media_type": pymongo.ASCENDING}})
-            latest_pipeline.append(latest_op)
+            latest_pipeline.append({"$group": {"_id": "$id", "media_type": {"$last": "$_manifest.media_type"}}})
 
-        if "media_type" in latest_op.get("$group", {}):
             query = [
                 {"id": x["_id"], "_manifest.media_type": x["media_type"]}
                 for x in list(data.aggregate(latest_pipeline))
@@ -80,10 +75,10 @@ class MongoDBFilter(BasicFilter):
                 match_version = "last"
             if "all" not in match_version:
                 actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
-                latest_op = {"$group": {"_id": "$id", "versions": {"$push": "$_manifest.version"}}}
+
                 latest_pipeline = list(pipeline)
                 latest_pipeline.append({"$sort": {"_manifest.version": pymongo.ASCENDING}})
-                latest_pipeline.append(latest_op)
+                latest_pipeline.append({"$group": {"_id": "$id", "versions": {"$push": "$_manifest.version"}}})
 
                 # The documents are sorted in ASCENDING order.
                 version_selector = []
@@ -97,13 +92,12 @@ class MongoDBFilter(BasicFilter):
                 if actual_dates:
                     latest_pipeline.append({"$match": {"versions": {"$in": actual_dates}}})
 
-        if "versions" in latest_op.get("$group", {}):
-            query = [
-                {"id": x["_id"], "_manifest.version": {"$in": x["versions"]}}
-                for x in list(data.aggregate(latest_pipeline))
-            ]
-            if query:
-                pipeline.append({"$match": {"$or": query}})
+                query = [
+                    {"id": x["_id"], "_manifest.version": {"$in": x["versions"]}}
+                    for x in list(data.aggregate(latest_pipeline))
+                ]
+                if query:
+                    pipeline.append({"$match": {"$or": query}})
 
         pipeline.append({"$sort": {"_manifest.date_added": pymongo.ASCENDING, "created": pymongo.ASCENDING, "modified": pymongo.ASCENDING}})
 
