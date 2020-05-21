@@ -52,7 +52,6 @@ class MongoDBFilter(BasicFilter):
     def process_filter(self, data, allowed, manifest_info):
         pipeline = [
             {"$match": {"$and": [self.full_query]}},
-            {"$sort": {"_manifest.media_type": pymongo.ASCENDING, "_manifest.version": pymongo.ASCENDING}},
         ]
 
         latest_pipeline = []
@@ -63,6 +62,7 @@ class MongoDBFilter(BasicFilter):
         if not match_spec_version and "spec_version" in allowed:
             latest_op = {"$group": {"_id": "$id", "media_type": {"$last": "$_manifest.media_type"}}}
             latest_pipeline = list(pipeline)
+            latest_pipeline.append({"$sort": {"_manifest.media_type": pymongo.ASCENDING}})
             latest_pipeline.append(latest_op)
 
         if "media_type" in latest_op.get("$group", {}):
@@ -82,6 +82,7 @@ class MongoDBFilter(BasicFilter):
                 actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
                 latest_op = {"$group": {"_id": "$id", "versions": {"$push": "$_manifest.version"}}}
                 latest_pipeline = list(pipeline)
+                latest_pipeline.append({"$sort": {"_manifest.version": pymongo.ASCENDING}})
                 latest_pipeline.append(latest_op)
 
                 # The documents are sorted in ASCENDING order.
