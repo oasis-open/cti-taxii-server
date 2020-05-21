@@ -94,65 +94,6 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         },
     ])
 
-    api_root_db["manifests"].insert_many([
-        {
-            "date_added": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000000Z")),
-            "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
-            "media_type": "application/stix+json;version=2.1",
-            "version": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "relationship",
-        },
-        {
-            "date_added": datetime_to_float(string_to_datetime("2016-11-01T03:04:05.000000Z")),
-            "id": "indicator--cd981c25-8042-4166-8945-51178443bdac",
-            "media_type": "application/stix+json;version=2.1",
-            "version": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "indicator",
-        },
-        {
-            "date_added": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.001000Z")),
-            "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
-            "media_type": "application/stix+json;version=2.0",
-            "version": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "indicator",
-        },
-        {
-            "date_added": datetime_to_float(string_to_datetime("2016-12-27T13:49:59.000000Z")),
-            "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
-            "media_type": "application/stix+json;version=2.1",
-            "version": datetime_to_float(string_to_datetime("2016-12-25T12:30:59.444Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "indicator",
-        },
-        {
-            "date_added": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000000Z")),
-            "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
-            "media_type": "application/stix+json;version=2.1",
-            "version": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "marking-definition",
-        },
-        {
-            "date_added": datetime_to_float(string_to_datetime("2017-01-27T13:49:59.997000Z")),
-            "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
-            "media_type": "application/stix+json;version=2.1",
-            "version": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "malware",
-        },
-        {
-            "date_added": datetime_to_float(string_to_datetime("2017-12-31T13:49:53.935000Z")),
-            "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
-            "media_type": "application/stix+json;version=2.1",
-            "version": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.935Z")),
-            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-            "_type": "indicator",
-        }
-    ])
-
     api_root_db["collections"].insert_one({
         "id": "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4",
         "title": "This data collection is for testing querying across collections",
@@ -180,6 +121,7 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
         "can_read": True,
         "can_write": True,
         "media_types": [
+            "application/stix+json;version=2.0",
             "application/stix+json;version=2.1",
         ],
     })
@@ -217,6 +159,12 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "target_ref": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
             "type": "relationship",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000000Z")),
+                "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
+            },
         },
         {
             "created": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
@@ -232,6 +180,12 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "type": "indicator",
             "valid_from": "2014-05-08T09:00:00.000000Z",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2016-11-01T03:04:05.000000Z")),
+                "id": "indicator--cd981c25-8042-4166-8945-51178443bdac",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2014-05-08T09:00:00.000Z")),
+            },
         },
         {
             "created": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
@@ -244,10 +198,16 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "name": "Malicious site hosting downloader",
             "pattern": "[url:value = 'http://z4z10farb.cn/4712']",
             "pattern_type": "stix",
-            "spec_version": "2.0",
+            "spec_version": "2.1",
             "type": "indicator",
             "valid_from": "2017-01-27T13:49:53.935382Z",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.001000Z")),
+                "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
+            },
         },
         {
             "created": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
@@ -264,6 +224,12 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "type": "indicator",
             "valid_from": "2017-01-27T13:49:53.935382Z",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2016-12-27T13:49:59.000000Z")),
+                "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2016-12-25T12:30:59.444Z")),
+            },
         },
         {
             "created": datetime_to_float(string_to_datetime("2016-11-03T12:30:59.000Z")),
@@ -280,6 +246,12 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "type": "indicator",
             "valid_from": "2016-11-03T12:30:59.000Z",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2017-12-31T13:49:53.935000Z")),
+                "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.935Z")),
+            },
         },
         {
             "created": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000Z")),
@@ -292,6 +264,12 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "spec_version": "2.1",
             "type": "marking-definition",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000000Z")),
+                "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2017-01-20T00:00:00.000Z")),
+            },
         },
         {
             "created": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
@@ -306,18 +284,46 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "spec_version": "2.1",
             "type": "malware",
             "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
-        }
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2017-01-27T13:49:59.997000Z")),
+                "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                "media_type": "application/stix+json;version=2.1",
+                "version": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
+            },
+        },
+        {
+            "created": datetime_to_float(string_to_datetime("2017-01-27T13:49:53.997Z")),
+            "description": "Poison Ivy",
+            "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+            "is_family": True,
+            "malware_types": [
+                "remote-access-trojan"
+            ],
+            "modified": datetime_to_float(string_to_datetime("2018-02-23T18:30:00.000Z")),
+            "name": "Poison Ivy",
+            "type": "malware",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": datetime_to_float(string_to_datetime("2017-01-27T13:49:59.997000Z")),
+                "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                "media_type": "application/stix+json;version=2.0",
+                "version": datetime_to_float(string_to_datetime("2018-02-23T18:30:00.000Z")),
+            },
+        },
     ])
 
-    date_index = IndexModel([("date_added", ASCENDING)])
     id_index = IndexModel([("id", ASCENDING)])
+    type_index = IndexModel([("type", ASCENDING)])
     collection_index = IndexModel([("_collection_id", ASCENDING)])
-    collection_and_date_index = IndexModel([("_collection_id", ASCENDING), ("date_added", ASCENDING)])
-    type_index = IndexModel([("_type", ASCENDING)])
-    api_root_db["manifests"].create_indexes(
-        [date_index, id_index, collection_index, collection_and_date_index, type_index],
+    date_index = IndexModel([("_manifest.date_added", ASCENDING)])
+    version_index = IndexModel([("_manifest.version", ASCENDING)])
+    date_and_spec_index = IndexModel([("_manifest.media_type", ASCENDING), ("_manifest.date_added", ASCENDING)])
+    version_and_spec_index = IndexModel([("_manifest.media_type", ASCENDING), ("_manifest.version", ASCENDING)])
+    collection_and_date_index = IndexModel([("_collection_id", ASCENDING), ("_manifest.date_added", ASCENDING)])
+    api_root_db["objects"].create_indexes(
+        [id_index, type_index, date_index, version_index, collection_index, date_and_spec_index,
+         version_and_spec_index, collection_and_date_index]
     )
-    api_root_db["objects"].create_indexes([id_index])
 
 
 def wipe_mongodb_server():

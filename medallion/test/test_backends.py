@@ -534,8 +534,7 @@ def test_get_object_spec_version(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    for obj in objs['objects']:
-        assert 'spec_version' not in obj
+    assert all("spec_version" not in obj for obj in objs['objects'])
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec?match[spec_version]=2.1",
