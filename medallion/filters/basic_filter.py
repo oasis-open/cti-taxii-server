@@ -197,7 +197,7 @@ class BasicFilter(object):
                     match_objects.append(obj)
         return match_objects
 
-    def process_filter(self, data, allowed=(), manifest_info=[], limit=None):
+    def process_filter(self, data, allowed=(), manifest_info=(), limit=None):
         filtered_by_type = []
         filtered_by_id = []
         filtered_by_spec_version = []
