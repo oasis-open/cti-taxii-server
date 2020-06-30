@@ -176,7 +176,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
-        get_header["Range"] = "items 100-199"
+        get_header["Range"] = "items=100-199"
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(416, r.status_code)
@@ -195,7 +195,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
-        get_header["Range"] = "items x-199"
+        get_header["Range"] = "items=x-199"
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(400, r.status_code)
@@ -211,7 +211,7 @@ class TestTAXIIServerWithMockBackend(unittest.TestCase):
 
         get_header = copy.deepcopy(self.common_headers)
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
-        get_header["Range"] = "items 0-10"
+        get_header["Range"] = "items=0-10"
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
 
         self.assertEqual(206, r.status_code)
