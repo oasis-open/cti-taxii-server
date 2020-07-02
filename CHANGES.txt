@@ -1,3 +1,9 @@
+Version 1.1.0
+2020-07-02
+Patch release to fix issues on TAXII 2.0
+- #129 Dropped Python versions older than 3.5
+- #128 The Range header was incorrectly checked/enforced according to RFC 7233 (@dougle)
+
 Version 1.0.0
 2020-03-26
 First major and stable release to support TAXII 2.0
