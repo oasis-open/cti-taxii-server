@@ -108,7 +108,7 @@ def test_get_objects(backend):
                      'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da',
                      'malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
                      'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
-    x = 0
+
     for x in range(0, len(correct_order)):
         assert objs['objects'][x]['id'] == correct_order[x]
 
@@ -241,7 +241,7 @@ def test_get_object_manifests(backend):
     assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
 
     # checking ordered by date_added
-    x = 1
+
     for x in range(1, len(manifests["objects"])):
         assert manifests["objects"][x - 1]["date_added"] < manifests["objects"][x]["date_added"]
 
@@ -294,9 +294,8 @@ def test_get_objects_limit(backend):
                      'indicator--cd981c25-8042-4166-8945-51178443bdac',
                      'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da']
 
-    x = 0
     for x in range(0, len(correct_order)):
-        objs["objects"][x]["id"] == correct_order[x]
+        assert objs["objects"][x]["id"] == correct_order[x]
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?limit=3&next=" + r.json["next"],
@@ -314,9 +313,9 @@ def test_get_objects_limit(backend):
 
     correct_order = ['malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
                      'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
-    x = 0
+
     for x in range(0, len(correct_order)):
-        objs["objects"][x]["id"] == correct_order[x]
+        assert objs["objects"][x]["id"] == correct_order[x]
 
 
 def test_get_objects_id(backend):
