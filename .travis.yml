@@ -1,11 +1,9 @@
-os: linux
+dist: focal
 language: python
 cache: pip
 services:
   - mongodb
 python:
-  - "2.7"
-  - "3.4"
   - "3.5"
   - "3.6"
   - "3.7"
@@ -14,10 +12,10 @@ install:
   - pip install -U pip setuptools
   - pip install tox-travis
   - pip install codecov
-  - if [[ $TRAVIS_PYTHON_VERSION != 3.4 ]]; then pip install pre-commit; fi
+  - pip install pre-commit
 script:
   - tox
-  - if [[ $TRAVIS_PYTHON_VERSION != 3.4 ]]; then pre-commit run --all-files; fi
+  - pre-commit run --all-files
 after_success:
   - codecov
 before_script:
