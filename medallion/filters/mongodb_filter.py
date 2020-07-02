@@ -1,4 +1,5 @@
-import pymongo
+from bson.son import SON
+from pymongo import ASCENDING
 
 from ..common import datetime_to_float, string_to_datetime
 from .basic_filter import BasicFilter
@@ -58,8 +59,8 @@ class MongoDBFilter(BasicFilter):
         match_spec_version = self.filter_args.get("match[spec_version]")
         if not match_spec_version and "spec_version" in allowed:
             latest_pipeline = list(pipeline)
-            latest_pipeline.append({"$sort": {"_manifest.media_type": pymongo.ASCENDING}})
-            latest_pipeline.append({"$group": {"_id": "$id", "media_type": {"$last": "$_manifest.media_type"}}})
+            latest_pipeline.append({"$sort": {"_manifest.media_type": ASCENDING}})
+            latest_pipeline.append({"$group": SON([("_id", "$id"), ("media_type", SON([("$last", "$_manifest.media_type")]))])})
 
             query = [
                 {"id": x["_id"], "_manifest.media_type": x["media_type"]}
@@ -77,8 +78,8 @@ class MongoDBFilter(BasicFilter):
                 actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
 
                 latest_pipeline = list(pipeline)
-                latest_pipeline.append({"$sort": {"_manifest.version": pymongo.ASCENDING}})
-                latest_pipeline.append({"$group": {"_id": "$id", "versions": {"$push": "$_manifest.version"}}})
+                latest_pipeline.append({"$sort": {"_manifest.version": ASCENDING}})
+                latest_pipeline.append({"$group": SON([("_id", "$id"), ("versions", SON([("$push", "$_manifest.version")]))])})
 
                 # The documents are sorted in ASCENDING order.
                 version_selector = []
@@ -99,7 +100,7 @@ class MongoDBFilter(BasicFilter):
                 if query:
                     pipeline.append({"$match": {"$or": query}})
 
-        pipeline.append({"$sort": {"_manifest.date_added": pymongo.ASCENDING, "created": pymongo.ASCENDING, "modified": pymongo.ASCENDING}})
+        pipeline.append({"$sort": SON([("_manifest.date_added", ASCENDING), ("created", ASCENDING), ("modified", ASCENDING)])})
 
         if manifest_info == "manifests":
             # Project the final results
