@@ -739,7 +739,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for subset of objects endpoint ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-10"
+        get_header["Range"] = "items=0-10"
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
@@ -752,7 +752,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for more than servers supported page size on objects endpoint ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-100"
+        get_header["Range"] = "items=0-100"
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
@@ -766,7 +766,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for range beyond result set of objects endpoint ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 90-119"
+        get_header["Range"] = "items=90-119"
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
@@ -779,7 +779,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for just the first item ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-0"
+        get_header["Range"] = "items=0-0"
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         objs = self.load_json_response(r.data)
@@ -792,7 +792,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for one item past the end of the range ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 100-100"
+        get_header["Range"] = "items=100-100"
         get_header["Accept"] = MEDIA_TYPE_STIX_V20
         r = self.client.get(test.GET_OBJECT_EP, headers=get_header)
         self.assertEqual(r.status_code, 416)
@@ -825,7 +825,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for subset of manifests endpoint------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-10"
+        get_header["Range"] = "items=0-10"
         r = self.client.get(test.MANIFESTS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
@@ -837,7 +837,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for more than servers supported page size of manifests endpoint------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-100"
+        get_header["Range"] = "items=0-100"
         r = self.client.get(test.MANIFESTS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
@@ -849,7 +849,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for range beyond result set of manifests endpoint  ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 90-119"
+        get_header["Range"] = "items=90-119"
         r = self.client.get(test.MANIFESTS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
@@ -883,7 +883,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for subset of collections endpoint------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-10"
+        get_header["Range"] = "items=0-10"
         r = self.client.get(test.COLLECTIONS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
@@ -895,7 +895,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for more than servers supported page size of collections endpoint------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 0-100"
+        get_header["Range"] = "items=0-100"
         r = self.client.get(test.COLLECTIONS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
@@ -907,7 +907,7 @@ class TestTAXIIServerWithMongoDBBackend(TaxiiTest):
         # ------------- BEGIN: test request for range beyond result set of collections endpoint  ------------- #
 
         get_header = copy.deepcopy(self.common_headers)
-        get_header["Range"] = "items 90-119"
+        get_header["Range"] = "items=90-119"
         r = self.client.get(test.COLLECTIONS_EP, headers=get_header)
         objs = self.load_json_response(r.data)
 
