@@ -1,3 +1,5 @@
+|Build_Status| |Coverage| |Version| |Documentation_Status|
+
 cti-taxii-server
 ================
 
@@ -253,11 +255,13 @@ any specific CLA-related questions to repository-cla@oasis-open.org.
 
 .. |Build_Status| image:: https://travis-ci.org/oasis-open/cti-taxii-server.svg?branch=master
    :target: https://travis-ci.org/oasis-open/cti-taxii-server
+   :alt: Travis CI Build Status
 .. |Coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-server/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/oasis-open/cti-taxii-server
+   :alt: Codecov Coverage
 .. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/medallion/
-   :alt: Version 2.0.1
+   :alt: PyPI Version 2.0.1
 .. |Documentation_Status| image:: https://readthedocs.org/projects/medallion/badge/?version=latest
    :target: https://medallion.readthedocs.io/en/latest/
-   :alt: Documentation Status
+   :alt: ReadTheDocs Documentation Status
