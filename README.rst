@@ -59,7 +59,7 @@ Medallion provides a command-line interface to start the TAXII Server
         [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
         CONFIG_PATH
 
-    medallion v2.0.1
+    medallion v3.0.0
 
     positional arguments:
       CONFIG_PATH           The location of the JSON configuration file to use.
@@ -261,7 +261,7 @@ any specific CLA-related questions to repository-cla@oasis-open.org.
    :alt: Codecov Coverage
 .. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/medallion/
-   :alt: PyPI Version 2.0.1
+   :alt: PyPI Version 3.0.0
 .. |Documentation_Status| image:: https://readthedocs.org/projects/medallion/badge/?version=latest
    :target: https://medallion.readthedocs.io/en/latest/
    :alt: ReadTheDocs Documentation Status
