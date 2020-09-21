@@ -85,8 +85,8 @@ def connect_to_backend(config_info):
         # Handle configurations which specify a module to load
         warnings.warn(
             "Backend module paths in configuration will be removed in future. "
-            "Simply use the backend class name in 'module_class' for builtin "
-            "backend implementations.",
+            "Simply use the backend class name in 'module_class' or add a "
+            "medallion.backends entrypoint for more exotic implementations.",
             DeprecationWarning
         )
         try:
