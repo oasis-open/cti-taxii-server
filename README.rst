@@ -99,7 +99,6 @@ To use the Memory back-end plug, include the following in the <config-file>:
 
     {
         "backend": {
-            "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
             "filename": "<path to json file with initial data>"
         }
@@ -111,7 +110,6 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
 
     {
          "backend": {
-            "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
             "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
          }

@@ -1,6 +1,5 @@
 {
   "backend": {
-    "module": "medallion.backends.mongodb_backend",
     "module_class": "MongoBackend",
     "uri": "mongodb://root:example@mongo:27017/"
   },

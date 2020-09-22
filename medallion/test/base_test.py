@@ -27,7 +27,6 @@ class TaxiiTest():
 
     config_no_taxii = {
         "backend": {
-            "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
             "filename": DATA_FILE,
         },
@@ -38,7 +37,6 @@ class TaxiiTest():
 
     config_no_auth = {
         "backend": {
-            "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
             "filename": DATA_FILE,
         },
@@ -58,7 +56,6 @@ class TaxiiTest():
 
     memory_config = {
         "backend": {
-            "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
             "filename": DATA_FILE,
         },
@@ -72,7 +69,6 @@ class TaxiiTest():
 
     mongodb_config = {
         "backend": {
-            "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
             "uri": "mongodb://travis:test@127.0.0.1:27017/",
         },

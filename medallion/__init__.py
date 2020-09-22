@@ -59,7 +59,7 @@ def set_config(flask_application_instance, prop_name, config):
                 log.warning("We are giving medallion the default settings,")
                 log.warning("which includes a data file of 'default_data.json'.")
                 log.warning("Please ensure this file is in your CWD.")
-                back = {'module': 'medallion.backends.memory_backend', 'module_class': 'MemoryBackend', 'filename': None}
+                back = {'module_class': 'MemoryBackend', 'filename': None}
                 flask_application_instance.medallion_backend = connect_to_backend(back)
 
 
