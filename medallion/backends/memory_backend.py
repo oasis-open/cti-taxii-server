@@ -1,6 +1,7 @@
 import copy
 import io
 import json
+import os
 import uuid
 
 from six import string_types
@@ -36,6 +37,16 @@ class MemoryBackend(Backend):
     # access control is handled at the views level
 
     def __init__(self, **kwargs):
+        # Refuse to run under a WSGI server since this is an internal backend
+        if (
+            "SERVER_SOFTWARE" in os.environ and
+            kwargs.get("force_wsgi", False) is not True
+        ):
+            raise RuntimeError(
+                "The memory backend should not be run by a WSGI server since "
+                "it does not provide an external data backend. "
+                "Set the 'force_wsgi' backend option to true to skip this."
+            )
         if kwargs.get("filename"):
             self.load_data_from_file(kwargs.get("filename"))
         else:
