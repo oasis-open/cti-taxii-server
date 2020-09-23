@@ -50,6 +50,7 @@ setup(
     install_requires=[
         "flask>=0.12.1",
         "Flask-HTTPAuth",
+        "jsonmerge",
         "pytz",
         "six",
     ],
@@ -63,6 +64,7 @@ setup(
             "coverage",
             "pytest",
             "pytest-cov",
+            "pytest-subtests",
             "tox",
         ],
         "docs": [

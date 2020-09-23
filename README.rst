@@ -52,17 +52,17 @@ Medallion provides a command-line interface to start the TAXII Server
 
 .. code-block:: text
 
-    usage: medallion [-h]
-        [--host HOST]
-        [--port PORT]
-        [--debug-mode]
-        [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
-        CONFIG_PATH
+    usage: medallion [-h] [--host HOST] [--port PORT] [--debug-mode]
+                     [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
+                     [-c CONF_FILE] [--conf-dir CONF_DIR | --no-conf-dir]
+                     [CONFIG_PATH]
 
     medallion v3.0.0
 
     positional arguments:
-      CONFIG_PATH           The location of the JSON configuration file to use.
+      CONFIG_PATH           Deprecated argument for specifying a single
+                            JSON configuration file. Do not specify this
+                            and `--conf-file`.
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -76,17 +76,32 @@ Medallion provides a command-line interface to start the TAXII Server
       --log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}
                             The logging output level for medallion.
 
+      -c CONF_FILE, --conf-file CONF_FILE
+                            Path to a single configuration file. Defaults to the
+                            value of the MEDALLION_CONFFILE environment variable
+                            or '/etc/medallion.conf'.
+
+      --conf-dir CONF_DIR   Path to a directory containing JSON configuration
+                            files with names ending in .json or .conf. Defaults to
+                            the value of the MEDALLION_CONFDIR environment
+                            variable or '/etc/medallion.d/'.
+
+      --no-conf-dir         Disable the use of any configuration directory as
+                            described for --conf-dir. This may be used to ensure
+                            that the default or some value from the environment is
+                            not used.
+
 To run *medallion*
 
 .. code-block:: bash
 
-    $ python medallion/scripts/run.py <config-file>
+    $ python medallion/scripts/run.py --conf-file <config-file>
 
 Make sure medallion is using the same port that your TAXII client will be connecting on. You can specify which port medallion runs on using the `--port` option, for example
 
 .. code-block:: bash
 
-    $ medallion --port 80 config_file.json
+    $ medallion --port 80 --conf-file config_file.json
 
 The <config_file> contains:
 
