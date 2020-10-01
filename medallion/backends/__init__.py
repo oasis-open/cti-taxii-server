@@ -1,7 +1,7 @@
 import importlib
 import inspect
-import pkgutil
 import logging
+import pkgutil
 import sys
 
 import pkg_resources
