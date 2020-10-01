@@ -1,6 +1,5 @@
 {
   "backend": {
-    "module": "medallion.backends.memory_backend",
     "module_class": "MemoryBackend",
     "filename": "../test/data/default_data.json"
   },
