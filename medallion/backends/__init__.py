@@ -4,6 +4,7 @@ import logging
 import pkgutil
 import sys
 
+import environ
 import pkg_resources
 
 from . import base
@@ -27,3 +28,17 @@ for ep in pkg_resources.iter_entry_points("medallion.backends"):
     ep_obj = ep.load()
     if inspect.isclass(ep_obj):
         base.BackendRegistry.register(ep.name, ep_obj)
+
+
+# Finally we define a top-level environ config class which includes and configs
+# defined in the registered backends
+@environ.config(prefix="BACKEND")
+class BackendConfig(object):
+    for name, clsobj in base.BackendRegistry.iter_():
+        # We have to use a magic attribute name here since `config`s don't have
+        # a specific mixin or type we can check for
+        try:
+            locals()[name] = environ.group(clsobj.Config, optional=True)
+        except AttributeError:
+            pass
+    module_class = environ.var(None)

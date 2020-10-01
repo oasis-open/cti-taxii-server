@@ -1,6 +1,7 @@
 import logging
 import uuid
 
+import environ
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
@@ -34,6 +35,10 @@ def catch_mongodb_error(func):
 class MongoBackend(Backend):
 
     # access control is handled at the views level
+
+    @environ.config(prefix="MONGO")
+    class Config(object):
+        uri = environ.var()
 
     def __init__(self, **kwargs):
         try:

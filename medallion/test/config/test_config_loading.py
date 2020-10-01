@@ -1,11 +1,14 @@
 import json
 import json.decoder
+import re
 from unittest import mock
 
 import pytest
 import pytest_subtests  # noqa: F401
 
 import medallion.config as m_cfg
+
+pytestmark = pytest.mark.usefixtures("empty_environ")
 
 
 def test_load_config_defaults():
@@ -42,7 +45,8 @@ def test_load_config_non_default_file_missing(subtests, tmp_path):
     Confirm an exception is raised if a non-default config file is missing.
     """
     conf_file = tmp_path / "missing.conf"
-    with pytest.raises(FileNotFoundError, match=repr(str(conf_file))):
+    exc_patt = re.escape(repr(str(conf_file)))
+    with pytest.raises(FileNotFoundError, match=exc_patt):
         m_cfg.load_config(conf_file=conf_file)
 
 
@@ -68,7 +72,8 @@ def test_load_config_non_default_dir_missing(tmp_path):
     Confirm an exception is raised if a non-default config dir is missing.
     """
     conf_dir = tmp_path / "missing.d"
-    with pytest.raises(FileNotFoundError, match=repr(str(conf_dir))):
+    exc_patt = re.escape(repr(str(conf_dir)))
+    with pytest.raises(FileNotFoundError, match=exc_patt):
         m_cfg.load_config(conf_dir=conf_dir)
 
 
@@ -131,3 +136,122 @@ def test_load_config_file_bad_json(confdata, subtests, tmp_path):
         with pytest.raises(ValueError, match="Invalid JSON") as exc:
             m_cfg.load_config(conf_dir=tmp_path)
         assert isinstance(exc.value.__cause__, json.decoder.JSONDecodeError)
+
+
+def test_env_config_empty_env(subtests):
+    """
+    Confirm that the `MedallionConfig` return an empty dict from an empty env.
+
+    This test module does this for all tests but an explicit one doesn't hurt!
+    """
+    env = expected = {}
+    with subtests.test(msg="Loading config directly"):
+        assert m_cfg.MedallionConfig.from_environ(env).as_dict() == expected
+    with subtests.test(msg="Loading config via loader"):
+        with mock.patch.dict("os.environ", **env, clear=True):
+            config_data = m_cfg.load_config(conf_file=None, conf_dir=None)
+        assert config_data == expected
+
+
+def test_env_config_taxii(subtests):
+    """
+    Confirm that the `MedallionConfig` can get TAXII config from the env.
+    """
+    env = {
+        "MEDALLION_TAXII_MAX_PAGE_SIZE": "42",
+    }
+    expected = {
+        "taxii": {
+            "max_page_size": int(env["MEDALLION_TAXII_MAX_PAGE_SIZE"]),
+        },
+    }
+    with subtests.test(msg="Loading config directly"):
+        assert m_cfg.MedallionConfig.from_environ(env).as_dict() == expected
+    with subtests.test(msg="Loading config via loader"):
+        with mock.patch.dict("os.environ", **env, clear=True):
+            config_data = m_cfg.load_config(conf_file=None, conf_dir=None)
+        assert config_data == expected
+
+
+def test_env_config_backend_type(subtests):
+    """
+    Confirm that the `MedallionConfig` can get a backend type from the env.
+    """
+    env = {
+        "MEDALLION_BACKEND_MODULE_CLASS": "MemoryBackend",
+    }
+    expected = {
+        "backend": {
+            "module_class": env["MEDALLION_BACKEND_MODULE_CLASS"],
+        },
+    }
+    with subtests.test(msg="Loading config directly"):
+        assert m_cfg.MedallionConfig.from_environ(env).as_dict() == expected
+    with subtests.test(msg="Loading config via loader"):
+        with mock.patch.dict("os.environ", **env, clear=True):
+            config_data = m_cfg.load_config(conf_file=None, conf_dir=None)
+        assert config_data == expected
+
+
+def test_env_config_backend_memory(subtests):
+    """
+    Confirm that the `MedallionConfig` can get `MemoryBackend` config.
+    """
+    env = {
+        "MEDALLION_BACKEND_MODULE_CLASS": "MemoryBackend",
+        "MEDALLION_BACKEND_MEMORY_FILENAME": "/path/to/nowhere",
+    }
+    expected = {
+        "backend": {
+            "module_class": env["MEDALLION_BACKEND_MODULE_CLASS"],
+            # This has to be flattened by the config loader
+            env["MEDALLION_BACKEND_MODULE_CLASS"]: {
+                "filename": env["MEDALLION_BACKEND_MEMORY_FILENAME"],
+            },
+        },
+    }
+    with subtests.test(msg="Loading config directly"):
+        assert m_cfg.MedallionConfig.from_environ(env).as_dict() == expected
+
+    expected_flat = {
+        "backend": {
+            "module_class": env["MEDALLION_BACKEND_MODULE_CLASS"],
+            "filename": env["MEDALLION_BACKEND_MEMORY_FILENAME"],
+        },
+    }
+    with subtests.test(msg="Loading config via loader"):
+        with mock.patch.dict("os.environ", **env, clear=True):
+            config_data = m_cfg.load_config(conf_file=None, conf_dir=None)
+        assert config_data == expected_flat
+
+
+def test_env_config_backend_mongo(subtests):
+    """
+    Confirm that the `MedallionConfig` can get `MongoBackend` config.
+    """
+    env = {
+        "MEDALLION_BACKEND_MODULE_CLASS": "MongoBackend",
+        "MEDALLION_BACKEND_MONGO_URI": "mongodb://user:resu@localhost:27017/",
+    }
+    expected = {
+        "backend": {
+            "module_class": env["MEDALLION_BACKEND_MODULE_CLASS"],
+            # This has to be flattened by the config loader
+            env["MEDALLION_BACKEND_MODULE_CLASS"]: {
+                "uri": env["MEDALLION_BACKEND_MONGO_URI"],
+            },
+        },
+    }
+    with subtests.test(msg="Loading config directly"):
+        assert m_cfg.MedallionConfig.from_environ(env).as_dict() == expected
+
+    expected_flat = {
+        "backend": {
+            "module_class": env["MEDALLION_BACKEND_MODULE_CLASS"],
+            "uri": env["MEDALLION_BACKEND_MONGO_URI"],
+        },
+    }
+    with subtests.test(msg="Loading config via loader"):
+        with mock.patch.dict("os.environ", **env, clear=True):
+            config_data = m_cfg.load_config(conf_file=None, conf_dir=None)
+        assert config_data == expected_flat

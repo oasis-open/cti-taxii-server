@@ -2,11 +2,39 @@ import collections.abc
 import json
 import pathlib
 
+import attr
+import environ
 import jsonmerge
+
+from . import backends
 
 DEFAULT_CONFFILE = "/etc/medallion.conf"
 DEFAULT_CONFDIR = "/etc/medallion.d/"
 CONFDIR_SUFFIXES = {".json", ".conf"}
+
+
+@environ.config(prefix="TAXII")
+class TAXIIConfig(object):
+    max_page_size = environ.var(None, converter=lambda i: int(i) if i else i)
+
+
+@environ.config(prefix="MEDALLION")
+class MedallionConfig(object):
+    backend = environ.group(backends.BackendConfig)
+    taxii = environ.group(TAXIIConfig)
+
+    @classmethod
+    def __strip(cls, dict_):
+        for k, v in tuple(dict_.items()):
+            if isinstance(v, dict):
+                cls.__strip(v)
+            if v is None or v == {}:
+                del dict_[k]
+
+    def as_dict(self):
+        dictified = attr.asdict(self)
+        self.__strip(dictified)
+        return dictified
 
 
 def _load_config_file(conf_file_p):
@@ -56,5 +84,21 @@ def load_config(conf_file=DEFAULT_CONFFILE, conf_dir=DEFAULT_CONFDIR):
             pass
         else:
             config_data = jsonmerge.merge(config_data, new_data)
+    # Load extra configuration from the environment
+    env_config = MedallionConfig.from_environ().as_dict()
+    config_data = jsonmerge.merge(config_data, env_config)
+    # We promote config pulled from the environment for the specified backend
+    # `module_class` since the `environ-config` variable layout will nest it.
+    # Any of the following statements could `KeyError` if the configuration is
+    # incomplete or no config was sourced from the environment, but we're
+    # lenient about this here in favour of validating in the main app logic.
+    try:
+        backend_config = config_data["backend"]
+        backend_kind = backend_config["module_class"]
+        backend_kind_config = backend_config.pop(backend_kind)
+    except KeyError:
+        pass
+    else:
+        backend_config.update(backend_kind_config)
     # Return the finalised configuration dictionary
     return config_data

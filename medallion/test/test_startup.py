@@ -6,6 +6,8 @@ import pytest_subtests  # noqa: F401
 import medallion.config
 import medallion.scripts.run
 
+pytestmark = pytest.mark.usefixtures("empty_environ")
+
 
 def test_parser_help(capsys):
     """
