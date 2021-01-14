@@ -393,8 +393,9 @@ above <#currentMaintainers>`__. Please send general questions about Open
 Repository participation to OASIS Staff at repository-admin@oasis-open.org and
 any specific CLA-related questions to repository-cla@oasis-open.org.
 
-.. |Build_Status| image:: https://travis-ci.org/oasis-open/cti-taxii-server.svg?branch=master
-   :target: https://travis-ci.org/oasis-open/cti-taxii-server
+.. |Build_Status| image:: https://github.com/oasis-open/cti-taxii-server/workflows/cti-taxii-server%20test%20harness/badge.svg
+   :target: https://github.com/oasis-open/cti-taxii-server/actions?query=workflow%3A%22cti-taxii-server+test+harness%22
+   :alt: Build Status
 .. |Coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-server/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/oasis-open/cti-taxii-server
 .. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
