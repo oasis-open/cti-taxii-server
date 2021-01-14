@@ -1,13 +1,21 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.3.0
+    rev: v3.4.0
     hooks:
     -   id: trailing-whitespace
+    -   id: check-merge-conflict
+-   repo: https://github.com/PyCQA/flake8
+    rev: 3.8.4
+    hooks:
     -   id: flake8
+        name: Check project styling
         args:
         - --max-line-length=160
-    -   id: check-merge-conflict
--   repo: https://github.com/FalconSocial/pre-commit-python-sorter
-    sha: b57843b0b874df1d16eb0bef00b868792cb245c2
+-   repo: https://github.com/PyCQA/isort
+    rev: 5.7.0
     hooks:
-    -   id: python-import-sorter
+    -   id: isort
+        name: Sort python imports (shows diff)
+        args: ["-c", "--diff"]
+    -   id: isort
+        name: Sort python imports (fixes files)
