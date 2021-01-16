@@ -48,8 +48,10 @@ setup(
     keywords="taxii taxii2 server json cti cyber threat intelligence",
     packages=find_packages(exclude=["*.test", "*.test.data"]),
     install_requires=[
+        "environ-config",
         "flask>=0.12.1",
         "Flask-HTTPAuth",
+        "jsonmerge",
         "pytz",
         "six",
     ],
