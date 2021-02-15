@@ -98,6 +98,20 @@ def test_get_objects(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 5
 
+    # testing date-added headers
+    assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
+    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
+
+    # testing ordering of returned objects by date_added
+    correct_order = ['relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463',
+                     'indicator--cd981c25-8042-4166-8945-51178443bdac',
+                     'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da',
+                     'malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
+                     'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
+
+    for x in range(0, len(correct_order)):
+        assert objs['objects'][x]['id'] == correct_order[x]
+
 
 def test_get_object(backend):
 
@@ -111,6 +125,10 @@ def test_get_object(backend):
     objs = r.json
     assert len(objs["objects"]) == 1
     assert objs["objects"][0]["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec"
+
+    # testing date-added headers
+    assert r.headers['X-TAXII-Date-Added-First'] == "2017-01-27T13:49:59.997000Z"
+    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-01-27T13:49:59.997000Z"
 
 
 def test_add_and_delete_object(backend):
@@ -218,6 +236,15 @@ def test_get_object_manifests(backend):
     manifests = r.json
     assert len(manifests["objects"]) == 5
 
+    # testing the date-added headers
+    assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
+    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
+
+    # checking ordered by date_added
+
+    for x in range(1, len(manifests["objects"])):
+        assert manifests["objects"][x - 1]["date_added"] < manifests["objects"][x]["date_added"]
+
 
 def test_get_version(backend):
     r = backend.client.get(
@@ -229,6 +256,10 @@ def test_get_version(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     vers = r.json
     assert len(vers["versions"]) == 1
+
+    # testing the date-added headers
+    assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
+    assert r.headers['X-TAXII-Date-Added-Last'] == "2014-05-08T09:00:00.000000Z"
 
 
 # test each filter type with each applicable endpoint
@@ -256,6 +287,15 @@ def test_get_objects_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 3
+    assert r.headers['X-TAXII-Date-Added-First'] == '2014-05-08T09:00:00.000000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-01-20T00:00:00.000000Z'
+
+    correct_order = ['relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463',
+                     'indicator--cd981c25-8042-4166-8945-51178443bdac',
+                     'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da']
+
+    for x in range(0, len(correct_order)):
+        assert objs["objects"][x]["id"] == correct_order[x]
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?limit=3&next=" + r.json["next"],
@@ -267,6 +307,15 @@ def test_get_objects_limit(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 2
+
+    assert r.headers['X-TAXII-Date-Added-First'] == '2017-01-27T13:49:59.997000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
+
+    correct_order = ['malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
+                     'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
+
+    for x in range(0, len(correct_order)):
+        assert objs["objects"][x]["id"] == correct_order[x]
 
 
 def test_get_objects_id(backend):
@@ -441,6 +490,8 @@ def test_get_object_limit(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
+    assert r.headers['X-TAXII-Date-Added-First'] == '2017-12-31T13:49:53.935000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all&limit=2",
@@ -453,6 +504,11 @@ def test_get_object_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 2
+    assert r.headers['X-TAXII-Date-Added-First'] == '2016-11-03T12:30:59.001000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2016-12-27T13:49:59.000000Z'
+    # checking ordering by date_added value
+    assert objs['objects'][0]['modified'] == '2016-11-03T12:30:59.000Z'
+    assert objs['objects'][1]['modified'] == '2016-12-25T12:30:59.444Z'
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e?match[version]=all&limit=2&next=" + objs['next'],
@@ -465,6 +521,8 @@ def test_get_object_limit(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
+    assert r.headers['X-TAXII-Date-Added-First'] == '2017-12-31T13:49:53.935000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
 
 
 def test_get_object_version(backend):
@@ -606,6 +664,8 @@ def test_get_manifest_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 2
+    assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
+    assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
 
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?limit=2&next=" + objs['next'],
@@ -618,6 +678,8 @@ def test_get_manifest_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 2
+    assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
+    assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
 
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?limit=2&next=" + objs['next'],
@@ -630,6 +692,8 @@ def test_get_manifest_limit(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
+    assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
+    assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
 
 
 def test_get_manifest_id(backend):
@@ -815,6 +879,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is True
     assert len(objs["versions"]) == 1
+    assert objs["versions"][0] == '2016-11-03T12:30:59.000Z'
+    assert r.headers['X-TAXII-Date-Added-First'] == '2016-11-03T12:30:59.001000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2016-11-03T12:30:59.001000Z'
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
@@ -827,6 +894,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is True
     assert len(objs["versions"]) == 1
+    assert objs["versions"][0] == '2016-12-25T12:30:59.444Z'
+    assert r.headers['X-TAXII-Date-Added-First'] == '2016-12-27T13:49:59.000000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2016-12-27T13:49:59.000000Z'
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
@@ -839,6 +909,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is False
     assert len(objs["versions"]) == 1
+    assert objs["versions"][0] == '2017-01-27T13:49:53.935Z'
+    assert r.headers['X-TAXII-Date-Added-First'] == '2017-12-31T13:49:53.935000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
 
 
 def test_get_version_spec_version(backend):
@@ -1067,9 +1140,6 @@ def test_delete_objects_spec_version(backend):
 
     assert r.status_code == 404
     assert r.content_type == MEDIA_TYPE_TAXII_V21
-
-
-# test save, next, and hidden field capabilities
 
 
 def test_SCO_versioning(backend):

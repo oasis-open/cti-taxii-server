@@ -1,5 +1,26 @@
+class BackendRegistry(type):
+    __SUBCLASS_MAP = dict()
 
-class Backend(object):
+    def __new__(mcls, name, bases, attrs):
+        clsobj = super(BackendRegistry, mcls).__new__(mcls, name, bases, attrs)
+        mcls.register(name, clsobj)
+        return clsobj
+
+    @classmethod
+    def register(mcls, kind, clsobj):
+        if mcls.__SUBCLASS_MAP.get(kind, clsobj) is not clsobj:
+            raise ValueError(
+                "Backend name {!r} registered more than once"
+                .format(kind)
+            )
+        mcls.__SUBCLASS_MAP[kind] = clsobj
+
+    @classmethod
+    def get(mcls, kind):
+        return mcls.__SUBCLASS_MAP[kind]
+
+
+class Backend(object, metaclass=BackendRegistry):
 
     def server_discovery(self):
         """

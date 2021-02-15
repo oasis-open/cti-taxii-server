@@ -1,9 +1,11 @@
 import importlib
 import logging
+import warnings
 
 from flask import Flask, Response, current_app, json
 from flask_httpauth import HTTPBasicAuth
 
+from .backends import base as mbe_base
 from .exceptions import BackendError, ProcessingError
 from .version import __version__  # noqa
 from .views import MEDIA_TYPE_TAXII_V21
@@ -57,33 +59,61 @@ def set_config(flask_application_instance, prop_name, config):
                 log.warning("We are giving medallion the default settings,")
                 log.warning("which includes a data file of 'default_data.json'.")
                 log.warning("Please ensure this file is in your CWD.")
-                back = {'module': 'medallion.backends.memory_backend', 'module_class': 'MemoryBackend', 'filename': None}
+                back = {'module_class': 'MemoryBackend', 'filename': None}
                 flask_application_instance.medallion_backend = connect_to_backend(back)
 
 
 def connect_to_backend(config_info):
     log.debug("Initializing backend configuration using: {}".format(config_info))
 
-    if "module" not in config_info:
-        raise ValueError("No module parameter provided for the TAXII server.")
-    if "module_class" not in config_info:
+    try:
+        backend_cls_name = config_info["module_class"]
+    except KeyError:
         raise ValueError("No module_class parameter provided for the TAXII server.")
 
     try:
-        module = importlib.import_module(config_info["module"])
-        module_class = getattr(module, config_info["module_class"])
-        log.debug("Instantiating medallion backend with {}".format(module_class))
-        return module_class(**config_info)
-    except Exception as e:
-        log.error("Unknown backend for TAXII server. {} ".format(str(e)))
-        raise
+        backend_mod_name = config_info["module"]
+    except KeyError:
+        # Handle configurations which only specify a backend class name
+        try:
+            backend_cls = mbe_base.BackendRegistry.get(backend_cls_name)
+        except KeyError as exc:
+            msg = "Unknown backend {!r}".format(backend_cls_name)
+            log.error(msg)
+            raise ValueError(msg) from exc
+    else:
+        # Handle configurations which specify a module to load
+        warnings.warn(
+            "Backend module paths in configuration will be removed in future. "
+            "Simply use the backend class name in 'module_class' or add a "
+            "medallion.backends entrypoint for more exotic implementations.",
+            DeprecationWarning
+        )
+        try:
+            backend_mod = importlib.import_module(backend_mod_name)
+            backend_cls = getattr(backend_mod, backend_cls_name)
+        except (ImportError, AttributeError) as exc:
+            log.error(
+                "Failed to load backend %r from %r",
+                backend_cls_name, backend_mod_name,
+            )
+            raise exc
+        else:
+            log.debug(
+                "Instantiating medallion backend with %r from %r",
+                backend_cls_name, backend_mod_name,
+            )
+
+    # Finally, instantiate the backend class with the configuration passed in
+    try:
+        return backend_cls(**config_info)
+    except BaseException as exc:
+        log.error("Failed to instantiate %r: %s", backend_cls_name, exc)
+        raise exc
 
 
 def register_blueprints(flask_application_instance):
-    from medallion.views import collections
-    from medallion.views import discovery
-    from medallion.views import manifest
-    from medallion.views import objects
+    from medallion.views import collections, discovery, manifest, objects
 
     with flask_application_instance.app_context():
         log.debug("Registering medallion blueprints into {}".format(current_app))

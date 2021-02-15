@@ -1,3 +1,13 @@
+Version 3.0.0
+2020-07-07
+Major release to support TAXII 2.1
+- #116 MemoryBackend enhancement to allow spec_version auto filtering
+- #117 MongoDB document structure and pipeline change (breaking change)
+- #119 Update test suite to prevent errors in MongoDB causing inconsistent behavior in requests
+- #120 MemoryBackend update to default filter behavior when not provided in request
+- #126 Fix stability issues with inconsistent behavior in requests (mainly affecting old Python versions)
+- #127 Dropped support for Python 2.7, and 3.4 and Travis CI testing
+
 Version 2.0.1
 2020-04-03
 - #112 Test revamp for consistency across backends
@@ -11,6 +21,12 @@ First major and stable release to support TAXII 2.1
 - Supports all defined match filters (id, spec_version, version, type)
 - Header Validation for GET, POST requests
 - Updated tests (except view-level tests)
+
+Version 1.1.0
+2020-07-02
+Patch release to fix issues on TAXII 2.0
+- #129 Dropped Python versions older than 3.5
+- #128 The Range header was incorrectly checked/enforced according to RFC 7233 (@dougle)
 
 Version 1.0.0
 2020-03-26

@@ -1,3 +1,5 @@
+|Build_Status| |Coverage| |Version| |Documentation_Status|
+
 cti-taxii-server
 ================
 
@@ -57,7 +59,7 @@ Medallion provides a command-line interface to start the TAXII Server
         [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
         CONFIG_PATH
 
-    medallion v2.0.1
+    medallion v3.0.0
 
     positional arguments:
       CONFIG_PATH           The location of the JSON configuration file to use.
@@ -97,7 +99,6 @@ To use the Memory back-end plug, include the following in the <config-file>:
 
     {
         "backend": {
-            "module": "medallion.backends.memory_backend",
             "module_class": "MemoryBackend",
             "filename": "<path to json file with initial data>"
         }
@@ -109,7 +110,6 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
 
     {
          "backend": {
-            "module": "medallion.backends.mongodb_backend",
             "module_class": "MongoBackend",
             "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
          }
@@ -251,13 +251,15 @@ above <#currentMaintainers>`__. Please send general questions about Open
 Repository participation to OASIS Staff at repository-admin@oasis-open.org and
 any specific CLA-related questions to repository-cla@oasis-open.org.
 
-.. |Build_Status| image:: https://travis-ci.org/oasis-open/cti-taxii-server.svg?branch=master
-   :target: https://travis-ci.org/oasis-open/cti-taxii-server
+.. |Build_Status| image:: https://github.com/oasis-open/cti-taxii-server/workflows/cti-taxii-server%20test%20harness/badge.svg
+   :target: https://github.com/oasis-open/cti-taxii-server/actions?query=workflow%3A%22cti-taxii-server+test+harness%22
+   :alt: Build Status
 .. |Coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-server/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/oasis-open/cti-taxii-server
+   :alt: Codecov Coverage
 .. |Version| image:: https://img.shields.io/pypi/v/medallion.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/medallion/
-   :alt: Version 2.0.1
+   :alt: PyPI Version 3.0.0
 .. |Documentation_Status| image:: https://readthedocs.org/projects/medallion/badge/?version=latest
    :target: https://medallion.readthedocs.io/en/latest/
-   :alt: Documentation Status
+   :alt: ReadTheDocs Documentation Status
