@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, current_app, json
 
-from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header, conditional_auth
 from .. import auth
 from ..exceptions import ProcessingError
 
@@ -14,7 +14,8 @@ def api_root_exists(api_root):
 
 
 @discovery_bp.route("/taxii2/", methods=["GET"])
-@auth.login_required
+@conditional_auth
+#@auth.login_required(optional=current_app.config.get('no_auth', False))
 def get_server_discovery():
     """
     Defines TAXII API - Server Information:
@@ -30,7 +31,6 @@ def get_server_discovery():
     # depending upon the credentials.
     validate_version_parameter_in_accept_header()
     server_discovery = current_app.medallion_backend.server_discovery()
-
     if server_discovery:
         return Response(
             response=json.dumps(server_discovery),
@@ -41,7 +41,7 @@ def get_server_discovery():
 
 
 @discovery_bp.route("/<string:api_root>/", methods=["GET"])
-@auth.login_required
+@conditional_auth
 def get_api_root_information(api_root):
     """
     Defines TAXII API - Server Information:
@@ -67,7 +67,7 @@ def get_api_root_information(api_root):
 
 
 @discovery_bp.route("/<string:api_root>/status/<string:status_id>/", methods=["GET"])
-@auth.login_required
+@conditional_auth
 def get_status(api_root, status_id):
     """
     Defines TAXII API - Server Information:

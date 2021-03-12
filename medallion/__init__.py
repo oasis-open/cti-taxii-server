@@ -18,7 +18,9 @@ ch.setFormatter(logging.Formatter("[%(name)s] [%(levelname)-8s] [%(asctime)s] %(
 log = logging.getLogger(__name__)
 log.addHandler(ch)
 
+
 application_instance = Flask(__name__)
+application_instance.app_context().push()
 auth = HTTPBasicAuth()
 
 
@@ -30,7 +32,6 @@ def load_app(config_file):
     set_config(application_instance, "taxii", configuration)
     set_config(application_instance, "backend", configuration)
     register_blueprints(application_instance)
-
     return application_instance
 
 
@@ -46,11 +47,14 @@ def set_config(flask_application_instance, prop_name, config):
             try:
                 flask_application_instance.users_backend = config[prop_name]
             except KeyError:
-                log.warning("You did not give user information in your config.")
-                log.warning("We are giving you the default user information of:")
-                log.warning("User = user")
-                log.warning("Pass = pass")
-                flask_application_instance.users_backend = {"user": "pass"}
+                if config.get('no_auth'):
+                    flask_application_instance.config['no_auth'] = True
+                else:
+                    log.warning("You did not give user information in your config.")
+                    log.warning("We are giving you the default user information of:")
+                    log.warning("User = user")
+                    log.warning("Pass = pass")
+                    flask_application_instance.users_backend = {"user": "pass"}
         elif prop_name == "backend":
             try:
                 flask_application_instance.medallion_backend = connect_to_backend(config[prop_name])

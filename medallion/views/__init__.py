@@ -1,6 +1,7 @@
 import re
 
-from flask import request
+from flask import request, current_app
+from functools import wraps
 
 from ..exceptions import ProcessingError
 
@@ -25,3 +26,15 @@ def validate_version_parameter_in_accept_header():
 
     if found is False:
         raise ProcessingError("Media type in the Accept header is invalid or not found", 406)
+
+
+def conditional_auth(func):
+    from .. import auth, current_app
+    @wraps(func)
+    def wrapper():
+        if current_app.config.get('no_auth'):
+            return func
+        else:
+            return auth.login_required(func)
+    return wrapper()
+
