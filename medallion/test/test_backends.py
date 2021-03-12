@@ -37,22 +37,6 @@ def backend(request):
         yield pytest.skip("skipped")
 
 
-class TestTAXIIWithNoAuthSection(TaxiiTest):
-    type = "no_auth"
-
-
-@pytest.fixture(scope="module")
-def no_auth_section():
-    server = TestTAXIIWithNoAuthSection()
-    server.setUp()
-    yield server
-    server.tearDown()
-
-
-def test_default_userpass_no_auth_section(no_auth_section):
-    assert no_auth_section.app.users_backend.get("user") == "pass"
-
-
 # start with basic get requests for each endpoint
 def test_server_discovery(backend):
     r = backend.client.get(test.DISCOVERY_EP, headers=backend.headers)
@@ -1447,29 +1431,6 @@ def test_object_pagination_changing_params_400(backend):
     objs = r.json
     assert objs["title"] == "ProcessingError"
 
-"""
-class TestTAXIIWithNoAuthSectionAndArgument(TaxiiTest):
-    type = "no_auth_and_argument"
-
-
-@pytest.fixture(scope="module")
-def no_auth_with_argument_section():
-    server = TestTAXIIWithNoAuthSectionAndArgument()
-    server.setUp()
-    yield server
-    server.tearDown()
-
-
-def test_no_auth_section_with_no_auth_argument(no_auth_with_argument_section):
-    r = no_auth_with_argument_section.client.get(test.DISCOVERY_EP,
-                                                 headers=no_auth_with_argument_section.headers)
-
-    assert r.status_code == 200
-    assert r.content_type == MEDIA_TYPE_TAXII_V21
-    server_info = r.json
-    assert server_info["api_roots"][0] == "http://localhost:5000/api1/"
-"""
-
 
 # test other config values
 # this may warrant some cleanup and organization later
@@ -1512,7 +1473,7 @@ def no_taxii_section():
 def test_default_taxii_no_taxii_section(no_taxii_section):
     assert no_taxii_section.app.taxii_config['max_page_size'] == 100
 
-"""
+
 class TestTAXIIWithNoAuthSection(TaxiiTest):
     type = "no_auth"
 
@@ -1527,7 +1488,6 @@ def no_auth_section():
 
 def test_default_userpass_no_auth_section(no_auth_section):
     assert no_auth_section.app.users_backend.get("user") == "pass"
-"""
 
 
 class TestTAXIIWithNoAuthSectionAndArgument(TaxiiTest):

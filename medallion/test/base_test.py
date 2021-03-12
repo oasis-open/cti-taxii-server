@@ -84,7 +84,6 @@ class TaxiiTest():
     def setUp(self):
         self.__name__ = self.type
         self.app = application_instance
-        #self.app = Flask(self.__name__)
         self.app_context = self.app.app_context()
         self.app_context.push()
         if self.type == "no_auth_and_argument":
