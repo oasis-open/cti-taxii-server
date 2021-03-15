@@ -1,0 +1,9 @@
+{
+  "backend": {
+    "module_class": "MemoryBackend",
+    "filename": "../test/data/default_data.json"
+  },
+  "taxii": {
+      "max_page_size": 100
+  }
+}

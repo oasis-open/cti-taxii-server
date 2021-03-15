@@ -3,8 +3,7 @@ import re
 
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header
-from .. import auth
+from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header, conditional_auth
 from ..common import get_timestamp
 from ..exceptions import ProcessingError
 from .discovery import api_root_exists
@@ -86,7 +85,7 @@ def validate_limit_parameter():
 
 
 @objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/", methods=["GET", "POST"])
-@auth.login_required
+@conditional_auth
 def get_or_add_objects(api_root, collection_id):
     """
     Defines TAXII API - Collections:
@@ -138,7 +137,7 @@ def get_or_add_objects(api_root, collection_id):
 
 
 @objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/", methods=["GET", "DELETE"])
-@auth.login_required
+@conditional_auth
 def get_or_delete_object(api_root, collection_id, object_id):
     """
     Defines TAXII API - Collections:
@@ -187,7 +186,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
 
 
 @objects_bp.route("/<string:api_root>/collections/<string:collection_id>/objects/<string:object_id>/versions/", methods=["GET"])
-@auth.login_required
+@conditional_auth
 def get_object_versions(api_root, collection_id, object_id):
     """
     Defines TAXII API - Collections: Get Object Versions section

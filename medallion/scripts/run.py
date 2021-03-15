@@ -58,6 +58,13 @@ def _get_argparser():
     )
 
     parser.add_argument(
+        "--no-auth",
+        default=False,
+        action="store_true",
+        help="Turn off credential checking for all endpoints.",
+    )
+
+    parser.add_argument(
         "CONFIG_PATH",
         metavar="CONFIG_PATH",
         type=str,
@@ -74,6 +81,9 @@ def main():
 
     with open(medallion_args.CONFIG_PATH, "r") as f:
         configuration = json.load(f)
+
+    if medallion_args.no_auth:
+        configuration['no_auth'] = True
 
     set_config(application_instance, "users", configuration)
     set_config(application_instance, "taxii", configuration)

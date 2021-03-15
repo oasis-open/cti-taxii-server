@@ -83,10 +83,14 @@ class TaxiiTest():
     def setUp(self):
         self.__name__ = self.type
         self.app = application_instance
-        self.app_context = application_instance.app_context()
+        self.app_context = self.app.app_context()
         self.app_context.push()
-        self.app.testing = True
+        if self.type == "no_auth_and_argument":
+            self.app.config["no_auth"] = True
+        else:
+            self.app.config["no_auth"] = False
         register_blueprints(self.app)
+        self.app.testing = True
         if self.type == "mongo":
             reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config
@@ -98,6 +102,9 @@ class TaxiiTest():
             self.configuration = self.config_no_taxii
         elif self.type == "no_auth":
             self.configuration = self.config_no_auth
+        elif self.type == "no_auth_and_argument":
+            self.configuration = self.config_no_auth
+            self.configuration['no_auth'] = True
         elif self.type == "no_backend":
             self.configuration = self.config_no_backend
         else:
@@ -121,6 +128,12 @@ class TaxiiTest():
             "Accept": "application/taxii+json;version=2.1",
             "Authorization": encoded_auth
         }
+        if self.type == "no_auth_and_argument":
+            self.headers = {"Accept": "application/taxii+json;version=2.1"}
+            self.post_headers = {
+                "Content-Type": "application/taxii+json;version=2.1",
+                "Accept": "application/taxii+json;version=2.1"
+            }
 
     def tearDown(self):
         self.app_context.pop()
