@@ -1516,7 +1516,7 @@ def test_no_auth_section_with_no_auth_argument(no_auth_with_argument_section):
 
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
-    
+
     r = no_auth_with_argument_section.client.get(test.GET_COLLECTION_EP,
                                                  headers=no_auth_with_argument_section.headers)
 
@@ -1534,7 +1534,7 @@ def test_no_auth_section_with_no_auth_argument(no_auth_with_argument_section):
 
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
-    
+
 
 class TestTAXIIWithNoBackendSection(TaxiiTest):
     type = "no_backend"

@@ -1,6 +1,6 @@
 import re
 
-from flask import request, current_app
+from flask import request
 from functools import wraps
 
 from ..exceptions import ProcessingError
@@ -30,6 +30,7 @@ def validate_version_parameter_in_accept_header():
 
 def conditional_auth(func):
     from .. import auth, current_app
+
     @wraps(func)
     def wrapper():
         if current_app.config.get('no_auth'):
@@ -37,4 +38,3 @@ def conditional_auth(func):
         else:
             return auth.login_required(func)
     return wrapper()
-

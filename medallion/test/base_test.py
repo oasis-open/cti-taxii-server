@@ -1,6 +1,5 @@
 import base64
 import os
-from flask import Flask
 
 from medallion import application_instance, register_blueprints, set_config
 from medallion.test.data.initialize_mongodb import reset_db
@@ -135,7 +134,6 @@ class TaxiiTest():
                 "Content-Type": "application/taxii+json;version=2.1",
                 "Accept": "application/taxii+json;version=2.1"
             }
-
 
     def tearDown(self):
         self.app_context.pop()

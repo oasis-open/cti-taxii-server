@@ -1,7 +1,6 @@
 from flask import Blueprint, Response, current_app, json
 
 from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header, conditional_auth
-from .. import auth
 from ..exceptions import ProcessingError
 
 discovery_bp = Blueprint("discovery", __name__)
@@ -15,7 +14,6 @@ def api_root_exists(api_root):
 
 @discovery_bp.route("/taxii2/", methods=["GET"])
 @conditional_auth
-#@auth.login_required(optional=current_app.config.get('no_auth', False))
 def get_server_discovery():
     """
     Defines TAXII API - Server Information:
