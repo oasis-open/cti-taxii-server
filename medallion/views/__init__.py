@@ -1,7 +1,7 @@
+from functools import wraps
 import re
 
 from flask import request
-from functools import wraps
 
 from ..exceptions import ProcessingError
 

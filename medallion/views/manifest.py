@@ -1,6 +1,9 @@
 from flask import Blueprint, Response, current_app, json, request
 
-from . import MEDIA_TYPE_TAXII_V21, validate_version_parameter_in_accept_header, conditional_auth
+from . import (
+    MEDIA_TYPE_TAXII_V21, conditional_auth,
+    validate_version_parameter_in_accept_header
+)
 from .discovery import api_root_exists
 from .objects import (
     collection_exists, permission_to_read, validate_limit_parameter

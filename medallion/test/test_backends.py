@@ -1,14 +1,13 @@
 import copy
 import json
 
+from flask import current_app
 import pytest
 
 from medallion import common, test
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
-
-from flask import current_app
 
 
 class MemoryTestServer(TaxiiTest):
