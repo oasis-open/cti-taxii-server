@@ -1,5 +1,6 @@
 import json
 import json.decoder
+import logging
 import re
 from unittest import mock
 
@@ -75,6 +76,35 @@ def test_load_config_non_default_dir_missing(tmp_path):
     exc_patt = re.escape(repr(str(conf_dir)))
     with pytest.raises(FileNotFoundError, match=exc_patt):
         m_cfg.load_config(conf_dir=conf_dir)
+
+
+def test_load_config_logging(subtests, tmp_path, caplog):
+    """
+    Ensure that config loading emits log messages about paths and data.
+    """
+    confdata = {"foo": "bar"}
+    conf_file = tmp_path / "medallion.conf"
+    json.dump(confdata, conf_file.open("w"))
+    caplog.set_level(logging.DEBUG, logger="medallion.config")
+    with subtests.test(msg="Used as config file"):
+        assert m_cfg.load_config(conf_file=conf_file) == confdata
+        # We put the single quotes in ourself to avoid Windows/UNIX path issues
+        assert f"load configuration from '{str(conf_file)}'" in caplog.text
+        for record in caplog.records:
+            if '"foo": "bar"' in record.message:
+                break
+        else:
+            raise AssertionError("Config data not seen in log output")
+    caplog.clear()
+    with subtests.test(msg="Used from config dir"):
+        assert m_cfg.load_config(conf_dir=tmp_path) == confdata
+        # We put the single quotes in ourself to avoid Windows/UNIX path issues
+        assert f"and '{str(tmp_path)}'" in caplog.text
+        for record in caplog.records:
+            if '"foo": "bar"' in record.message:
+                break
+        else:
+            raise AssertionError("Config data not seen in log output")
 
 
 @pytest.mark.parametrize(

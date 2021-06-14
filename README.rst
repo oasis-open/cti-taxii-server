@@ -55,7 +55,7 @@ Medallion provides a command-line interface to start the TAXII Server
     usage: medallion [-h] [--host HOST] [--port PORT] [--debug-mode]
                      [--log-level {DEBUG,INFO,WARN,ERROR,CRITICAL}]
                      [-c CONF_FILE] [--conf-dir CONF_DIR | --no-conf-dir]
-                     [CONFIG_PATH]
+                     [--conf-check] [CONFIG_PATH]
 
     medallion v3.0.0
 
@@ -90,6 +90,9 @@ Medallion provides a command-line interface to start the TAXII Server
                             described for --conf-dir. This may be used to ensure
                             that the default or some value from the environment is
                             not used.
+
+      --conf-check          Evaluate medallion configuration without running the
+                            server.
 
 To run *medallion*
 

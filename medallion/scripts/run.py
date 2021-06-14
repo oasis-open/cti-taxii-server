@@ -103,6 +103,10 @@ def _get_argparser():
             value from the environment is not used.
         """),
     )
+    parser.add_argument(
+        "--conf-check", action="store_true",
+        help="Evaluate medallion configuration without running the server.",
+    )
 
     return parser
 
@@ -110,6 +114,9 @@ def _get_argparser():
 def main():
     medallion_parser = _get_argparser()
     medallion_args = medallion_parser.parse_args()
+    # Configuration checking sets up debug logging and does not run the app
+    if medallion_args.conf_check:
+        medallion_args.log_level = logging.DEBUG
     log.setLevel(medallion_args.log_level)
 
     configuration = medallion.config.load_config(
@@ -122,11 +129,12 @@ def main():
     set_config(application_instance, "backend", configuration)
     register_blueprints(application_instance)
 
-    application_instance.run(
-        host=medallion_args.host,
-        port=medallion_args.port,
-        debug=medallion_args.debug_mode,
-    )
+    if not medallion_args.conf_check:
+        application_instance.run(
+            host=medallion_args.host,
+            port=medallion_args.port,
+            debug=medallion_args.debug_mode,
+        )
 
 
 if __name__ == "__main__":

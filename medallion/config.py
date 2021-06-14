@@ -1,5 +1,6 @@
 import collections.abc
 import json
+import logging
 import pathlib
 
 import attr
@@ -11,6 +12,32 @@ from . import backends
 DEFAULT_CONFFILE = "/etc/medallion.conf"
 DEFAULT_CONFDIR = "/etc/medallion.d/"
 CONFDIR_SUFFIXES = {".json", ".conf"}
+
+LOGGER = logging.getLogger(__name__)
+
+
+class _LazyJSONDumper(object):
+    """An lazy stringifier for dumping objects as JSON, e.g. for logging."""
+    def __init__(self, obj, cls=json.JSONEncoder, indent=None):
+        super(_LazyJSONDumper, self).__init__()
+        # Beware: If `obj` is mutable then we'll get future mutations. This
+        # isn't really an issue for logging format evaluation, but it might be
+        # in other contexts/multi-thread. We concretise on the first call to
+        # `__str__()` so the output's immutable/repeatable after that at least.
+        self._obj = obj
+        self._dumpcls = cls
+        self._indent = indent
+
+    def __str__(self):
+        # The first stringification will concretise `obj`
+        if not isinstance(self._obj, str):
+            self._obj = json.dumps(
+                self._obj, cls=self._dumpcls, indent=self._indent,
+            )
+        return self._obj
+
+    def __repr__(self):  # pragma: no cover
+        return repr(str(self))
 
 
 @environ.config(prefix="TAXII")
@@ -48,6 +75,10 @@ def _load_config_file(conf_file_p):
 
 
 def load_config(conf_file=DEFAULT_CONFFILE, conf_dir=DEFAULT_CONFDIR):
+    LOGGER.debug(
+        "Attempting to load configuration from '%s' and '%s'",
+        conf_file, conf_dir,
+    )
     conf_files = list()
     # Sanity check that both the `conf_file` and `conf_dir` exist by resolving
     # them with strictness determined by whether they are the defaults or not
@@ -72,6 +103,10 @@ def load_config(conf_file=DEFAULT_CONFFILE, conf_dir=DEFAULT_CONFDIR):
             conf_files.extend(sorted(conf_dir_files,  key=lambda p: p.name))
         except FileNotFoundError:
             pass
+    LOGGER.debug(
+        "Configuration files to load in order: %s",
+        ", ".join(repr(str(p)) for p in conf_files),
+    )
     # Start with an empty config and progressively merge in data from files
     config_data = dict()
     for conf_file_p in conf_files:
@@ -83,9 +118,17 @@ def load_config(conf_file=DEFAULT_CONFFILE, conf_dir=DEFAULT_CONFDIR):
             # We also don't care about sub-directories of the config dir.
             pass
         else:
+            LOGGER.debug(
+                "Configuration data from '%s' to be merged: %s",
+                conf_file_p, _LazyJSONDumper(new_data, indent=2),
+            )
             config_data = jsonmerge.merge(config_data, new_data)
     # Load extra configuration from the environment
     env_config = MedallionConfig.from_environ().as_dict()
+    LOGGER.debug(
+        "Configuration data from environment to be merged: %s",
+        _LazyJSONDumper(env_config, indent=2),
+    )
     config_data = jsonmerge.merge(config_data, env_config)
     # We promote config pulled from the environment for the specified backend
     # `module_class` since the `environ-config` variable layout will nest it.
@@ -101,4 +144,8 @@ def load_config(conf_file=DEFAULT_CONFFILE, conf_dir=DEFAULT_CONFDIR):
     else:
         backend_config.update(backend_kind_config)
     # Return the finalised configuration dictionary
+    LOGGER.debug(
+        "Merged configuration: %s",
+        _LazyJSONDumper(config_data, indent=2),
+    )
     return config_data

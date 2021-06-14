@@ -1,3 +1,4 @@
+import logging
 from unittest import mock
 
 import pytest
@@ -143,6 +144,61 @@ def test_config_args_mutex(subtests):
         (expected_call, ) = mock_error.mock_calls
         (msg, ) = expected_call[1]
         assert "not allowed with argument" in msg
+
+
+@mock.patch("medallion.application_instance.run")
+def test_confcheck(mock_app, subtests):
+    """
+    Confirm that the --conf-check option works as expected.
+    """
+    with subtests.test(msg="--conf-check omitted"):
+        with mock.patch(
+            "medallion.scripts.run.log"
+        ) as mock_logger, mock.patch(
+            "sys.argv", ["ARGV0"]
+        ):
+            medallion.scripts.run.main()
+        # default `--log-level` value
+        mock_logger.setLevel.assert_called_once_with("WARN")
+        assert mock_app.call_count == 1
+    mock_app.reset_mock()
+
+    with subtests.test(msg="--conf-check provided without a value"):
+        with mock.patch(
+            "medallion.scripts.run.log"
+        ) as mock_logger, mock.patch(
+            "sys.argv", ["ARGV0", "--conf-check"]
+        ):
+            medallion.scripts.run.main()
+        mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
+        mock_app.assert_not_called()
+    mock_app.reset_mock()
+
+    class ExpectedException(BaseException):
+        pass
+
+    with subtests.test(msg="--conf-check with equals"):
+        with mock.patch(
+            "sys.argv", ["ARGV0", "--conf-check=1"]
+        ), mock.patch(
+            "argparse.ArgumentParser.error", side_effect=ExpectedException,
+        ) as mock_error, pytest.raises(ExpectedException):
+            medallion.scripts.run.main()
+        mock_error.assert_called_once()
+        (expected_call, ) = mock_error.mock_calls
+        (msg, ) = expected_call[1]
+        assert "ignored explicit argument" in msg
+    mock_app.reset_mock()
+
+    with subtests.test(msg="--conf-check overrides --log-level"):
+        with mock.patch(
+            "medallion.scripts.run.log"
+        ) as mock_logger, mock.patch(
+            "sys.argv", ["ARGV0", "--conf-check", "--log-level=CRITICAL"]
+        ):
+            medallion.scripts.run.main()
+        mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
+        mock_app.assert_not_called()
 
 
 def test_main_config_arg_handling(subtests):
