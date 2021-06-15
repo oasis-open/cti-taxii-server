@@ -1,15 +1,81 @@
+import importlib
 import json
 import json.decoder
 import logging
+import pathlib
 import re
 from unittest import mock
 
+import appdirs
 import pytest
 import pytest_subtests  # noqa: F401
 
 import medallion.config as m_cfg
+import medallion.version as m_vers
 
 pytestmark = pytest.mark.usefixtures("empty_environ")
+
+
+def test_load_config_appdir_discovery_none_found(tmp_path):
+    """
+    Ensure that if no config directories exist the current version's is used.
+    """
+    current_major = m_vers.__version__.split(".")[0]
+    default_appdirs = appdirs.AppDirs(
+        "medallion", "oasis-open", version=current_major
+    )
+    default_cfg_p = pathlib.Path(default_appdirs.site_config_dir)
+
+    with mock.patch("pathlib.Path.is_dir", return_value=False):
+        m_cfg_local = importlib.reload(m_cfg)
+    assert m_cfg_local.DEFAULT_CONFFILE == default_cfg_p / "medallion.conf"
+    assert m_cfg_local.DEFAULT_CONFDIR == default_cfg_p / "config.d"
+
+
+def test_load_config_appdir_discovery_current_found(tmp_path):
+    """
+    Ensure that if the current version's config directory is found it's used.
+
+    This should be the case even if other directories exist so we ensure that
+    `Path.is_dir()` returns True for any instances.
+    """
+    current_major = m_vers.__version__.split(".")[0]
+    default_appdirs = appdirs.AppDirs(
+        "medallion", "oasis-open", version=current_major
+    )
+    default_cfg_p = pathlib.Path(default_appdirs.site_config_dir)
+
+    with mock.patch("pathlib.Path.is_dir", return_value=True):
+        m_cfg_local = importlib.reload(m_cfg)
+    assert m_cfg_local.DEFAULT_CONFFILE == default_cfg_p / "medallion.conf"
+    assert m_cfg_local.DEFAULT_CONFDIR == default_cfg_p / "config.d"
+
+
+def test_load_config_appdir_discovery_compat_found(tmp_path):
+    """
+    Ensure that a compatible version's config directory will be used.
+    """
+    compat_major = "COMPAT"     # Doesn't need to be an integer
+    compat_appdirs = appdirs.AppDirs(
+        "medallion", "oasis-open", version=compat_major,
+    )
+    compat_cfg_p = pathlib.Path(compat_appdirs.site_config_dir)
+
+    def is_dir(inst):
+        return inst == compat_cfg_p
+
+    with mock.patch(
+        # Mock the `sorted()` builtin for the config module when we reload it
+        # and return a faked "CURRENT" candidate and a "COMPAT" candidate which
+        # our `is_dir()` mock knows to return `True` for
+        "medallion.config.sorted", return_value=["CURRENT", compat_major]
+    ) as mock_sorted, mock.patch(
+        "pathlib.Path.is_dir", new=is_dir
+    ):
+        m_cfg_local = importlib.reload(m_cfg)
+    mock_sorted.assert_called_once_with(mock.ANY, reverse=True)
+    assert m_cfg_local.DEFAULT_CONFFILE == compat_cfg_p / "medallion.conf"
+    assert m_cfg_local.DEFAULT_CONFDIR == compat_cfg_p / "config.d"
 
 
 def test_load_config_defaults():

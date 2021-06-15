@@ -78,7 +78,7 @@ def _get_argparser():
         help=inspect.cleandoc(f"""
             Path to a single configuration file. Defaults to the value of
             the MEDALLION_CONFFILE environment variable or
-            {medallion.config.DEFAULT_CONFFILE!r}.
+            {medallion.config.DEFAULT_CONFFILE}.
         """),
     )
     config_dir_group = parser.add_mutually_exclusive_group()
@@ -91,7 +91,7 @@ def _get_argparser():
             Path to a directory containing JSON configuration files with names
             ending in .json or .conf. Defaults to the value of the
             MEDALLION_CONFDIR environment variable or
-            {medallion.config.DEFAULT_CONFDIR!r}.
+            {medallion.config.DEFAULT_CONFDIR}.
         """),
     )
     config_dir_group.add_argument(

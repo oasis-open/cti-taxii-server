@@ -79,12 +79,12 @@ Medallion provides a command-line interface to start the TAXII Server
       -c CONF_FILE, --conf-file CONF_FILE
                             Path to a single configuration file. Defaults to the
                             value of the MEDALLION_CONFFILE environment variable
-                            or '/etc/medallion.conf'.
+                            or /etc/xdg/medallion/3/medallion.conf.
 
       --conf-dir CONF_DIR   Path to a directory containing JSON configuration
                             files with names ending in .json or .conf. Defaults to
                             the value of the MEDALLION_CONFDIR environment
-                            variable or '/etc/medallion.d/'.
+                            variable or /etc/xdg/medallion/3/config.d.
 
       --no-conf-dir         Disable the use of any configuration directory as
                             described for --conf-dir. This may be used to ensure

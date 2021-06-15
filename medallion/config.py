@@ -3,14 +3,35 @@ import json
 import logging
 import pathlib
 
+import appdirs
 import attr
 import environ
 import jsonmerge
+import packaging.version
 
 from . import backends
+from . import version as _medallion_version
 
-DEFAULT_CONFFILE = "/etc/medallion.conf"
-DEFAULT_CONFDIR = "/etc/medallion.d/"
+# Find a config directory for the closest compatible version including the
+# current one, or fall back to the current version's one if none are extant
+_curr_version = packaging.version.Version(_medallion_version.__version__)
+_compat_versions = {_curr_version.major, 3, 2}
+for _cand_version in sorted(_compat_versions, reverse=True):
+    _appdirs = appdirs.AppDirs(
+        "medallion", "oasis-open", version=str(_cand_version)
+    )
+    _default_conf_p = pathlib.Path(_appdirs.site_config_dir).resolve()
+    if _default_conf_p.is_dir():
+        break
+else:
+    _appdirs = appdirs.AppDirs(
+        "medallion", "oasis-open", version=str(_curr_version.major),
+    )
+    _default_conf_p = pathlib.Path(_appdirs.site_config_dir).resolve()
+# Set the default config file and config.d directory paths
+DEFAULT_CONFFILE = _default_conf_p / "medallion.conf"
+DEFAULT_CONFDIR = _default_conf_p / "config.d"
+# Configuration directories are scanned for files matching these suffixes
 CONFDIR_SUFFIXES = {".json", ".conf"}
 
 LOGGER = logging.getLogger(__name__)
