@@ -4,6 +4,7 @@ import json
 import os
 import uuid
 
+import environ
 from six import string_types
 
 from ..common import (
@@ -35,6 +36,10 @@ def find_headers(headers, manifest, obj):
 class MemoryBackend(Backend):
 
     # access control is handled at the views level
+
+    @environ.config(prefix="MEMORY")
+    class Config(object):
+        filename = environ.var(None)
 
     def __init__(self, **kwargs):
         # Refuse to run under a WSGI server since this is an internal backend

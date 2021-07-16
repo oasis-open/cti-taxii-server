@@ -1,11 +1,13 @@
 import argparse
-import json
+import inspect
 import logging
+import os
 import textwrap
 
 from medallion import (
     __version__, application_instance, register_blueprints, set_config
 )
+import medallion.config
 
 log = logging.getLogger("medallion")
 
@@ -57,11 +59,53 @@ def _get_argparser():
         choices=["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
     )
 
-    parser.add_argument(
+    config_path_group = parser.add_mutually_exclusive_group()
+    config_path_group.add_argument(
         "CONFIG_PATH",
         metavar="CONFIG_PATH",
+        nargs="?",
         type=str,
-        help="The location of the JSON configuration file to use.",
+        help=inspect.cleandoc("""
+            Deprecated argument for specifying a single JSON configuration
+            file. Do not specify this and `--conf-file`.
+        """),
+    )
+    config_path_group.add_argument(
+        "-c", "--conf-file",
+        default=os.environ.get(
+            "MEDALLION_CONFFILE", medallion.config.DEFAULT_CONFFILE
+        ),
+        help=inspect.cleandoc(f"""
+            Path to a single configuration file. Defaults to the value of
+            the MEDALLION_CONFFILE environment variable or
+            {medallion.config.DEFAULT_CONFFILE}.
+        """),
+    )
+    config_dir_group = parser.add_mutually_exclusive_group()
+    config_dir_group.add_argument(
+        "--conf-dir",
+        default=os.environ.get(
+            "MEDALLION_CONFDIR", medallion.config.DEFAULT_CONFDIR
+        ),
+        help=inspect.cleandoc(f"""
+            Path to a directory containing JSON configuration files with names
+            ending in .json or .conf. Defaults to the value of the
+            MEDALLION_CONFDIR environment variable or
+            {medallion.config.DEFAULT_CONFDIR}.
+        """),
+    )
+    config_dir_group.add_argument(
+        "--no-conf-dir",
+        action="store_true",
+        help=inspect.cleandoc("""
+            Disable the use of any configuration directory as described for
+            --conf-dir. This may be used to ensure that the default or some
+            value from the environment is not used.
+        """),
+    )
+    parser.add_argument(
+        "--conf-check", action="store_true",
+        help="Evaluate medallion configuration without running the server.",
     )
 
     return parser
@@ -70,21 +114,27 @@ def _get_argparser():
 def main():
     medallion_parser = _get_argparser()
     medallion_args = medallion_parser.parse_args()
+    # Configuration checking sets up debug logging and does not run the app
+    if medallion_args.conf_check:
+        medallion_args.log_level = logging.DEBUG
     log.setLevel(medallion_args.log_level)
 
-    with open(medallion_args.CONFIG_PATH, "r") as f:
-        configuration = json.load(f)
+    configuration = medallion.config.load_config(
+        medallion_args.CONFIG_PATH or medallion_args.conf_file,
+        medallion_args.conf_dir if not medallion_args.no_conf_dir else None,
+    )
 
     set_config(application_instance, "users", configuration)
     set_config(application_instance, "taxii", configuration)
     set_config(application_instance, "backend", configuration)
     register_blueprints(application_instance)
 
-    application_instance.run(
-        host=medallion_args.host,
-        port=medallion_args.port,
-        debug=medallion_args.debug_mode,
-    )
+    if not medallion_args.conf_check:
+        application_instance.run(
+            host=medallion_args.host,
+            port=medallion_args.port,
+            debug=medallion_args.debug_mode,
+        )
 
 
 if __name__ == "__main__":

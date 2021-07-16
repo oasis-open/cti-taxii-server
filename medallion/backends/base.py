@@ -19,6 +19,10 @@ class BackendRegistry(type):
     def get(mcls, kind):
         return mcls.__SUBCLASS_MAP[kind]
 
+    @classmethod
+    def iter_(mcls):
+        yield from mcls.__SUBCLASS_MAP.items()
+
 
 class Backend(object, metaclass=BackendRegistry):
 
