@@ -24,6 +24,9 @@ class ProcessingError(MedallionError):
     """Internal processing error when processing user supplied data"""
     pass
 
+class InitializationError(MedallionError):
+    """Medallion Initialization Error, such as bad initial data"""
+    pass
 
 class BackendError(MedallionError):
     """Medallion data backend error"""
@@ -33,3 +36,4 @@ class BackendError(MedallionError):
 class MongoBackendError(BackendError):
     """Cannot connect or obtain access to MongoDB backend"""
     pass
+
