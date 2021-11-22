@@ -130,20 +130,21 @@ class MemoryBackend(Backend):
         """
         for key, api_root in self.data:
             for collection in api_root.get('collections', [])
-                if collection['objects']:
-                    if 'manifest' not in collection:
-                        raise InitializationError("Collection {} manifest is missing".format(collection['id']), 408)
-                    else if not collection['manifest']:
-                        raise InitializationError("Collection {} with objects has an empty manifest".format(collection['id']), 408)
-                    for obj in collection.get('objects', []):
-                        obj_time=find_att(obj)
-                        obj_man_paired = False
-                        for man in collection['manifest']:
-                            man_time = find_att(man)
-                            if obj['id'] == man['id'] and obj_time == man_time:
-                                obj_man_paired = True
-                        if not obj_man_paired: 
-                            raise InitializationError("Object with id {} last modified on {} is missing a manifest".format(obj['id'], obj_time), 408)
+                if not collection.get('objects'):
+                    continue
+                if 'manifest' not in collection:
+                    raise InitializationError("Collection {} manifest is missing".format(collection['id']), 408)
+                else if not collection['manifest']:
+                    raise InitializationError("Collection {} with objects has an empty manifest".format(collection['id']), 408)
+                for obj in collection.get('objects', []):
+                    obj_time=find_att(obj)
+                    obj_man_paired = False
+                    for man in collection['manifest']:
+                        man_time = find_att(man)
+                        if obj['id'] == man['id'] and obj_time == man_time:
+                            obj_man_paired = True
+                    if not obj_man_paired: 
+                        raise InitializationError("Object with id {} last modified on {} is missing a manifest".format(obj['id'], obj_time), 408)
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
             with io.open(filename, "r", encoding="utf-8") as infile:
