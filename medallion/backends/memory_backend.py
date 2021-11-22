@@ -144,7 +144,7 @@ class MemoryBackend(Backend):
                         if obj['id'] == man['id'] and obj_time == man_time:
                             obj_man_paired = True
                     if not obj_man_paired: 
-                        raise InitializationError("Object with id {} last modified on {} is missing a manifest".format(obj['id'], obj_time), 408)
+                        raise InitializationError("Object with id {} from {} is missing a manifest".format(obj['id'], obj_time), 408)
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
             with io.open(filename, "r", encoding="utf-8") as infile:
