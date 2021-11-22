@@ -12,7 +12,7 @@ from ..common import (
     determine_spec_version, determine_version, find_att, generate_status,
     generate_status_details, get_timestamp, iterpath
 )
-from ..exceptions import (ProcessingError, InitializationError)
+from ..exceptions import InitializationError, ProcessingError
 from ..filters.basic_filter import BasicFilter
 from .base import Backend
 
@@ -125,16 +125,17 @@ class MemoryBackend(Backend):
             self.next.pop(item)
     def collections_manifest_check(self):
         """
-        Checks collections for proper manifest, if objects are present in a collection, a manifest should be present with 
+        Checks collections for proper manifest, if objects are present in a collection, a manifest should be present with
         an entry for each entry in objects
         """
-        for key, api_root in self.data:
-            for collection in api_root.get('collections', [])
+        for key in self.data:
+            api_root = self.data[key]
+            for collection in api_root.get('collections', []):
                 if not collection.get('objects'):
                     continue
                 if 'manifest' not in collection:
                     raise InitializationError("Collection {} manifest is missing".format(collection['id']), 408)
-                else if not collection['manifest']:
+                if not collection['manifest']:
                     raise InitializationError("Collection {} with objects has an empty manifest".format(collection['id']), 408)
                 for obj in collection.get('objects', []):
                     obj_time=find_att(obj)
@@ -143,7 +144,8 @@ class MemoryBackend(Backend):
                         man_time = find_att(man)
                         if obj['id'] == man['id'] and obj_time == man_time:
                             obj_man_paired = True
-                    if not obj_man_paired: 
+                            break
+                    if not obj_man_paired:
                         raise InitializationError("Object with id {} from {} is missing a manifest".format(obj['id'], obj_time), 408)
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
@@ -456,4 +458,3 @@ class MemoryBackend(Backend):
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
             return create_resource("versions", objs, more, n), headers
-
