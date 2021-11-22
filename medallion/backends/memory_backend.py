@@ -123,28 +123,27 @@ class MemoryBackend(Backend):
 
         for item in expired_ids:
             self.next.pop(item)
-    #checks collections for proper manifest, if objects are present in a collection, a manifest should be present with 
-    #an entry for each entry in objects
     def collections_manifest_check(self):
-        for group in self.data:
-            if 'collections' in self.data[group].keys():
-                collections = self.data[group]['collections']
-                if collections:
-                    for collection in collections:
-                        if collection['objects']:
-                            if 'manifest' not in collection:
-                                raise InitializationError("Collection {} manifest is missing".format(collection['id']), 408)
-                            if not collection['manifest']:
-                                raise InitializationError("Collection {} with objects has an empty manifest".format(collection['id']), 408)
-                            for obj in collection['objects']:
-                                obj_time=find_att(obj)
-                                obj_man_paired = False
-                                for man in collection['manifest']:
-                                    man_time = find_att(man)
-                                    if obj['id'] == man['id'] and obj_time == man_time:
-                                        obj_man_paired = True
-                                if not obj_man_paired: 
-                                    raise InitializationError("Object with id {} last modified on {} is missing a manifest".format(obj['id'], obj_time), 408)
+        """
+        Checks collections for proper manifest, if objects are present in a collection, a manifest should be present with 
+        an entry for each entry in objects
+        """
+        for key, api_root in self.data:
+            for collection in api_root.get('collections', [])
+                if collection['objects']:
+                    if 'manifest' not in collection:
+                        raise InitializationError("Collection {} manifest is missing".format(collection['id']), 408)
+                    else if not collection['manifest']:
+                        raise InitializationError("Collection {} with objects has an empty manifest".format(collection['id']), 408)
+                    for obj in collection.get('objects', []):
+                        obj_time=find_att(obj)
+                        obj_man_paired = False
+                        for man in collection['manifest']:
+                            man_time = find_att(man)
+                            if obj['id'] == man['id'] and obj_time == man_time:
+                                obj_man_paired = True
+                        if not obj_man_paired: 
+                            raise InitializationError("Object with id {} last modified on {} is missing a manifest".format(obj['id'], obj_time), 408)
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
             with io.open(filename, "r", encoding="utf-8") as infile:
@@ -456,3 +455,4 @@ class MemoryBackend(Backend):
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
             return create_resource("versions", objs, more, n), headers
+
