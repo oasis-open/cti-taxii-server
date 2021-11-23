@@ -128,8 +128,7 @@ class MemoryBackend(Backend):
         Checks collections for proper manifest, if objects are present in a collection, a manifest should be present with
         an entry for each entry in objects
         """
-        for key in self.data:
-            api_root = self.data[key]
+        for key, api_root in self.data.items():
             for collection in api_root.get('collections', []):
                 if not collection.get('objects'):
                     continue
