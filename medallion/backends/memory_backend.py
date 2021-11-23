@@ -128,6 +128,7 @@ class MemoryBackend(Backend):
         Checks collections for proper manifest, if objects are present in a collection, a manifest should be present with
         an entry for each entry in objects
         """
+
         for key, api_root in self.data.items():
             for collection in api_root.get('collections', []):
                 if not collection.get('objects'):
@@ -137,7 +138,7 @@ class MemoryBackend(Backend):
                 if not collection['manifest']:
                     raise InitializationError("Collection {} with objects has an empty manifest".format(collection['id']), 408)
                 for obj in collection.get('objects', []):
-                    obj_time=find_att(obj)
+                    obj_time = find_att(obj)
                     obj_man_paired = False
                     for man in collection['manifest']:
                         man_time = find_att(man)
@@ -146,14 +147,13 @@ class MemoryBackend(Backend):
                             break
                     if not obj_man_paired:
                         raise InitializationError("Object with id {} from {} is missing a manifest".format(obj['id'], obj_time), 408)
+
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
             with io.open(filename, "r", encoding="utf-8") as infile:
                 self.data = json.load(infile)
         else:
             self.data = json.load(filename)
-
-
 
     def save_data_to_file(self, filename, **kwargs):
         """The kwargs are passed to ``json.dump()`` if provided."""
