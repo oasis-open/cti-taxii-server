@@ -12,7 +12,9 @@ from ..common import (
     get_custom_headers, get_timestamp, parse_request_parameters,
     string_to_datetime
 )
-from ..exceptions import MongoBackendError, ProcessingError
+from ..exceptions import (
+    InitializationError, MongoBackendError, ProcessingError
+)
 from ..filters.mongodb_filter import MongoDBFilter
 from .base import Backend
 
@@ -43,6 +45,7 @@ class MongoBackend(Backend):
     def __init__(self, **kwargs):
         try:
             self.client = MongoClient(kwargs.get("uri"))
+            self.object_manifest_check()
             self.pages = {}
             self.timeout = kwargs.get("session_timeout", 30)
         except ConnectionFailure:
@@ -126,6 +129,30 @@ class MongoBackend(Backend):
         else:
             headers = get_custom_headers(manifest_resource)
             return manifest_resource, headers
+
+    def object_manifest_check(self):
+        db = self.client
+        objects_exists = False
+        for api_root in db.list_database_names():
+            cols = db[api_root].list_collection_names()
+            if "objects" in cols:
+                objects_exists = True
+                api_root_db = db[api_root]
+                objects = api_root_db["objects"]
+                results = objects.find({})
+                for result in results:
+                    if "_manifest" not in result:
+                        if "modified" in result:
+                            raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result['modified']), 408)
+                        else:
+                            raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result['created']), 408)
+                    if not result['_manifest']:
+                        if "modified" in result:
+                            raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result['modified']), 408)
+                        else:
+                            raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result['created']), 408)
+        if not objects_exists:
+            raise InitializationError("Could not find any objects in database", 408)
 
     @catch_mongodb_error
     def _update_manifest(self, api_root, collection_id, media_type):
