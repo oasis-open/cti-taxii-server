@@ -123,6 +123,7 @@ class MemoryBackend(Backend):
 
         for item in expired_ids:
             self.next.pop(item)
+
     def collections_manifest_check(self):
         """
         Checks collections for proper manifest, if objects are present in a collection, a manifest should be present with
@@ -457,3 +458,4 @@ class MemoryBackend(Backend):
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
             return create_resource("versions", objs, more, n), headers
+
