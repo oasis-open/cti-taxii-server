@@ -131,6 +131,9 @@ class MongoBackend(Backend):
             return manifest_resource, headers
 
     def object_manifest_check(self):
+        """
+        Checks for manifests in each object, throws an error if not present.
+        """
         db = self.client
         objects_exists = False
         for api_root in db.list_database_names():
