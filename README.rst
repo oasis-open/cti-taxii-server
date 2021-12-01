@@ -212,7 +212,7 @@ from the OASIS TC Process and related policies.
 
 All contributions made to this TC Open Repository are subject to open source
 license terms expressed in the `BSD-3-Clause License
-<https://www.oasis-open.org/sites/www.oasis-open.org/files/BSD-3-Clause.txt>`__.
+<http://opensource.org/licenses/BSD-3-Clause>`__.
 That license was selected as the declared `"Applicable License"
 <https://www.oasis-open.org/resources/open-repositories/licenses>`__ when the
 TC Open Repository was created.
