@@ -143,8 +143,7 @@ class MongoBackend(Backend):
             objects_exists = True
             api_root_db = db[api_root]
             objects = api_root_db["objects"]
-            results = objects.find({})
-            for result in results:
+            for result in objects.find({}):
                 if "_manifest" not in result:
                     field_to_use = 'created'
                     if "modified" in result:
