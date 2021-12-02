@@ -145,15 +145,15 @@ class MongoBackend(Backend):
                 results = objects.find({})
                 for result in results:
                     if "_manifest" not in result:
+                        field_to_use = 'created'
                         if "modified" in result:
-                            raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result['modified']), 408)
-                        else:
-                            raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result['created']), 408)
+                            field_to_use = 'modified'
+                        raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result[field_to_use]), 408)
                     if not result['_manifest']:
+                        field_to_use = 'created'
                         if "modified" in result:
-                            raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result['modified']), 408)
-                        else:
-                            raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result['created']), 408)
+                            field_to_use = 'modified'
+                        raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result[field_to_use]), 408)
         if not objects_exists:
             raise InitializationError("Could not find any objects in database", 408)
 
