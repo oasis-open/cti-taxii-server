@@ -38,4 +38,3 @@ class BackendError(MedallionError):
 class MongoBackendError(BackendError):
     """Cannot connect or obtain access to MongoDB backend"""
     pass
-

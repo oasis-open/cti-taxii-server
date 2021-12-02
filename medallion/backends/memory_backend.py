@@ -458,4 +458,3 @@ class MemoryBackend(Backend):
                         objs = sorted(map(lambda x: x["version"], objs), reverse=True)
                         break
             return create_resource("versions", objs, more, n), headers
-
