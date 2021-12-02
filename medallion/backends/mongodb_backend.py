@@ -138,22 +138,23 @@ class MongoBackend(Backend):
         objects_exists = False
         for api_root in db.list_database_names():
             cols = db[api_root].list_collection_names()
-            if "objects" in cols:
-                objects_exists = True
-                api_root_db = db[api_root]
-                objects = api_root_db["objects"]
-                results = objects.find({})
-                for result in results:
-                    if "_manifest" not in result:
-                        field_to_use = 'created'
-                        if "modified" in result:
-                            field_to_use = 'modified'
-                        raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result[field_to_use]), 408)
-                    if not result['_manifest']:
-                        field_to_use = 'created'
-                        if "modified" in result:
-                            field_to_use = 'modified'
-                        raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result[field_to_use]), 408)
+            if "objects" not in cols:
+                continue
+            objects_exists = True
+            api_root_db = db[api_root]
+            objects = api_root_db["objects"]
+            results = objects.find({})
+            for result in results:
+                if "_manifest" not in result:
+                    field_to_use = 'created'
+                    if "modified" in result:
+                        field_to_use = 'modified'
+                    raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result[field_to_use]), 408)
+                if not result['_manifest']:
+                    field_to_use = 'created'
+                    if "modified" in result:
+                        field_to_use = 'modified'
+                    raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result[field_to_use]), 408)
         if not objects_exists:
             raise InitializationError("Could not find any objects in database", 408)
 
