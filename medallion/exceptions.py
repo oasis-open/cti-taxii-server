@@ -25,6 +25,11 @@ class ProcessingError(MedallionError):
     pass
 
 
+class InitializationError(MedallionError):
+    """Medallion Initialization Error, such as bad initial data"""
+    pass
+
+
 class BackendError(MedallionError):
     """Medallion data backend error"""
     pass
