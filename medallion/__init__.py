@@ -135,7 +135,7 @@ def handle_error(error):
     e = {
         "title": "InternalError",
         "http_status": "500",
-        "description": str(error.args[0]),
+        "description": str(error),
     }
     return Response(
         response=json.dumps(e),
