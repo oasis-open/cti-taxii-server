@@ -499,8 +499,8 @@ def test_get_object_limit(backend):
 # could have parametrized all three, but last one requried some modification
 # easier to read this way
 @pytest.mark.parametrize("getstr, modified", [("?match[version]=2016-12-25T12:30:59.444Z", "2016-12-25T12:30:59.444Z"),
-    ("?match[version]=first", "2016-11-03T12:30:59.000Z"),
-    ("?match[version]=last", "2017-01-27T13:49:53.935Z")])
+                                              ("?match[version]=first", "2016-11-03T12:30:59.000Z"),
+                                              ("?match[version]=last", "2017-01-27T13:49:53.935Z")])
 def test_get_object_version1(backend, getstr, modified):
     objstr = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     r = backend.client.get(
@@ -1391,3 +1391,49 @@ def test_default_backend_no_backend_section(no_backend_section):
     assert no_backend_section.app.medallion_backend.data == {}
 
 # test collections with different can_read and can_write values
+
+
+# test if program will reject duplicate objects being posted
+def test_object_already_present(backend):
+    object_copy = {
+                        "created": "2014-05-08T09:00:00.000Z",
+                        "modified": "2014-05-08T09:00:00.000Z",
+                        "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
+                        "relationship_type": "indicates",
+                        "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
+                        "spec_version": "2.1",
+                        "target_ref": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                        "type": "relationship"
+                    }
+    object_copy2 = {
+                        "created": "2014-05-08T09:00:00.000Z",
+                        "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
+                        "relationship_type": "indicates",
+                        "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
+                        "spec_version": "2.1",
+                        "target_ref": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                        "type": "relationship"
+                    }
+    add_objects = {"objects": []}
+
+    add_objects["objects"].append(object_copy)
+# add object to test against
+    r_post = backend.client.post(
+        test.ADD_OBJECTS_EP,
+        data=json.dumps(add_objects),
+        headers=backend.post_headers,
+    )
+
+    add_objects["objects"].append(object_copy2)
+# try to add a duplicate, with and without the modified key (both should fail)
+    r_post = backend.client.post(
+        test.ADD_OBJECTS_EP,
+        data=json.dumps(add_objects),
+        headers=backend.post_headers,
+    )
+    status_data = r_post.json
+    assert r_post.status_code == 202
+    # should have failures
+    assert "failures" in status_data
+    # should not have successes
+    assert "successes" not in status_data
