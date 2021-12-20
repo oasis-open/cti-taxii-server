@@ -70,7 +70,7 @@ class TaxiiTest():
     mongodb_config = {
         "backend": {
             "module_class": "MongoBackend",
-            "uri": "mongodb://travis:test@127.0.0.1:27017/",
+            "uri": "mongodb://127.0.0.1:27017/",
         },
         "users": {
             "root": "example",
