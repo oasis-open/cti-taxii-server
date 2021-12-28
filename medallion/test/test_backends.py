@@ -1,5 +1,6 @@
 import copy
 import json
+import tempfile
 
 import pytest
 
@@ -1437,3 +1438,23 @@ def test_object_already_present(backend):
     assert "failures" in status_data
     # should not have successes
     assert "successes" not in status_data
+
+
+def test_save_to_file(backend):
+    if backend.type != "memory":
+        pytest.skip()
+    with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
+        backend.app.medallion_backend.save_data_to_file(tmpfile.name)
+        tmpfile.flush()
+        with open(tmpfile.name) as f:
+            data = json.load(f)
+        if 'trustgroup1' in data.keys():
+            if 'collections' in data['trustgroup1'].keys():
+                assert data['trustgroup1']['collections'][0]['id'] == "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4"
+                assert data['trustgroup1']['collections'][1]['id'] == "365fed99-08fa-fdcd-a1b3-fb247eb41d01"
+                assert data['trustgroup1']['collections'][2]['id'] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+                assert data['trustgroup1']['collections'][3]['id'] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
+            else:
+                assert False
+        else:
+            assert False
