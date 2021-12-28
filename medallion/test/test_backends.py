@@ -346,10 +346,9 @@ def test_get_objects_type(backend):
     assert all("indicator" == obj["type"] for obj in objs["objects"])
 
 
-# following is new test_get_objects_by_version
-def get_objects_by_version(backend, getstr):
+def get_objects_by_version(backend, filter):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + getstr,
+        test.GET_OBJECTS_EP + filter,
         headers=backend.headers,
     )
     assert r.status_code == 200
@@ -390,10 +389,9 @@ def test_objects_version_match_all(backend):
     assert len(objs['objects']) == 7
 
 
-# following is new test_get_objects_spec_version
-def get_objects_spec_version(backend, getstr, length):
+def get_objects_spec_version(backend, filter, length):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + getstr,
+        test.GET_OBJECTS_EP + filter,
         headers=backend.headers,
     )
 
@@ -424,10 +422,9 @@ def test_get_objects_spec_version_default(backend):
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
 
-# following is new test_get_object_added_after
-def get_object_added_after(backend, getstr):
+def get_object_added_after(backend, filter):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + getstr,
+        test.GET_OBJECTS_EP + filter,
         headers=backend.headers,
         follow_redirects=True
     )
@@ -496,16 +493,13 @@ def test_get_object_limit(backend):
     assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
 
 
-# split test_get_object version  into two, parameterized first three, split of last
-# could have parametrized all three, but last one requried some modification
-# easier to read this way
-@pytest.mark.parametrize("getstr, modified", [("?match[version]=2016-12-25T12:30:59.444Z", "2016-12-25T12:30:59.444Z"),
+@pytest.mark.parametrize("filter, modified", [("?match[version]=2016-12-25T12:30:59.444Z", "2016-12-25T12:30:59.444Z"),
                                               ("?match[version]=first", "2016-11-03T12:30:59.000Z"),
                                               ("?match[version]=last", "2017-01-27T13:49:53.935Z")])
-def test_get_object_version1(backend, getstr, modified):
+def test_get_object_version_single(backend, filter, modified):
     objstr = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     r = backend.client.get(
-        test.GET_OBJECTS_EP + objstr + getstr,
+        test.GET_OBJECTS_EP + objstr + filter,
         headers=backend.headers,
         follow_redirects=True
     )
@@ -534,9 +528,9 @@ def test_get_object_version_match_all(backend):
     assert len(objs['objects']) == 3
 
 
-def get_object_spec_version(backend, getstr, matching):
+def get_object_spec_version(backend, filter, matching):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + getstr + matching,
+        test.GET_OBJECTS_EP + filter + matching,
         headers=backend.headers,
         follow_redirects=True
     )
@@ -557,10 +551,10 @@ def test_get_object_spec_version_20(backend):
 def test_get_object_spec_version_21(backend):
     objs = get_object_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec", "?match[spec_version]=2.1")
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
-# though this is getting objects with every spec_version, the version filter gets only the latest object.
 
 
 def test_get_object_spec_version_2021(backend):
+    # though this is getting objects with every spec_version, the version filter gets only the latest object.
     objs = get_object_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec", "?match[spec_version]=2.0,2.1")
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
@@ -661,10 +655,10 @@ def test_get_manifest_type(backend):
     assert all('indicator' in obj['id'] for obj in objs['objects'])
 
 
-def get_manifest_version(backend, getstr):
+def get_manifest_version(backend, filter):
 
     r = backend.client.get(
-        test.GET_MANIFESTS_EP + getstr,
+        test.GET_MANIFESTS_EP + filter,
         headers=backend.headers,
         follow_redirects=True
     )
@@ -706,9 +700,9 @@ def test_get_manifest_version_all(backend):
     assert len(objs['objects']) == 7
 
 
-def get_manifest_spec_version(backend, getstr):
+def get_manifest_spec_version(backend, filter):
     r = backend.client.get(
-        test.GET_MANIFESTS_EP + getstr,
+        test.GET_MANIFESTS_EP + filter,
         headers=backend.headers,
     )
 
@@ -820,9 +814,9 @@ def test_get_version_limit(backend):
     assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
 
 
-def get_version_spec_version(backend, getstr):
+def get_version_spec_version(backend, filter):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + getstr,
+        test.GET_OBJECTS_EP + filter,
         headers=backend.headers,
         follow_redirects=True,
     )
@@ -1398,7 +1392,6 @@ def test_default_backend_no_backend_section(no_backend_section):
 def test_object_already_present(backend):
     object_copy = {
                         "created": "2014-05-08T09:00:00.000Z",
-                        "modified": "2014-05-08T09:00:00.000Z",
                         "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
                         "relationship_type": "indicates",
                         "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
@@ -1406,6 +1399,8 @@ def test_object_already_present(backend):
                         "target_ref": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
                         "type": "relationship"
                     }
+    object_copy2 = object_copy.copy()
+    object_copy2.update({"modified": "2014-05-08T09:00:00.000Z"})
     object_copy2 = {
                         "created": "2014-05-08T09:00:00.000Z",
                         "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
@@ -1418,7 +1413,7 @@ def test_object_already_present(backend):
     add_objects = {"objects": []}
 
     add_objects["objects"].append(object_copy)
-# add object to test against
+    # add object to test against
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
         data=json.dumps(add_objects),
@@ -1426,7 +1421,7 @@ def test_object_already_present(backend):
     )
 
     add_objects["objects"].append(object_copy2)
-# try to add a duplicate, with and without the modified key (both should fail)
+    # try to add a duplicate, with and without the modified key (both should fail)
     r_post = backend.client.post(
         test.ADD_OBJECTS_EP,
         data=json.dumps(add_objects),
