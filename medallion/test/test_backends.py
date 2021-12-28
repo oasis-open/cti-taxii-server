@@ -1392,6 +1392,7 @@ def test_default_backend_no_backend_section(no_backend_section):
 def test_object_already_present(backend):
     object_copy = {
                         "created": "2014-05-08T09:00:00.000Z",
+                        "modified": "2014-05-08T09:00:00.000Z",
                         "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
                         "relationship_type": "indicates",
                         "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
@@ -1400,16 +1401,7 @@ def test_object_already_present(backend):
                         "type": "relationship"
                     }
     object_copy2 = object_copy.copy()
-    object_copy2.update({"modified": "2014-05-08T09:00:00.000Z"})
-    object_copy2 = {
-                        "created": "2014-05-08T09:00:00.000Z",
-                        "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
-                        "relationship_type": "indicates",
-                        "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
-                        "spec_version": "2.1",
-                        "target_ref": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
-                        "type": "relationship"
-                    }
+    del object_copy2['modified']
     add_objects = {"objects": []}
 
     add_objects["objects"].append(object_copy)
