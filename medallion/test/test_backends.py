@@ -389,7 +389,7 @@ def test_objects_version_match_all(backend):
     assert len(objs['objects']) == 7
 
 
-def get_objects_spec_version(backend, filter, length):
+def get_objects_spec_version(backend, filter, num_objects):
     r = backend.client.get(
         test.GET_OBJECTS_EP + filter,
         headers=backend.headers,
@@ -399,7 +399,7 @@ def get_objects_spec_version(backend, filter, length):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == length
+    assert len(objs['objects']) == num_objects
     return objs
 
 
@@ -424,7 +424,7 @@ def test_get_objects_spec_version_default(backend):
 
 def get_object_added_after(backend, filter):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + filter,
+        test.GET_OBJECTS_EP + "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec" + filter,
         headers=backend.headers,
         follow_redirects=True
     )
@@ -435,13 +435,13 @@ def get_object_added_after(backend, filter):
 
 
 def test_get_object_added_after_case1(backend):
-    objs = get_object_added_after(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec?added_after=2018-01-27T13:49:59.997000Z")
+    objs = get_object_added_after(backend, "?added_after=2018-01-27T13:49:59.997000Z")
     assert 'more' not in objs
     assert 'objects' not in objs
 
 
 def test_get_object_added_after_case2(backend):
-    objs = get_object_added_after(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec?added_after=2017-01-27T13:49:59Z")
+    objs = get_object_added_after(backend, "?added_after=2017-01-27T13:49:59Z")
     assert objs['more'] is False
     assert len(objs['objects']) == 1
 
@@ -1435,13 +1435,8 @@ def test_save_to_file(backend):
         tmpfile.flush()
         with open(tmpfile.name) as f:
             data = json.load(f)
-        if 'trustgroup1' in data.keys():
-            if 'collections' in data['trustgroup1'].keys():
-                assert data['trustgroup1']['collections'][0]['id'] == "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4"
-                assert data['trustgroup1']['collections'][1]['id'] == "365fed99-08fa-fdcd-a1b3-fb247eb41d01"
-                assert data['trustgroup1']['collections'][2]['id'] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
-                assert data['trustgroup1']['collections'][3]['id'] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
-            else:
-                assert False
-        else:
-            assert False
+        assert data['trustgroup1']['collections'][0]['id'] == "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4"
+        assert data['trustgroup1']['collections'][1]['id'] == "365fed99-08fa-fdcd-a1b3-fb247eb41d01"
+        assert data['trustgroup1']['collections'][2]['id'] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
+        assert data['trustgroup1']['collections'][3]['id'] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
+
