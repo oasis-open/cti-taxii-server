@@ -45,8 +45,6 @@ class BasicFilter(object):
 
     def __init__(self, filter_args):
         self.filter_args = filter_args
-        print("init")
-        print(filter_args)
 
     def sort_and_paginate(self, data, limit, manifest):
         temp = None
@@ -144,7 +142,6 @@ class BasicFilter(object):
 
     @staticmethod
     def check_by_spec_version(obj, spec_, data):
-        print(spec_)
         if spec_:
             if "media_type" in obj:
                 if any(s == obj["media_type"].split("version=")[1] for s in spec_):
@@ -204,7 +201,7 @@ class BasicFilter(object):
                     continue
                 matcher = False
 
-            if "added_after" in allowed:
+            if added_after_date:
                 if not self.check_added_after(obj, manifest_info, added_after_date):
                     continue
                 matcher = False
