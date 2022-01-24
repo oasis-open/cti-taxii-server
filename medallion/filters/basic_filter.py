@@ -1,4 +1,5 @@
 import bisect
+import copy
 import operator
 
 from ..common import determine_spec_version, find_att, string_to_datetime
@@ -181,8 +182,7 @@ class BasicFilter(object):
         headers = {}
         match_objects = []
         # match for type and id filters first
-        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) \
-           or (self.added_after_date) or ("spec_version" in allowed):
+        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) or (self.added_after_date) or ("spec_version" in allowed):
             for obj in data:
                 if self.match_type and "type" in allowed:
                     if not ("type" in obj and any(s == obj["type"] for s in self.type_)) \
@@ -201,7 +201,7 @@ class BasicFilter(object):
                         continue
                 match_objects.append(obj)
         else:
-            match_objects = data
+            match_objects = copy.deepcopy(data)
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
