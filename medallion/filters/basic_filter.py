@@ -181,10 +181,12 @@ class BasicFilter(object):
         headers = {}
         match_objects = []
         # match for type and id filters first
-        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) or (self.added_after_date) or ("spec_version" in allowed):
+        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) \
+           or (self.added_after_date) or ("spec_version" in allowed):
             for obj in data:
                 if self.match_type and "type" in allowed:
-                    if not ("type" in obj and any(s == obj["type"] for s in self.type_)) and not ("id" in obj and any(s == obj["id"].split("--")[0] for s in self.type_)):
+                    if not ("type" in obj and any(s == obj["type"] for s in self.type_)) \
+                       and not ("id" in obj and any(s == obj["id"].split("--")[0] for s in self.type_)):
                         continue
                 if self.match_id and "id" in allowed:
                     if not ("id" in obj and any(s == obj["id"] for s in self.id_)):
@@ -199,7 +201,7 @@ class BasicFilter(object):
                         continue
                 match_objects.append(obj)
         else:
-            match_objects = deepcopy(obj)
+            match_objects = data
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
