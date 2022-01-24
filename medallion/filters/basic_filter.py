@@ -182,11 +182,11 @@ class BasicFilter(object):
         headers = {}
         match_objects = []
         # match for type and id filters first
-        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) or (self.added_after_date) or ("spec_version" in allowed):
+        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) \
+           or (self.added_after_date) or ("spec_version" in allowed):
             for obj in data:
                 if self.match_type and "type" in allowed:
-                    if not ("type" in obj and any(s == obj["type"] for s in self.type_)) \
-                       and not ("id" in obj and any(s == obj["id"].split("--")[0] for s in self.type_)):
+                    if not (any(s == obj.get("type") for s in self.type_)) and not (any(s == obj.get("id").split("--")[0] for s in self.type_)):
                         continue
                 if self.match_id and "id" in allowed:
                     if not ("id" in obj and any(s == obj["id"] for s in self.id_)):
