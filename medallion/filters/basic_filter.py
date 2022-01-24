@@ -1,5 +1,4 @@
 import bisect
-import cProfile
 import operator
 
 from ..common import determine_spec_version, find_att, string_to_datetime
@@ -45,6 +44,16 @@ class BasicFilter(object):
 
     def __init__(self, filter_args):
         self.filter_args = filter_args
+        self.match_type = self.filter_args.get("match[type]")
+        if self.match_type:
+            self.type_ = self.match_type.split(",")
+        self.match_id = self.filter_args.get("match[id]")
+        if self.match_id:
+            self.id_ = self.match_id.split(",")
+        self.added_after_date = self.filter_args.get("added_after")
+        self.match_spec_version = self.filter_args.get("match[spec_version]")
+        if self.match_spec_version:
+            self.match_spec_version = self.match_spec_version.split(",")
 
     def sort_and_paginate(self, data, limit, manifest):
         temp = None
@@ -166,52 +175,31 @@ class BasicFilter(object):
         return False
 
     def process_filter(self, data, allowed=(), manifest_info=(), limit=None):
-        prof = cProfile.Profile()
         filtered_by_version = []
         final_match = []
         save_next = []
         headers = {}
-        prof.enable()
         match_objects = []
-        matcher = False
-        match_type = self.filter_args.get("match[type]")
-        if match_type:
-            type_ = match_type.split(",")
-        match_id = self.filter_args.get("match[id]")
-        if match_id:
-            id_ = match_id.split(",")
-        added_after_date = self.filter_args.get("added_after")
-        match_spec_version = self.filter_args.get("match[spec_version]")
-        if match_spec_version:
-            match_spec_version = match_spec_version.split(",")
         # match for type and id filters first
-        for obj in data:
-            if match_type and "type" in allowed:
-                if "type" in obj and any(s == obj["type"] for s in type_):
-                    matcher = True
-                elif "id" in obj and any(s == obj["id"].split("--")[0] for s in type_):
-                    matcher = True
-                if not matcher:
-                    continue
-                matcher = False
-            if match_id and "id" in allowed:
-                if "id" in obj and any(s == obj["id"] for s in id_):
-                    matcher = True
-                if not matcher:
-                    continue
-                matcher = False
+        if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) or (self.added_after_date) or ("spec_version" in allowed):
+            for obj in data:
+                if self.match_type and "type" in allowed:
+                    if not ("type" in obj and any(s == obj["type"] for s in self.type_)) and not ("id" in obj and any(s == obj["id"].split("--")[0] for s in self.type_)):
+                        continue
+                if self.match_id and "id" in allowed:
+                    if not ("id" in obj and any(s == obj["id"] for s in self.id_)):
+                        continue
 
-            if added_after_date:
-                if not self.check_added_after(obj, manifest_info, added_after_date):
-                    continue
-                matcher = False
+                if self.added_after_date:
+                    if not self.check_added_after(obj, manifest_info, self.added_after_date):
+                        continue
 
-            if "spec_version" in allowed:
-                if not self.check_by_spec_version(obj, match_spec_version, data):
-                    continue
-            match_objects.append(obj)
-        prof.disable()
-        prof.print_stats()
+                if "spec_version" in allowed:
+                    if not self.check_by_spec_version(obj, self.match_spec_version, data):
+                        continue
+                match_objects.append(obj)
+        else:
+            match_objects = deepcopy(obj)
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
