@@ -1,5 +1,4 @@
 import bisect
-import copy
 import operator
 
 from ..common import determine_spec_version, find_att, string_to_datetime
@@ -47,10 +46,10 @@ class BasicFilter(object):
         self.filter_args = filter_args
         self.match_type = self.filter_args.get("match[type]")
         if self.match_type:
-            self.type_ = self.match_type.split(",")
+            self.match_type = self.match_type.split(",")
         self.match_id = self.filter_args.get("match[id]")
         if self.match_id:
-            self.id_ = self.match_id.split(",")
+            self.match_id = self.match_id.split(",")
         self.added_after_date = self.filter_args.get("added_after")
         self.match_spec_version = self.filter_args.get("match[spec_version]")
         if self.match_spec_version:
@@ -186,10 +185,10 @@ class BasicFilter(object):
            or (self.added_after_date) or ("spec_version" in allowed):
             for obj in data:
                 if self.match_type and "type" in allowed:
-                    if not (any(s == obj.get("type") for s in self.type_)) and not (any(s == obj.get("id").split("--")[0] for s in self.type_)):
+                    if not (any(s == obj.get("type") for s in self.match_type)) and not (any(s == obj.get("id").split("--")[0] for s in self.match_type)):
                         continue
                 if self.match_id and "id" in allowed:
-                    if not ("id" in obj and any(s == obj["id"] for s in self.id_)):
+                    if not ("id" in obj and any(s == obj["id"] for s in self.match_id)):
                         continue
 
                 if self.added_after_date:
@@ -201,7 +200,7 @@ class BasicFilter(object):
                         continue
                 match_objects.append(obj)
         else:
-            match_objects = copy.deepcopy(data)
+            match_objects = data
         # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
