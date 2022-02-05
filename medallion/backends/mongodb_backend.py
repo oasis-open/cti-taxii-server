@@ -294,14 +294,7 @@ class MongoBackend(Backend):
                     mongo_query["_manifest.version"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
                 existing_entry = objects_info.find_one(mongo_query)
                 obj_version = determine_version(new_obj, request_time)
-                if existing_entry:
-                    status_detail = generate_status_details(
-                        new_obj["id"], obj_version,
-                        message="Unable to process object because an identical entry already exists in collection '{}'.".format(collection_id),
-                    )
-                    failures.append(status_detail)
-                    failed += 1
-                else:
+                if not existing_entry:
                     new_obj.update({"_collection_id": collection_id})
                     if "modified" in new_obj:
                         new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
@@ -316,12 +309,16 @@ class MongoBackend(Backend):
                     new_obj.update({"_manifest": _manifest})
                     objects_info.insert_one(new_obj)
                     self._update_manifest(api_root, collection_id, media_type)
-                    status_detail = generate_status_details(
-                        new_obj["id"], obj_version,
-                        message="Successfully added object to collection '{}'.".format(collection_id)
-                    )
-                    successes.append(status_detail)
-                    succeeded += 1
+
+                # else: we already have the object, so this is a
+                # no-op.
+
+                status_detail = generate_status_details(
+                    new_obj["id"], obj_version,
+                    message="Successfully added object to collection '{}'.".format(collection_id)
+                )
+                successes.append(status_detail)
+                succeeded += 1
         except Exception as e:
             # log.exception(e)
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
