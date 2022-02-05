@@ -315,6 +315,7 @@ class MemoryBackend(Backend):
                         collection["objects"] = []
                     try:
                         for new_obj in objs["objects"]:
+                            version = determine_version(new_obj, request_time)
                             id_and_version_already_present = False
                             for obj in collection["objects"]:
                                 if new_obj["id"] == obj["id"]:
@@ -327,7 +328,6 @@ class MemoryBackend(Backend):
                                         id_and_version_already_present = True
                                         break
                             if id_and_version_already_present is False:
-                                version = determine_version(new_obj, request_time)
                                 if "modified" not in new_obj and "created" not in new_obj:
                                     new_obj["_date_added"] = version
                                 collection["objects"].append(new_obj)
