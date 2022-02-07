@@ -106,7 +106,6 @@ class BasicFilter(object):
                 item_time = find_att(item)
                 if item["id"] == obj["id"] and item_time == obj_time and string_to_datetime(item["date_added"]) > added_after_timestamp:
                     return True
-                    break
             return False
 
     @staticmethod
@@ -180,7 +179,6 @@ class BasicFilter(object):
         save_next = []
         headers = {}
         match_objects = []
-        # match for type and id filters first
         if (self.match_type and "type" in allowed) or (self.match_id and "id" in allowed) \
            or (self.added_after_date) or ("spec_version" in allowed):
             for obj in data:
@@ -201,7 +199,6 @@ class BasicFilter(object):
                 match_objects.append(obj)
         else:
             match_objects = data
-        # match for version, and get rid of duplicates as appropriate
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
             filtered_by_version = self.filter_by_version(match_objects, match_version)
