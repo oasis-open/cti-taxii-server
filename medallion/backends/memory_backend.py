@@ -371,7 +371,7 @@ class MemoryBackend(Backend):
                     else:
                         for obj in collection.get("objects", []):
                             if object_id == obj["id"]:
-                                objs.append(obj)
+                                objs.append(copy.deepcopy(obj))
                         if len(objs) == 0:
                             raise ProcessingError("Object '{}' not found".format(object_id), 404)
                         full_filter = BasicFilter(filter_args)
