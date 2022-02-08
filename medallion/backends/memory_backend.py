@@ -327,7 +327,12 @@ class MemoryBackend(Backend):
                                         # There is no modified field, so this object is immutable
                                         id_and_version_already_present = True
                                         break
-                            if id_and_version_already_present is False:
+
+                            if id_and_version_already_present:
+                                message = "Object already added"
+
+                            else:
+                                message = None
                                 if "modified" not in new_obj and "created" not in new_obj:
                                     new_obj["_date_added"] = version
                                 collection["objects"].append(new_obj)
@@ -337,7 +342,7 @@ class MemoryBackend(Backend):
                             # no-op.
 
                             status_details = generate_status_details(
-                                new_obj["id"], version
+                                new_obj["id"], version, message
                             )
                             successes.append(status_details)
                             succeeded += 1

@@ -294,7 +294,12 @@ class MongoBackend(Backend):
                     mongo_query["_manifest.version"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
                 existing_entry = objects_info.find_one(mongo_query)
                 obj_version = determine_version(new_obj, request_time)
-                if not existing_entry:
+
+                if existing_entry:
+                    message = "Object already added"
+
+                else:
+                    message = None
                     new_obj.update({"_collection_id": collection_id})
                     if "modified" in new_obj:
                         new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
@@ -314,8 +319,7 @@ class MongoBackend(Backend):
                 # no-op.
 
                 status_detail = generate_status_details(
-                    new_obj["id"], obj_version,
-                    message="Successfully added object to collection '{}'.".format(collection_id)
+                    new_obj["id"], obj_version, message
                 )
                 successes.append(status_detail)
                 succeeded += 1
