@@ -1388,7 +1388,7 @@ def test_default_backend_no_backend_section(no_backend_section):
 # test collections with different can_read and can_write values
 
 
-# test if program will reject duplicate objects being posted
+# test if program will accept duplicate objects being posted
 def test_object_already_present(backend):
     object_copy = {
                         "created": "2014-05-08T09:00:00.000Z",
@@ -1421,10 +1421,10 @@ def test_object_already_present(backend):
     )
     status_data = r_post.json
     assert r_post.status_code == 202
-    # should have failures
-    assert "failures" in status_data
-    # should not have successes
-    assert "successes" not in status_data
+    # should not have failures
+    assert "failures" not in status_data
+    # should have successes
+    assert "successes" in status_data
 
 
 def test_save_to_file(backend):

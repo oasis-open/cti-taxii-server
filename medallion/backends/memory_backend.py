@@ -315,6 +315,7 @@ class MemoryBackend(Backend):
                         collection["objects"] = []
                     try:
                         for new_obj in objs["objects"]:
+                            version = determine_version(new_obj, request_time)
                             id_and_version_already_present = False
                             for obj in collection["objects"]:
                                 if new_obj["id"] == obj["id"]:
@@ -326,24 +327,26 @@ class MemoryBackend(Backend):
                                         # There is no modified field, so this object is immutable
                                         id_and_version_already_present = True
                                         break
-                            if id_and_version_already_present is False:
-                                version = determine_version(new_obj, request_time)
+
+                            if id_and_version_already_present:
+                                message = "Object already added"
+
+                            else:
+                                message = None
                                 if "modified" not in new_obj and "created" not in new_obj:
                                     new_obj["_date_added"] = version
                                 collection["objects"].append(new_obj)
                                 self._update_manifest(new_obj, api_root, collection["id"], request_time)
-                                status_details = generate_status_details(
-                                    new_obj["id"], version
-                                )
-                                successes.append(status_details)
-                                succeeded += 1
-                            else:
-                                status_details = generate_status_details(
-                                    new_obj["id"], determine_version(new_obj, request_time),
-                                    message="Unable to process object",
-                                )
-                                failures.append(status_details)
-                                failed += 1
+
+                            # else: we already have the object, so this is a
+                            # no-op.
+
+                            status_details = generate_status_details(
+                                new_obj["id"], version, message
+                            )
+                            successes.append(status_details)
+                            succeeded += 1
+
                     except Exception as e:
                         raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
