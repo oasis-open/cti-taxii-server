@@ -1439,22 +1439,30 @@ def test_save_to_file(backend):
         assert data['trustgroup1']['collections'][1]['id'] == "365fed99-08fa-fdcd-a1b3-fb247eb41d01"
         assert data['trustgroup1']['collections'][2]['id'] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         assert data['trustgroup1']['collections'][3]['id'] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
-   
+ 
+
 def test_get_objects_match_type_version(backend):
     r = backend.client.get(
-        test.GET_OBJECTS_EP + "?match[type]=incident&match[version]=2016-01-01T01:01:01.000Z",
+        test.GET_OBJECTS_EP + "?match[type]=indicator&match[version]=2017-01-27T13:49:53.935Z",
         headers=backend.headers,
     )
+    obj = r.json
 
+    assert len(obj['objects']) == 1
+    assert obj['objects'][0]['id'] == 'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e'
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
 
+    
 def test_get_objects_match_type_spec_version(backend):
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?match[type]=indicator&match[spec_version]=2.1",
         headers=backend.headers,
     )
-
+    objs = r.json
+    for obj in objs['objects']:
+        assert obj['type'] == 'indicator'
+        assert obj['spec_version'] == '2.1'
+    assert len(objs['objects']) == 2
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
-
