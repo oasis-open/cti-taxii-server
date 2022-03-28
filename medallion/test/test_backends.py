@@ -1475,6 +1475,21 @@ def test_get_objects_match_type_spec_version(backend):
         data=json.dumps(copy.deepcopy(newobj)),
         headers=backend.post_headers
     )
+    r = backend.client.get(
+        test.GET_OBJECTS_EP + "?match[type]=indicator&match[spec_version]=2.1",
+        headers=backend.headers,
+    )
+
+    obj = r.json
+    assert r.status_code == 200
+    assert r.content_type == MEDIA_TYPE_TAXII_V21
+    assert len(obj['objects']) == 2
+    assert obj['objects'][0]['type'] == "indicator"
+    assert obj['objects'][0]['id'] == "indicator--cd981c25-8042-4166-8945-51178443bdac"
+    assert obj['objects'][0]['spec_version'] == "2.1"
+    assert obj['objects'][1]['type'] == "indicator"
+    assert obj['objects'][1]['id'] == "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
+    assert obj['objects'][1]['spec_version'] == "2.1"
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "?match[type]=indicator&match[spec_version]=2.0",
