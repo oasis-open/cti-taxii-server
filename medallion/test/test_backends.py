@@ -1448,10 +1448,10 @@ def test_get_objects_match_type_version(backend):
     )
     obj = r.json
 
-    assert len(obj['objects']) == 1
-    assert obj['objects'][0]['id'] == 'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e'
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
+    assert len(obj['objects']) == 1
+    assert obj['objects'][0]['id'] == 'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e'
 
 
 def test_get_objects_match_type_spec_version(backend):
@@ -1481,9 +1481,8 @@ def test_get_objects_match_type_spec_version(backend):
     )
 
     obj = r.json
-
-    assert obj['objects'][0]['id'] == object_id
-    assert obj['objects'][0]['spec_version'] == "2.0"
-    assert len(obj['objects']) == 1
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
+    assert len(obj['objects']) == 1
+    assert obj['objects'][0]['id'] == object_id
+    assert obj['objects'][0]['spec_version'] == "2.0"
