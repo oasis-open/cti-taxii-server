@@ -3,8 +3,11 @@ import datetime as dt
 import threading
 import uuid
 
+from flask import Flask
 import pytz
 from six import iteritems
+
+APPLICATION_INSTANCE = Flask(__name__)
 
 
 def create_resource(resource_name, items, more=False, next_id=None):
@@ -251,7 +254,7 @@ def find_version_attribute(obj):
         return "_date_added"
 
 
-class SessionChecker(object):
+class TaskChecker(object):
     """Calls a target method every X seconds to perform a task."""
 
     def __init__(self, interval, target_function):
@@ -268,3 +271,21 @@ class SessionChecker(object):
 
     def start(self):
         self.thread.start()
+
+
+def get_application_instance_config_values(config_group, config_key=None):
+    if config_group == "taxii":
+        if APPLICATION_INSTANCE.taxii_config and config_key in APPLICATION_INSTANCE.taxii_config:
+            return APPLICATION_INSTANCE.taxii_config[config_key]
+        else:
+            return APPLICATION_INSTANCE.taxii_config
+    if config_group == "users":
+        if APPLICATION_INSTANCE.users_backend and config_key in APPLICATION_INSTANCE.users_backend:
+            return APPLICATION_INSTANCE.users_backend[config_key]
+        else:
+            return APPLICATION_INSTANCE.users_backend
+    if config_group == "backend":
+        if APPLICATION_INSTANCE.backend_config and config_key in APPLICATION_INSTANCE.backend_config:
+            return APPLICATION_INSTANCE.backend_config[config_key]
+        else:
+            return APPLICATION_INSTANCE.backend_config

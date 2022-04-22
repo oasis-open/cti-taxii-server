@@ -5,8 +5,10 @@ import os
 import textwrap
 
 from medallion import (
-    __version__, application_instance, register_blueprints, set_config
+    APPLICATION_INSTANCE, __version__, connect_to_backend, register_blueprints,
+    set_config
 )
+from medallion.common import get_application_instance_config_values
 import medallion.config
 
 log = logging.getLogger("medallion")
@@ -116,7 +118,7 @@ def main():
     medallion_args = medallion_parser.parse_args()
     # Configuration checking sets up debug logging and does not run the app
     if medallion_args.conf_check:
-        medallion_args.log_level = logging.DEBUG
+        medallion_args.log_level = logging.INFO
     log.setLevel(medallion_args.log_level)
 
     configuration = medallion.config.load_config(
@@ -124,13 +126,15 @@ def main():
         medallion_args.conf_dir if not medallion_args.no_conf_dir else None,
     )
 
-    set_config(application_instance, "users", configuration)
-    set_config(application_instance, "taxii", configuration)
-    set_config(application_instance, "backend", configuration)
-    register_blueprints(application_instance)
+    set_config(APPLICATION_INSTANCE, "users", configuration)
+    set_config(APPLICATION_INSTANCE, "taxii", configuration)
+    set_config(APPLICATION_INSTANCE, "backend", configuration)
+
+    APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values("backend"))
+    register_blueprints(APPLICATION_INSTANCE)
 
     if not medallion_args.conf_check:
-        application_instance.run(
+        APPLICATION_INSTANCE.run(
             host=medallion_args.host,
             port=medallion_args.port,
             debug=medallion_args.debug_mode,

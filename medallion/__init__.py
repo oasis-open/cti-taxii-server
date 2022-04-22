@@ -2,11 +2,12 @@ import importlib
 import logging
 import warnings
 
-from flask import Flask, Response, current_app, json
+from flask import Response, current_app, json
 from flask_httpauth import HTTPBasicAuth
 
 from .backends import base as mbe_base
-from .exceptions import BackendError, ProcessingError
+from .common import APPLICATION_INSTANCE
+from .exceptions import BackendError, InitializationError, ProcessingError
 from .version import __version__  # noqa
 from .views import MEDIA_TYPE_TAXII_V21
 
@@ -18,30 +19,19 @@ ch.setFormatter(logging.Formatter("[%(name)s] [%(levelname)-8s] [%(asctime)s] %(
 log = logging.getLogger(__name__)
 log.addHandler(ch)
 
-application_instance = Flask(__name__)
 auth = HTTPBasicAuth()
-
-
-def load_app(config_file):
-    with open(config_file, "r") as f:
-        configuration = json.load(f)
-
-    set_config(application_instance, "users", configuration)
-    set_config(application_instance, "taxii", configuration)
-    set_config(application_instance, "backend", configuration)
-    register_blueprints(application_instance)
-
-    return application_instance
 
 
 def set_config(flask_application_instance, prop_name, config):
     with flask_application_instance.app_context():
         log.debug("Registering medallion {} configuration into {}".format(prop_name, current_app))
         if prop_name == "taxii":
-            try:
+            if prop_name in config:
                 flask_application_instance.taxii_config = config[prop_name]
-            except KeyError:
+            else:
                 flask_application_instance.taxii_config = {'max_page_size': 100}
+            if "interop_requirements" not in flask_application_instance.taxii_config:
+                flask_application_instance.taxii_config["interop_requirements"] = True
         elif prop_name == "users":
             try:
                 flask_application_instance.users_backend = config[prop_name]
@@ -52,15 +42,13 @@ def set_config(flask_application_instance, prop_name, config):
                 log.warning("Pass = pass")
                 flask_application_instance.users_backend = {"user": "pass"}
         elif prop_name == "backend":
-            try:
-                flask_application_instance.medallion_backend = connect_to_backend(config[prop_name])
-            except KeyError:
-                log.warning("You did not give backend information in your config.")
-                log.warning("We are giving medallion the default settings,")
-                log.warning("which includes a data file of 'default_data.json'.")
-                log.warning("Please ensure this file is in your CWD.")
-                back = {'module_class': 'MemoryBackend', 'filename': None}
-                flask_application_instance.medallion_backend = connect_to_backend(back)
+            if prop_name in config:
+                if "interop_requirements" not in config[prop_name]:
+                    config[prop_name]["interop_requirements"] = False
+                flask_application_instance.backend_config = config[prop_name]
+
+            else:
+                raise InitializationError("You did not give backend information in your config.", 408)
 
 
 def connect_to_backend(config_info):
@@ -130,7 +118,7 @@ def get_pwd(username):
     return None
 
 
-@application_instance.errorhandler(500)
+@APPLICATION_INSTANCE.errorhandler(500)
 def handle_error(error):
     e = {
         "title": "InternalError",
@@ -144,7 +132,7 @@ def handle_error(error):
     )
 
 
-@application_instance.errorhandler(ProcessingError)
+@APPLICATION_INSTANCE.errorhandler(ProcessingError)
 def handle_processing_error(error):
     e = {
         "title": str(error.__class__.__name__),
@@ -159,7 +147,7 @@ def handle_processing_error(error):
     )
 
 
-@application_instance.errorhandler(BackendError)
+@APPLICATION_INSTANCE.errorhandler(BackendError)
 def handle_backend_error(error):
     e = {
         "title": str(error.__class__.__name__),

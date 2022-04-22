@@ -1,10 +1,12 @@
 import copy
+import datetime
 import json
 import tempfile
 
 import pytest
 
-from medallion import common, test
+from medallion import common, exceptions, test
+from medallion.backends.base import SECONDS_IN_24_HOURS
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
@@ -13,9 +15,15 @@ from .base_test import TaxiiTest
 class MemoryTestServer(TaxiiTest):
     type = "memory"
 
+    def count(self, documents):
+        return len(documents)
+
 
 class MongoTestServer(TaxiiTest):
     type = "mongo"
+
+    def count(self, documents):
+        return documents.count_documents({})
 
 
 TestServers = ["memory", "mongo"]
@@ -29,6 +37,20 @@ def backend(request):
         if request.param == "mongo":
             test_server = MongoTestServer()
         test_server.setUp()
+        yield test_server
+        test_server.tearDown()
+    else:
+        yield pytest.skip("skipped")
+
+
+@pytest.fixture(scope="module", params=TestServers)
+def backend_without_threads(request):
+    if request.param in request.config.getoption("backends"):
+        if request.param == "memory":
+            test_server = MemoryTestServer()
+        if request.param == "mongo":
+            test_server = MongoTestServer()
+        test_server.setUp(False)
         yield test_server
         test_server.tearDown()
     else:
@@ -1318,24 +1340,20 @@ class TestTAXIIWithNoConfig(TaxiiTest):
     type = "memory_no_config"
 
 
-@pytest.fixture(scope="module")
-def no_config():
-    server = TestTAXIIWithNoConfig()
-    server.setUp()
-    yield server
+def test_default_userpass_no_config():
+    with pytest.raises(exceptions.InitializationError) as e:
+        server = TestTAXIIWithNoConfig()
+        server.setUp()
+        assert str(e.value) == "You did not give backend information in your config."
     server.tearDown()
 
 
-def test_default_userpass_no_config(no_config):
-    assert no_config.app.users_backend.get("user") == "pass"
-
-
-def test_default_backend_no_config(no_config):
-    assert no_config.app.medallion_backend.data == {}
-
-
-def test_default_taxii_config_no_config(no_config):
-    assert no_config.app.taxii_config['max_page_size'] == 100
+def test_default_backend_no_config():
+    with pytest.raises(exceptions.InitializationError) as e:
+        server = TestTAXIIWithNoConfig()
+        server.setUp()
+        assert str(e.value) == "You did not give backend information in your config."
+    server.tearDown()
 
 
 class TestTAXIIWithNoTAXIISection(TaxiiTest):
@@ -1382,8 +1400,12 @@ def no_backend_section():
     server.tearDown()
 
 
-def test_default_backend_no_backend_section(no_backend_section):
-    assert no_backend_section.app.medallion_backend.data == {}
+def test_default_backend_no_backend_section():
+    with pytest.raises(exceptions.InitializationError) as e:
+        server = TestTAXIIWithNoBackendSection()
+        server.setUp()
+        assert str(e.value) == "You did not give backend information in your config."
+    server.tearDown()
 
 # test collections with different can_read and can_write values
 
@@ -1439,3 +1461,16 @@ def test_save_to_file(backend):
         assert data['trustgroup1']['collections'][1]['id'] == "365fed99-08fa-fdcd-a1b3-fb247eb41d01"
         assert data['trustgroup1']['collections'][2]['id'] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
         assert data['trustgroup1']['collections'][3]['id'] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
+
+
+def test_status_cleanup(backend_without_threads):
+    backend_app = backend_without_threads.app.medallion_backend
+    if isinstance(backend_without_threads, MemoryTestServer):
+        # add a status with the current time, which should not be deleted.  mongodb already has such as status
+        new_status = common.generate_status(common.datetime_to_string(datetime.datetime.now()), "pending", 0, 0, 0)
+        backend_app._get_api_root_statuses('trustgroup1').append(new_status)
+    statuses = backend_app._get_api_root_statuses('trustgroup1')
+    assert backend_without_threads.count(statuses) == 3
+    backend_app.status_retention = SECONDS_IN_24_HOURS
+    backend_app._pop_old_statuses()
+    assert backend_without_threads.count(statuses) == 1

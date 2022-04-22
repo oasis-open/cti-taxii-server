@@ -1,6 +1,10 @@
+import datetime
+
 from pymongo import ASCENDING, IndexModel
 
-from medallion.common import datetime_to_float, string_to_datetime
+from medallion.common import (
+    datetime_to_float, datetime_to_string, string_to_datetime
+)
 from medallion.test.generic_initialize_mongodb import (
     add_api_root, build_new_mongo_databases_and_collection, connect_to_client
 )
@@ -84,6 +88,18 @@ def reset_db(url="mongodb://root:example@localhost:27017/"):
             "id": "2d086da7-4bdc-4f91-900e-f4566be4b780",
             "status": "pending",
             "request_timestamp": "2016-11-02T12:34:34.123456Z",
+            "total_objects": 0,
+            "success_count": 0,
+            "successes": [],
+            "failure_count": 0,
+            "failures": [],
+            "pending_count": 0,
+            "pendings": [],
+        },
+        {
+            "id": "5d086da7-4bdc-4f91-900e-f4566be4a680",
+            "status": "pending",
+            "request_timestamp": datetime_to_string(datetime.datetime.now()),
             "total_objects": 0,
             "success_count": 0,
             "successes": [],

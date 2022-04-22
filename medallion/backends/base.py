@@ -1,3 +1,20 @@
+import logging
+from urllib.parse import urlparse
+
+from ..common import TaskChecker, get_application_instance_config_values
+from ..exceptions import InitializationError
+
+# Module-level logger
+log = logging.getLogger(__name__)
+
+SECONDS_IN_24_HOURS = 24*60*60
+
+
+def get_api_root_name(url):
+    pr = urlparse(url)
+    return pr.path.replace("/", "")
+
+
 class BackendRegistry(type):
     __SUBCLASS_MAP = dict()
 
@@ -25,6 +42,44 @@ class BackendRegistry(type):
 
 
 class Backend(object, metaclass=BackendRegistry):
+
+    def __init__(self, **kwargs):
+        self.next = {}
+
+        if kwargs.get("run_cleanup_threads", True):
+            self.timeout = kwargs.get("session_timeout", 30)
+            checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
+            checker.start()
+
+            self.status_retention = kwargs.get("status_retention", SECONDS_IN_24_HOURS)
+            if self.status_retention != -1:
+                if self.status_retention < SECONDS_IN_24_HOURS and get_application_instance_config_values("backend", "interop_requirements"):
+                    # interop MUST requirement
+                    raise InitializationError("Status retention interval must be more than 24 hours", 408)
+                status_checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_old_statuses)
+                status_checker.start()
+        else:
+            if get_application_instance_config_values("backend", "interop_requirements"):
+                # interop MUST requirement
+                raise InitializationError("Status retention interval must be more than 24 hours", 408)
+
+    def _get_all_api_roots(self):
+        discovery_info = self.server_discovery()
+        return [get_api_root_name(x) for x in discovery_info["api_roots"]]
+
+    def _get_api_root_statuses(self, api_root):
+        """
+        Fill:
+            Returns the statuses of the given api root
+
+        Args:
+            api_root -
+
+        Returns:
+            list of statuses
+
+        """
+        raise NotImplementedError()
 
     def server_discovery(self):
         """
@@ -224,6 +279,34 @@ class Backend(object, metaclass=BackendRegistry):
 
         Returns:
             data from the collection that satisfies the filter
+
+        """
+        raise NotImplementedError()
+
+    def _pop_expired_sessions(self):
+        """
+        Fill:
+            Implement thread to remove expired get requests from request queue
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        raise NotImplementedError()
+
+    def _pop_old_statuses(self):
+        """
+        Fill:
+            Implement thread to remove old request status info
+
+        Args:
+            None
+
+        Returns:
+            None
 
         """
         raise NotImplementedError()
