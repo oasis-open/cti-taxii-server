@@ -146,7 +146,7 @@ def test_config_args_mutex(subtests):
         assert "not allowed with argument" in msg
 
 
-@mock.patch("medallion.application_instance.run")
+@mock.patch("medallion.common.APPLICATION_INSTANCE")
 def test_confcheck(mock_app, subtests):
     """
     Confirm that the --conf-check option works as expected.
@@ -216,7 +216,7 @@ def test_main_config_arg_handling(subtests):
     }
 
     with mock.patch(
-        "medallion.scripts.run.application_instance",
+        "medallion.common.APPLICATION_INSTANCE",
     ) as mock_app, mock.patch(
         "medallion.current_app", new=mock_app,
     ), mock.patch(

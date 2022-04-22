@@ -89,7 +89,9 @@ class TaxiiTest():
         self.app_context = APPLICATION_INSTANCE.app_context()
         self.app_context.push()
         self.app.testing = True
-        register_blueprints(self.app)
+        # hack to avoid registering blueprints twice when testing
+        if "collections" not in self.app.blueprints:
+            register_blueprints(self.app)
         if self.type == "mongo":
             reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config

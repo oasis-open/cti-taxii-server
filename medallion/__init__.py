@@ -23,32 +23,31 @@ auth = HTTPBasicAuth()
 
 
 def set_config(flask_application_instance, prop_name, config):
-    with flask_application_instance.app_context():
-        log.debug("Registering medallion {} configuration into {}".format(prop_name, current_app))
-        if prop_name == "taxii":
-            if prop_name in config:
-                flask_application_instance.taxii_config = config[prop_name]
-            else:
-                flask_application_instance.taxii_config = {'max_page_size': 100}
-            if "interop_requirements" not in flask_application_instance.taxii_config:
-                flask_application_instance.taxii_config["interop_requirements"] = True
-        elif prop_name == "users":
-            try:
-                flask_application_instance.users_backend = config[prop_name]
-            except KeyError:
-                log.warning("You did not give user information in your config.")
-                log.warning("We are giving you the default user information of:")
-                log.warning("User = user")
-                log.warning("Pass = pass")
-                flask_application_instance.users_backend = {"user": "pass"}
-        elif prop_name == "backend":
-            if prop_name in config:
-                if "interop_requirements" not in config[prop_name]:
-                    config[prop_name]["interop_requirements"] = False
-                flask_application_instance.backend_config = config[prop_name]
+    log.debug("Registering medallion {} configuration into {}".format(prop_name, flask_application_instance))
+    if prop_name == "taxii":
+        if prop_name in config:
+            flask_application_instance.taxii_config = config[prop_name]
+        else:
+            flask_application_instance.taxii_config = {'max_page_size': 100}
+        if "interop_requirements" not in flask_application_instance.taxii_config:
+            flask_application_instance.taxii_config["interop_requirements"] = True
+    elif prop_name == "users":
+        try:
+            flask_application_instance.users_backend = config[prop_name]
+        except KeyError:
+            log.warning("You did not give user information in your config.")
+            log.warning("We are giving you the default user information of:")
+            log.warning("User = user")
+            log.warning("Pass = pass")
+            flask_application_instance.users_backend = {"user": "pass"}
+    elif prop_name == "backend":
+        if prop_name in config:
+            if "interop_requirements" not in config[prop_name]:
+                config[prop_name]["interop_requirements"] = False
+            flask_application_instance.backend_config = config[prop_name]
 
-            else:
-                raise InitializationError("You did not give backend information in your config.", 408)
+        else:
+            raise InitializationError("You did not give backend information in your config.", 408)
 
 
 def connect_to_backend(config_info):
