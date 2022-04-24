@@ -1,7 +1,7 @@
 import logging
 from urllib.parse import urlparse
 
-from ..common import TaskChecker, get_application_instance_config_values
+from ..common import APPLICATION_INSTANCE, TaskChecker, get_application_instance_config_values
 from ..exceptions import InitializationError
 
 # Module-level logger
@@ -53,13 +53,17 @@ class Backend(object, metaclass=BackendRegistry):
 
             self.status_retention = kwargs.get("status_retention", SECONDS_IN_24_HOURS)
             if self.status_retention != -1:
-                if self.status_retention < SECONDS_IN_24_HOURS and get_application_instance_config_values("backend", "interop_requirements"):
+                if self.status_retention < SECONDS_IN_24_HOURS and get_application_instance_config_values(APPLICATION_INSTANCE,
+                                                                                                          "backend",
+                                                                                                          "interop_requirements"):
                     # interop MUST requirement
                     raise InitializationError("Status retention interval must be more than 24 hours", 408)
                 status_checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_old_statuses)
                 status_checker.start()
         else:
-            if get_application_instance_config_values("backend", "interop_requirements"):
+            if get_application_instance_config_values(APPLICATION_INSTANCE,
+                                                      "backend",
+                                                      "interop_requirements"):
                 # interop MUST requirement
                 raise InitializationError("Status retention interval must be more than 24 hours", 408)
 

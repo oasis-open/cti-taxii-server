@@ -7,7 +7,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 # from ..config import get_application_instance_config_values
 from ..common import (
-    create_resource, datetime_to_float, datetime_to_string,
+    APPLICATION_INSTANCE, create_resource, datetime_to_float, datetime_to_string,
     datetime_to_string_stix, determine_spec_version, determine_version,
     float_to_datetime, generate_status, generate_status_details,
     get_application_instance_config_values, get_custom_headers, get_timestamp,
@@ -241,7 +241,7 @@ class MongoBackend(Backend):
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}, {"_id": 0}))
         # interop wants results sorted by id - no need to check for interop option
-        if get_application_instance_config_values("backend", "interop_requirements"):
+        if get_application_instance_config_values(APPLICATION_INSTANCE, "backend", "interop_requirements"):
             collections = sorted(collections, key=lambda o: o["id"])
         return create_resource("collections", collections)
 

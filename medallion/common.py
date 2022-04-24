@@ -273,19 +273,19 @@ class TaskChecker(object):
         self.thread.start()
 
 
-def get_application_instance_config_values(config_group, config_key=None):
+def get_application_instance_config_values(flask_application_instance, config_group, config_key=None):
     if config_group == "taxii":
-        if APPLICATION_INSTANCE.taxii_config and config_key in APPLICATION_INSTANCE.taxii_config:
-            return APPLICATION_INSTANCE.taxii_config[config_key]
+        if flask_application_instance.taxii_config and config_key in flask_application_instance.taxii_config:
+            return flask_application_instance.taxii_config[config_key]
         else:
-            return APPLICATION_INSTANCE.taxii_config
+            return flask_application_instance.taxii_config
     if config_group == "users":
-        if APPLICATION_INSTANCE.users_backend and config_key in APPLICATION_INSTANCE.users_backend:
-            return APPLICATION_INSTANCE.users_backend[config_key]
+        if flask_application_instance.users_backend and config_key in flask_application_instance.users_backend:
+            return flask_application_instance.users_backend[config_key]
         else:
-            return APPLICATION_INSTANCE.users_backend
+            return flask_application_instance.users_backend
     if config_group == "backend":
-        if APPLICATION_INSTANCE.backend_config and config_key in APPLICATION_INSTANCE.backend_config:
-            return APPLICATION_INSTANCE.backend_config[config_key]
+        if flask_application_instance.backend_config and config_key in flask_application_instance.backend_config:
+            return flask_application_instance.backend_config[config_key]
         else:
-            return APPLICATION_INSTANCE.backend_config
+            return flask_application_instance.backend_config

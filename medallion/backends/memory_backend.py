@@ -9,7 +9,7 @@ import environ
 from six import string_types
 
 from ..common import (
-    create_resource, datetime_to_float, datetime_to_string,
+    APPLICATION_INSTANCE, create_resource, datetime_to_float, datetime_to_string,
     determine_spec_version, determine_version, find_att, generate_status,
     generate_status_details, get_application_instance_config_values,
     get_timestamp, iterpath, string_to_datetime
@@ -224,7 +224,7 @@ class MemoryBackend(Backend):
             collection.pop("responses", None)
             collection.pop("objects", None)
         # interop wants results sorted by id - no need to check for interop option
-        if get_application_instance_config_values("backend", "interop_requirements"):
+        if get_application_instance_config_values(APPLICATION_INSTANCE, "backend", "interop_requirements"):
             collections = sorted(collections, key=lambda o: o["id"])
         return create_resource("collections", collections)
 
