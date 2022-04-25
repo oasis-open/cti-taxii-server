@@ -86,7 +86,6 @@ class TaxiiTest():
         self.app_context = application_instance.app_context()
         self.app_context.push()
         self.app.testing = True
-        self.app.config["PRESERVE_CONTEXT_ON_EXEPTION"] = False
         if(not self.app.blueprints):
             register_blueprints(self.app)
         if self.type == "mongo":
