@@ -9,10 +9,11 @@ import environ
 from six import string_types
 
 from ..common import (
-    APPLICATION_INSTANCE, create_resource, datetime_to_float, datetime_to_string,
-    determine_spec_version, determine_version, find_att, generate_status,
-    generate_status_details, get_application_instance_config_values,
-    get_timestamp, iterpath, string_to_datetime
+    APPLICATION_INSTANCE, create_resource, datetime_to_float,
+    datetime_to_string, determine_spec_version, determine_version, find_att,
+    generate_status, generate_status_details,
+    get_application_instance_config_values, get_timestamp, iterpath,
+    string_to_datetime
 )
 from ..exceptions import InitializationError, ProcessingError
 from ..filters.basic_filter import BasicFilter

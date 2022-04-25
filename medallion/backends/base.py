@@ -1,7 +1,9 @@
 import logging
 from urllib.parse import urlparse
 
-from ..common import APPLICATION_INSTANCE, TaskChecker, get_application_instance_config_values
+from ..common import (
+    APPLICATION_INSTANCE, TaskChecker, get_application_instance_config_values
+)
 from ..exceptions import InitializationError
 
 # Module-level logger

@@ -5,10 +5,11 @@ import os
 import textwrap
 
 from medallion import (
-    __version__, connect_to_backend, register_blueprints,
-    set_config
+    __version__, connect_to_backend, register_blueprints, set_config
 )
-from medallion.common import APPLICATION_INSTANCE, get_application_instance_config_values
+from medallion.common import (
+    APPLICATION_INSTANCE, get_application_instance_config_values
+)
 import medallion.config
 
 log = logging.getLogger("medallion")
