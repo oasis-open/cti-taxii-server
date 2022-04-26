@@ -127,7 +127,8 @@ def main():
     set_config(application_instance, "users", configuration)
     set_config(application_instance, "taxii", configuration)
     set_config(application_instance, "backend", configuration)
-    register_blueprints(application_instance)
+    if(not application_instance.blueprints):
+        register_blueprints(application_instance)
 
     if not medallion_args.conf_check:
         application_instance.run(
