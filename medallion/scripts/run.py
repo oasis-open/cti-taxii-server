@@ -119,7 +119,7 @@ def main():
     medallion_args = medallion_parser.parse_args()
     # Configuration checking sets up debug logging and does not run the app
     if medallion_args.conf_check:
-        medallion_args.log_level = logging.INFO
+        medallion_args.log_level = logging.DEBUG
     log.setLevel(medallion_args.log_level)
 
     configuration = medallion.config.load_config(

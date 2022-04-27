@@ -148,6 +148,10 @@ def test_config_args_mutex(subtests):
 
 @mock.patch("medallion.APPLICATION_INSTANCE.run")
 def test_confcheck(mock_app, subtests):
+
+    class ExpectedException(BaseException):
+        pass
+
     """
     Confirm that the --conf-check option works as expected.
     """
@@ -155,7 +159,7 @@ def test_confcheck(mock_app, subtests):
         with mock.patch(
             "medallion.scripts.run.log"
         ) as mock_logger, mock.patch(
-            "sys.argv", ["ARGV0"]
+            "sys.argv", ["ARGV0", "-c", "data/config.json"]
         ):
             medallion.scripts.run.main()
         # default `--log-level` value
@@ -167,15 +171,12 @@ def test_confcheck(mock_app, subtests):
         with mock.patch(
             "medallion.scripts.run.log"
         ) as mock_logger, mock.patch(
-            "sys.argv", ["ARGV0", "--conf-check"]
+            "sys.argv", ["ARGV0", "--conf-check", "-c", "data/config.json"]
         ):
             medallion.scripts.run.main()
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
         mock_app.assert_not_called()
     mock_app.reset_mock()
-
-    class ExpectedException(BaseException):
-        pass
 
     with subtests.test(msg="--conf-check with equals"):
         with mock.patch(
@@ -194,7 +195,7 @@ def test_confcheck(mock_app, subtests):
         with mock.patch(
             "medallion.scripts.run.log"
         ) as mock_logger, mock.patch(
-            "sys.argv", ["ARGV0", "--conf-check", "--log-level=CRITICAL"]
+            "sys.argv", ["ARGV0", "--conf-check", "--log-level=CRITICAL", "-c", "data/config.json"]
         ):
             medallion.scripts.run.main()
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
@@ -221,7 +222,7 @@ def test_main_config_arg_handling(subtests):
         "medallion.current_app", new=mock_app,
     ), mock.patch(
         "medallion.config.load_config", return_value=safe_config,
-    ) as mock_load_config:
+    ) as mock_load_config, mock.patch("medallion.scripts.run.APPLICATION_INSTANCE.backend_config", None):
         with subtests.test(msg="No config args provided"):
             with mock.patch(
                 "sys.argv", ["ARGV0"]
