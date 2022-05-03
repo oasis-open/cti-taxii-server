@@ -109,7 +109,10 @@ class TaxiiTest():
         set_config(self.app, "backend", self.configuration)
         set_config(self.app, "users", self.configuration)
         set_config(self.app, "taxii", self.configuration)
-        self.client = application_instance.test_client()
+        if not start_threads:
+            self.app.backend_config["run_cleanup_threads"] = False
+        APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE, "backend"))
+        self.client = APPLICATION_INSTANCE.test_client()
         if self.type == "memory_no_config" or self.type == "no_auth":
             encoded_auth = "Basic " + \
                 base64.b64encode(b"user:pass").decode("ascii")
