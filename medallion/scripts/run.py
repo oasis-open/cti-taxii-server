@@ -132,7 +132,8 @@ def main():
     set_config(APPLICATION_INSTANCE, "backend", configuration)
 
     APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE, "backend"))
-    register_blueprints(APPLICATION_INSTANCE)
+    if (not APPLICATION_INSTANCE.blueprints):
+        register_blueprints(APPLICATION_INSTANCE)
 
     if not medallion_args.conf_check:
         APPLICATION_INSTANCE.run(

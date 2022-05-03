@@ -89,8 +89,7 @@ class TaxiiTest():
         self.app_context = APPLICATION_INSTANCE.app_context()
         self.app_context.push()
         self.app.testing = True
-        # hack to avoid registering blueprints twice when testing
-        if "collections" not in self.app.blueprints:
+        if(not self.app.blueprints):
             register_blueprints(self.app)
         if self.type == "mongo":
             reset_db(self.mongodb_config["backend"]["uri"])
@@ -110,10 +109,7 @@ class TaxiiTest():
         set_config(self.app, "backend", self.configuration)
         set_config(self.app, "users", self.configuration)
         set_config(self.app, "taxii", self.configuration)
-        if not start_threads:
-            self.app.backend_config["run_cleanup_threads"] = False
-        APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE, "backend"))
-        self.client = APPLICATION_INSTANCE.test_client()
+        self.client = application_instance.test_client()
         if self.type == "memory_no_config" or self.type == "no_auth":
             encoded_auth = "Basic " + \
                 base64.b64encode(b"user:pass").decode("ascii")
