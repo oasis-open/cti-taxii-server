@@ -224,8 +224,8 @@ class MemoryBackend(Backend):
             collection.pop("manifest", None)
             collection.pop("responses", None)
             collection.pop("objects", None)
-        # interop wants results sorted by id - no need to check for interop option
-        if get_application_instance_config_values(APPLICATION_INSTANCE, "backend", "interop_requirements"):
+        # interop wants results sorted by id
+        if get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements"):
             collections = sorted(collections, key=lambda o: o["id"])
         return create_resource("collections", collections)
 

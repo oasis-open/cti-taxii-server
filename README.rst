@@ -166,6 +166,7 @@ Configs may also contain a "taxii" section as well, as shown below:
     {
         "taxii": {
            "max_page_size": 100
+           "interop_requirements": True      (default value is False)
         }
     }
 

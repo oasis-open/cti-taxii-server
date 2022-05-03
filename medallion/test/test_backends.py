@@ -1340,15 +1340,7 @@ class TestTAXIIWithNoConfig(TaxiiTest):
     type = "memory_no_config"
 
 
-def test_default_userpass_no_config():
-    with pytest.raises(exceptions.InitializationError) as e:
-        server = TestTAXIIWithNoConfig()
-        server.setUp()
-        assert str(e.value) == "You did not give backend information in your config."
-    server.tearDown()
-
-
-def test_default_backend_no_config():
+def test_no_config():
     with pytest.raises(exceptions.InitializationError) as e:
         server = TestTAXIIWithNoConfig()
         server.setUp()

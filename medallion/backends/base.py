@@ -48,6 +48,7 @@ class Backend(object, metaclass=BackendRegistry):
     def __init__(self, **kwargs):
         self.next = {}
 
+        interop_requirements_enforced = get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements")
         if kwargs.get("run_cleanup_threads", True):
             self.timeout = kwargs.get("session_timeout", 30)
             checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
@@ -55,17 +56,13 @@ class Backend(object, metaclass=BackendRegistry):
 
             self.status_retention = kwargs.get("status_retention", SECONDS_IN_24_HOURS)
             if self.status_retention != -1:
-                if self.status_retention < SECONDS_IN_24_HOURS and get_application_instance_config_values(APPLICATION_INSTANCE,
-                                                                                                          "backend",
-                                                                                                          "interop_requirements"):
+                if self.status_retention < SECONDS_IN_24_HOURS and interop_requirements_enforced:
                     # interop MUST requirement
                     raise InitializationError("Status retention interval must be more than 24 hours", 408)
                 status_checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_old_statuses)
                 status_checker.start()
         else:
-            if get_application_instance_config_values(APPLICATION_INSTANCE,
-                                                      "backend",
-                                                      "interop_requirements"):
+            if interop_requirements_enforced:
                 # interop MUST requirement
                 raise InitializationError("Status retention interval must be more than 24 hours", 408)
 

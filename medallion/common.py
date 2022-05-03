@@ -7,7 +7,7 @@ from flask import Flask
 import pytz
 from six import iteritems
 
-APPLICATION_INSTANCE = Flask("taxii-server")
+APPLICATION_INSTANCE = Flask("medallion")
 
 
 def create_resource(resource_name, items, more=False, next_id=None):
