@@ -33,13 +33,13 @@ def set_config(flask_application_instance, prop_name, config):
             flask_application_instance.taxii_config["interop_requirements"] = False
     elif prop_name == "users":
         try:
-            flask_application_instance.users_backend = config[prop_name]
+            flask_application_instance.users_config = config[prop_name]
         except KeyError:
             log.warning("You did not give user information in your config.")
             log.warning("We are giving you the default user information of:")
             log.warning("User = user")
             log.warning("Pass = pass")
-            flask_application_instance.users_backend = {"user": "pass"}
+            flask_application_instance.users_config = {"user": "pass"}
     elif prop_name == "backend":
         if prop_name in config:
             flask_application_instance.backend_config = config[prop_name]
@@ -109,8 +109,8 @@ def register_blueprints(flask_application_instance):
 
 @auth.get_password
 def get_pwd(username):
-    if username in current_app.users_backend:
-        return current_app.users_backend.get(username)
+    if username in current_app.users_config:
+        return current_app.users_config.get(username)
     return None
 
 

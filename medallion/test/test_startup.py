@@ -11,11 +11,6 @@ import medallion.scripts.run
 pytestmark = pytest.mark.usefixtures("empty_environ")
 
 
-# hack to avoid adding redundant blueprints
-def re_initialize_flask_app():
-    medallion.common.APPLICATION_INSTANCE.blueprints = {}
-
-
 def test_parser_help(capsys):
     """
     Confirm that the parser help can be printed with the custom formatter.
@@ -167,7 +162,6 @@ def test_confcheck(mock_app, subtests):
         ) as mock_logger, mock.patch(
             "sys.argv", ["ARGV0", "-c", "medallion/test/data/config.json"]
         ):
-            re_initialize_flask_app()
             medallion.scripts.run.main()
         # default `--log-level` value
         mock_logger.setLevel.assert_called_once_with("WARN")
@@ -180,7 +174,6 @@ def test_confcheck(mock_app, subtests):
         ) as mock_logger, mock.patch(
             "sys.argv", ["ARGV0", "--conf-check", "-c", "medallion/test/data/config.json"]
         ):
-            re_initialize_flask_app()
             medallion.scripts.run.main()
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
         mock_app.assert_not_called()
@@ -205,7 +198,6 @@ def test_confcheck(mock_app, subtests):
         ) as mock_logger, mock.patch(
             "sys.argv", ["ARGV0", "--conf-check", "--log-level=CRITICAL", "-c", "medallion/test/data/config.json"]
         ):
-            re_initialize_flask_app()
             medallion.scripts.run.main()
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
         mock_app.assert_not_called()

@@ -1377,7 +1377,7 @@ def no_auth_section():
 
 
 def test_default_userpass_no_auth_section(no_auth_section):
-    assert no_auth_section.app.users_backend.get("user") == "pass"
+    assert no_auth_section.app.users_config.get("user") == "pass"
 
 
 class TestTAXIIWithNoBackendSection(TaxiiTest):
