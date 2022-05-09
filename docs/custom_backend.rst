@@ -121,7 +121,7 @@ If you need or prefer a library different from ``Flask-HTTPAuth``, you can overr
             return decorated_function
 
         def get_password():
-            return None  # Custom stuff to get password using other libraries, users_backend can go here.
+            return None  # Custom stuff to get password using other libraries, users_config can go here.
 
     # Set the default implementation to the dummy auth
     auth = dummy_auth()
@@ -133,7 +133,7 @@ If you need or prefer a library different from ``Flask-HTTPAuth``, you can overr
 How to use a different backend to control users
 -----------------------------------------------
 
-Our implementation of a users authentication system is not suitable for a production environment. Thus requiring to write custom code to handle credential authentication, sessions, etc. Most likely you will require the changes described in the section above on `How to use a different authentication library`_, plus changing the ``users_backend``.
+Our implementation of a users authentication system is not suitable for a production environment. Thus requiring to write custom code to handle credential authentication, sessions, etc. Most likely you will require the changes described in the section above on `How to use a different authentication library`_, plus changing the ``users_config``.
 
 .. code-block:: python
 
@@ -152,7 +152,7 @@ Our implementation of a users authentication system is not suitable for a produc
 
         def get_password():
             # Usage of MyCustomDBforUsers would likely happen here.
-            return something # Custom stuff to get password using other libraries, users_backend functionality.
+            return something # Custom stuff to get password using other libraries, users_config functionality.
 
     # Set the default implementation to the dummy auth
     auth = dummy_auth()
@@ -160,7 +160,7 @@ Our implementation of a users authentication system is not suitable for a produc
     db = MyCustomDBforUsers.init()  # Do some setup before attaching to application... (Imagine other steps happening here)
 
     with application_instance.app_context():
-        current_app.users_backend = db  # This will make it available inside the Flask instance in case you decide to perform changes to the internal blueprints.
+        current_app.users_config = db  # This will make it available inside the Flask instance in case you decide to perform changes to the internal blueprints.
 
     init_backend(application_instance, {...})
     application_instance.run()

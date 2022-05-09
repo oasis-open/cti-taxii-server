@@ -1,6 +1,7 @@
 import copy
 import io
 import json
+import logging
 import os
 import uuid
 
@@ -8,13 +9,18 @@ import environ
 from six import string_types
 
 from ..common import (
-    SessionChecker, create_resource, datetime_to_float, datetime_to_string,
-    determine_spec_version, determine_version, find_att, generate_status,
-    generate_status_details, get_timestamp, iterpath
+    APPLICATION_INSTANCE, create_resource, datetime_to_float,
+    datetime_to_string, determine_spec_version, determine_version, find_att,
+    generate_status, generate_status_details,
+    get_application_instance_config_values, get_timestamp, iterpath,
+    string_to_datetime
 )
 from ..exceptions import InitializationError, ProcessingError
 from ..filters.basic_filter import BasicFilter
 from .base import Backend
+
+# Module-level logger
+log = logging.getLogger(__name__)
 
 
 def remove_hidden_field(objs):
@@ -57,11 +63,27 @@ class MemoryBackend(Backend):
             self.collections_manifest_check()
         else:
             self.data = {}
-        self.next = {}
-        self.timeout = kwargs.get("session_timeout", 30)
+        super(MemoryBackend, self).__init__(**kwargs)
 
-        checker = SessionChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
-        checker.start()
+    def _pop_expired_sessions(self):
+        expired_ids = []
+        boundary = datetime_to_float(get_timestamp())
+        for next_id, record in self.next.items():
+            if boundary - record["request_time"] > self.timeout:
+                expired_ids.append(next_id)
+
+        for item in expired_ids:
+            self.next.pop(item)
+
+    def _pop_old_statuses(self):
+        api_roots = self._get_all_api_roots()
+        boundary = datetime_to_float(get_timestamp())
+        for ar in api_roots:
+            statuses_of_api_root = copy.copy(self._get_api_root_statuses(ar))
+            for s in statuses_of_api_root:
+                if boundary - datetime_to_float(string_to_datetime(s["request_timestamp"])) > self.status_retention:
+                    self._get_api_root_statuses(ar).remove(s)
+                    log.info("Status {} was deleted from {} because it was older than the status retention time".format(s['id'], ar))
 
     def set_next(self, objects, args):
         u = str(uuid.uuid4())
@@ -113,16 +135,6 @@ class MemoryBackend(Backend):
             return ret, more, headers, nex
         else:
             raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
-
-    def _pop_expired_sessions(self):
-        expired_ids = []
-        boundary = datetime_to_float(get_timestamp())
-        for next_id, record in self.next.items():
-            if boundary - record["request_time"] > self.timeout:
-                expired_ids.append(next_id)
-
-        for item in expired_ids:
-            self.next.pop(item)
 
     def collections_manifest_check(self):
         """
@@ -212,6 +224,9 @@ class MemoryBackend(Backend):
             collection.pop("manifest", None)
             collection.pop("responses", None)
             collection.pop("objects", None)
+        # interop wants results sorted by id
+        if get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements"):
+            collections = sorted(collections, key=lambda o: o["id"])
         return create_resource("collections", collections)
 
     def get_collection(self, api_root, collection_id):
@@ -261,6 +276,12 @@ class MemoryBackend(Backend):
 
             if "information" in api_info:
                 return api_info["information"]
+
+    def _get_api_root_statuses(self, api_root):
+        api_info = self._get(api_root)
+
+        if "status" in api_info:
+            return api_info["status"]
 
     def get_status(self, api_root, status_id):
         if api_root in self.data:

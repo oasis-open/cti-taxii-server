@@ -5,7 +5,10 @@ import os
 import textwrap
 
 from medallion import (
-    __version__, application_instance, register_blueprints, set_config
+    __version__, connect_to_backend, register_blueprints, set_config
+)
+from medallion.common import (
+    APPLICATION_INSTANCE, get_application_instance_config_values
 )
 import medallion.config
 
@@ -124,14 +127,16 @@ def main():
         medallion_args.conf_dir if not medallion_args.no_conf_dir else None,
     )
 
-    set_config(application_instance, "users", configuration)
-    set_config(application_instance, "taxii", configuration)
-    set_config(application_instance, "backend", configuration)
-    if(not application_instance.blueprints):
-        register_blueprints(application_instance)
+    set_config(APPLICATION_INSTANCE, "users", configuration)
+    set_config(APPLICATION_INSTANCE, "taxii", configuration)
+    set_config(APPLICATION_INSTANCE, "backend", configuration)
+
+    APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE, "backend"))
+    if (not APPLICATION_INSTANCE.blueprints):
+        register_blueprints(APPLICATION_INSTANCE)
 
     if not medallion_args.conf_check:
-        application_instance.run(
+        APPLICATION_INSTANCE.run(
             host=medallion_args.host,
             port=medallion_args.port,
             debug=medallion_args.debug_mode,

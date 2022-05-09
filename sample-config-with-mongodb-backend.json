@@ -1,0 +1,6 @@
+{
+  "backend": {
+    "module_class": "MongoBackend",
+    "uri": "mongodb://localhost:27017/"
+  }
+}

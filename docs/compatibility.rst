@@ -15,5 +15,5 @@ Its main purpose is for use in testing scenarios of STIX-based applications that
 use the `python-stix2 API <https://github.com/oasis-open/cti-python-stix2>`_.
 It has been developed in conjunction with
 `cti-taxii-client <https://github.com/oasis-open/cti-taxii-client>`_ but should
-be compatible with any TAXII client which makes HTTP requests as defined in TAXII 2.0
+be compatible with any TAXII client which makes HTTP requests as defined in TAXII 2.1
 specification.

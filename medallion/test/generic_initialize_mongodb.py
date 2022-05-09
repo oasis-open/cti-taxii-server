@@ -71,4 +71,5 @@ def add_api_root(client, url=None, title=None, description=None, versions=None, 
         "max_content_length": max_content_length,
     })
     api_root_db = client[name]
+    api_root_db.drop_collection("status")
     return api_root_db

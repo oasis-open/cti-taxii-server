@@ -5,10 +5,12 @@ import environ
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
+# from ..config import get_application_instance_config_values
 from ..common import (
-    SessionChecker, create_resource, datetime_to_float, datetime_to_string,
-    datetime_to_string_stix, determine_spec_version, determine_version,
-    float_to_datetime, generate_status, generate_status_details,
+    APPLICATION_INSTANCE, create_resource, datetime_to_float,
+    datetime_to_string, datetime_to_string_stix, determine_spec_version,
+    determine_version, float_to_datetime, generate_status,
+    generate_status_details, get_application_instance_config_values,
     get_custom_headers, get_timestamp, parse_request_parameters,
     string_to_datetime
 )
@@ -44,15 +46,13 @@ class MongoBackend(Backend):
 
     def __init__(self, **kwargs):
         try:
+            super(MongoBackend, self).__init__(**kwargs)
+            self.pages = {}
             self.client = MongoClient(kwargs.get("uri"))
             self.object_manifest_check()
-            self.pages = {}
-            self.timeout = kwargs.get("session_timeout", 30)
+
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
-
-        checker = SessionChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
-        checker.start()
 
     def _process_params(self, filter_args, limit):
         next_id = filter_args.get("next")
@@ -100,6 +100,40 @@ class MongoBackend(Backend):
 
         for item in expired_ids:
             self.pages.pop(item)
+
+    def _pop_old_statuses(self):
+        api_roots = self._get_all_api_roots()
+        status_retention_in_milliseconds = self.status_retention * 1000
+        for ar in api_roots:
+            statuses_of_api_root = self._get_api_root_statuses(ar)
+            result = statuses_of_api_root.aggregate([
+                    {
+                        "$project": {
+                            "id": 1,
+                            "date_difference": {
+                                "$subtract": [
+                                    "$$NOW",
+                                    {
+                                        "$dateFromString": {
+                                            "dateString": "$request_timestamp"
+                                        }
+                                    }
+                                ]
+                            },
+                        }
+                    },
+                    {
+                        "$match": {
+                            "date_difference": {
+                                "$gt": status_retention_in_milliseconds
+                            }
+                        }
+                    }
+                ]
+            )
+            for doc in result:
+                log.info("Status {} was deleted from {} because it was older than the status retention time".format(doc["id"], ar))
+                statuses_of_api_root.delete_one({"_id": doc["_id"]})
 
     def _get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit, internal=False):
         api_root_db = self.client[api_root]
@@ -207,6 +241,9 @@ class MongoBackend(Backend):
         api_root_db = self.client[api_root]
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}, {"_id": 0}))
+        # interop wants results sorted by id - no need to check for interop option
+        if get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements"):
+            collections = sorted(collections, key=lambda o: o["id"])
         return create_resource("collections", collections)
 
     @catch_mongodb_error
@@ -232,6 +269,11 @@ class MongoBackend(Backend):
             {"_id": 0, "_url": 0, "_name": 0}
         )
         return info
+
+    @catch_mongodb_error
+    def _get_api_root_statuses(self, api_root):
+        api_root_db = self.client[api_root]
+        return api_root_db["status"]
 
     @catch_mongodb_error
     def get_status(self, api_root, status_id):
