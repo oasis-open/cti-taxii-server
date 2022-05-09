@@ -166,12 +166,15 @@ Configs may also contain a "taxii" section as well, as shown below:
     {
         "taxii": {
            "max_page_size": 100
-           "interop_requirements": True      (default value is False)
+           "interop_requirements": true
         }
     }
 
 All TAXII servers require a config, though if any of the sections specified above
 are missing, they will be filled with default values.
+
+The ``interop_requirements`` option will enforce additional requireemnts from
+the TAXII 2.1 Interoperability specification. It defaults to ``false``.
 
 We welcome contributions for other back-end plugins.
 
