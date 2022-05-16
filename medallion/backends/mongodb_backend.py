@@ -1,9 +1,12 @@
+import io
+import json
 import logging
 import uuid
 
 import environ
-from pymongo import MongoClient
+from pymongo import ASCENDING, IndexModel, MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from six import string_types
 
 # from ..config import get_application_instance_config_values
 from ..common import (
@@ -36,6 +39,18 @@ def catch_mongodb_error(func):
     return api_wrapper
 
 
+def find_manifest_entries_for_id(obj, manifest):
+    for m in manifest:
+        if m["id"] == obj["id"]:
+            if "modified" in obj:
+                if m["version"] == obj["modified"]:
+                    return m
+            else:
+                # handle data markings
+                if m["version"] == obj["created"]:
+                    return m
+
+
 class MongoBackend(Backend):
 
     # access control is handled at the views level
@@ -49,6 +64,10 @@ class MongoBackend(Backend):
             super(MongoBackend, self).__init__(**kwargs)
             self.pages = {}
             self.client = MongoClient(kwargs.get("uri"))
+
+            if kwargs.get("filename"):
+                self.initialize_mongodb(kwargs.get("filename"))
+
             self.object_manifest_check()
 
         except ConnectionFailure:
@@ -209,28 +228,31 @@ class MongoBackend(Backend):
     def server_discovery(self):
         discovery_db = self.client["discovery_database"]
         discovery_info = discovery_db["discovery_information"]
-        pipeline = [
-            {
-                "$lookup": {
-                    "from": "api_root_info",
-                    "localField": "api_roots",
-                    "foreignField": "_name",
-                    "as": "_roots",
-                },
-            },
-            {
-                "$addFields": {
-                    "api_roots": "$_roots._url",
-                },
-            },
-            {
-                "$project": {
-                    "_roots": 0,
-                    "_id": 0,
-                }
-            }
-        ]
-        info = discovery_info.aggregate(pipeline).next()
+        # pipeline = [
+        #     {
+        #         "$lookup": {
+        #             "from": "api_root_info",
+        #             "localField": "api_roots",
+        #             "foreignField": "_name",
+        #             "as": "_roots",
+        #         },
+        #     },
+        #     {
+        #         "$addFields": {
+        #             "api_roots": "$_roots._url",
+        #         },
+        #     },
+        #     {
+        #         "$project": {
+        #             "_roots": 0,
+        #             "_id": 0,
+        #         }
+        #     }
+        # ]
+        # info = discovery_info.aggregate(pipeline).next()
+        # return info
+        info = discovery_info.find_one()
+        info.pop("_id")
         return info
 
     @catch_mongodb_error
@@ -316,6 +338,11 @@ class MongoBackend(Backend):
 
         next_id, more = self._update_record(next_id, count)
         return create_resource("objects", objects_found, more, next_id), headers
+
+    @catch_mongodb_error
+    def _add_status(self, api_root_name, status):
+        api_root_db = self.client[api_root_name]
+        api_root_db["status"].insert_one(status)
 
     @catch_mongodb_error
     def add_objects(self, api_root, collection_id, objs, request_time):
@@ -467,3 +494,69 @@ class MongoBackend(Backend):
         manifests_found = list(map(lambda x: datetime_to_string_stix(float_to_datetime(x["version"])), manifests_found))
         next_id, more = self._update_record(next_id, count)
         return create_resource("versions", manifests_found, more, next_id), headers
+
+    def load_data_from_file(self, filename):
+        if isinstance(filename, string_types):
+            with io.open(filename, "r", encoding="utf-8") as infile:
+                self.json_data = json.load(infile)
+        else:
+            self.json_data = json.load(filename)
+
+    def initialize_mongodb(self, filename):
+        self.load_data_from_file(filename)
+        self.client.drop_database("discovery_database")
+        if "/discovery" in self.json_data:
+            db = self.client["discovery_database"]
+            db["discovery_information"].insert_one(self.json_data["/discovery"])
+        else:
+            raise InitializationError("No discovery information provided when initializing the Mongo DB")
+        for api_root_name, api_root_data in self.json_data.items():
+            if api_root_name == "/discovery":
+                continue
+            else:
+                api_root_info_db = db["api_root_info"]
+            url = list(filter(lambda a: api_root_name in a, self.json_data["/discovery"]["api_roots"]))[0]
+            api_root_data["information"]["_url"] = url
+            api_root_data["information"]["_name"] = api_root_name
+            api_root_info_db.insert_one(api_root_data["information"])
+            self.client.drop_database(api_root_name)
+            api_db = self.client[api_root_name]
+            if api_root_data["status"]:
+                api_db["status"].insert_many(api_root_data["status"])
+            else:
+                api_db.create_collection("status")
+            api_db.create_collection("collections")
+            api_db.create_collection("objects")
+            for collection in api_root_data["collections"]:
+                collection_id = collection["id"]
+                objects = collection["objects"]
+                manifest = collection["manifest"]
+                # these are not in the collections mongodb collection (both TAXII and Mongo DB use the term collection)
+                collection.pop("objects")
+                collection.pop("manifest")
+                api_db["collections"].insert_one(collection)
+                for obj in objects:
+                    obj["_collection_id"] = collection_id
+                    obj["_manifest"] = find_manifest_entries_for_id(obj, manifest)
+                    obj["_manifest"]["date_added"] = datetime_to_float(string_to_datetime( obj["_manifest"]["date_added"]))
+                    obj["_manifest"]["version"] = datetime_to_float(string_to_datetime(obj["_manifest"]["version"]))
+                    obj["created"] = datetime_to_float(string_to_datetime(obj["created"]))
+                    if "modified" in obj:
+                        # not for data markings
+                        obj["modified"] = datetime_to_float(string_to_datetime(obj["modified"]))
+                    api_db["objects"].insert_one(obj)
+                id_index = IndexModel([("id", ASCENDING)])
+                type_index = IndexModel([("type", ASCENDING)])
+                collection_index = IndexModel([("_collection_id", ASCENDING)])
+                date_index = IndexModel([("_manifest.date_added", ASCENDING)])
+                version_index = IndexModel([("_manifest.version", ASCENDING)])
+                date_and_spec_index = IndexModel([("_manifest.media_type", ASCENDING), ("_manifest.date_added", ASCENDING)])
+                version_and_spec_index = IndexModel([("_manifest.media_type", ASCENDING), ("_manifest.version", ASCENDING)])
+                collection_and_date_index = IndexModel([("_collection_id", ASCENDING), ("_manifest.date_added", ASCENDING)])
+                api_db["objects"].create_indexes(
+                    [id_index, type_index, date_index, version_index, collection_index, date_and_spec_index,
+                     version_and_spec_index, collection_and_date_index]
+                )
+
+
+

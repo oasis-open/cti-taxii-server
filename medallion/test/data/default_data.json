@@ -102,7 +102,7 @@
                 "objects": [],
                 "manifest": []
             },
-	    {
+	        {
                 "id": "365fed99-08fa-fdcd-a1b3-fb247eb41d01",
                 "title": "This data collection is for testing adding objects",
                 "can_read": true,
