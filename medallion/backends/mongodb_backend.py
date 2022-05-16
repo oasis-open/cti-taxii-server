@@ -66,6 +66,7 @@ class MongoBackend(Backend):
             self.client = MongoClient(kwargs.get("uri"))
 
             if kwargs.get("filename"):
+                log.info("Initializing Mongo DB backend using " + kwargs.get("filename"))
                 self.initialize_mongodb(kwargs.get("filename"))
 
             self.object_manifest_check()
