@@ -539,7 +539,7 @@ class MongoBackend(Backend):
                 for obj in objects:
                     obj["_collection_id"] = collection_id
                     obj["_manifest"] = find_manifest_entries_for_id(obj, manifest)
-                    obj["_manifest"]["date_added"] = datetime_to_float(string_to_datetime( obj["_manifest"]["date_added"]))
+                    obj["_manifest"]["date_added"] = datetime_to_float(string_to_datetime(obj["_manifest"]["date_added"]))
                     obj["_manifest"]["version"] = datetime_to_float(string_to_datetime(obj["_manifest"]["version"]))
                     obj["created"] = datetime_to_float(string_to_datetime(obj["created"]))
                     if "modified" in obj:
@@ -558,6 +558,3 @@ class MongoBackend(Backend):
                     [id_index, type_index, date_index, version_index, collection_index, date_and_spec_index,
                      version_and_spec_index, collection_and_date_index]
                 )
-
-
-

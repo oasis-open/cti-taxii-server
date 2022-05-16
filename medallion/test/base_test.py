@@ -5,7 +5,9 @@ from medallion import connect_to_backend, register_blueprints, set_config
 from medallion.common import (
     APPLICATION_INSTANCE, get_application_instance_config_values
 )
-from medallion.test.generic_initialize_mongodb import build_new_mongo_databases_and_collection, connect_to_client
+from medallion.test.generic_initialize_mongodb import (
+    build_new_mongo_databases_and_collection, connect_to_client
+)
 
 
 class TaxiiTest():
