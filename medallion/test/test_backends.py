@@ -599,6 +599,7 @@ def test_get_manifest_added_after(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
+    # only 2 because one is v2.0
     assert len(objs['objects']) == 2
 
 
