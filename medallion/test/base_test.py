@@ -74,6 +74,7 @@ class TaxiiTest():
             "module_class": "MongoBackend",
             "uri": "mongodb://127.0.0.1:27017/",
             "filename": DATA_FILE,
+            "clear_db": True
         },
         "users": {
             "root": "example",

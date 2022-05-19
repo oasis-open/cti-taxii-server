@@ -68,7 +68,11 @@ class Backend(object, metaclass=BackendRegistry):
 
     def _get_all_api_roots(self):
         discovery_info = self.server_discovery()
-        return [get_api_root_name(x) for x in discovery_info["api_roots"]]
+        if discovery_info:
+            # this is accessing the record
+            roots = discovery_info["api_roots"]
+            if roots:
+                return [get_api_root_name(x) for x in roots]
 
     def _get_api_root_statuses(self, api_root):
         """

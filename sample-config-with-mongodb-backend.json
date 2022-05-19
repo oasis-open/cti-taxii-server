@@ -2,6 +2,7 @@
   "backend": {
     "module_class": "MongoBackend",
     "uri": "mongodb://localhost:27017/",
-    "filename": "../test/data/default_data.json"
+    "filename": "../test/data/default_data.json",
+    "clear_db": true
   }
 }
