@@ -14,6 +14,7 @@ Welcome to medallion's documentation!
 
    compatibility
    custom_backend
+   page_size
    mongodb_schema
    contributing
 
