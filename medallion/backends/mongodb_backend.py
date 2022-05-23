@@ -65,18 +65,25 @@ class MongoBackend(Backend):
             self.pages = {}
             self.client = MongoClient(kwargs.get("uri"))
 
-            if kwargs.get("clear_db"):
-                self._clear_db()
+            # unless clearing the db has been explicitly specified, don't initialize if the discovery_database exits
+            # the discovery_databases is a minimally viable database,
+            if not self.database_established() or kwargs.get("clear_db"):
+                self.clear_db()
                 if kwargs.get("filename"):
                     log.info("Initializing Mongo DB backend using " + kwargs.get("filename"))
-                    self.initialize_mongodb(kwargs.get("filename"))
+                    self.initialize_mongodb_with_data(kwargs.get("filename"))
                     self.object_manifest_check()
-            else:
-                self.object_manifest_check()
+
             super(MongoBackend, self).__init__(**kwargs)
 
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
+
+    def database_established(self):
+        """
+        Checks to see if a medallion database exists
+        """
+        return "discovery_database" in self.client.list_database_names()
 
     def _process_params(self, filter_args, limit):
         next_id = filter_args.get("next")
@@ -491,7 +498,7 @@ class MongoBackend(Backend):
         except Exception as e:
             raise InitializationError("Problem loading initialization data from {0}".format(filename), 408, e)
 
-    def initialize_mongodb(self, filename):
+    def initialize_mongodb_with_data(self, filename):
         self.load_data_from_file(filename)
         if "/discovery" in self.json_data:
             db = self.client["discovery_database"]
@@ -545,14 +552,15 @@ class MongoBackend(Backend):
                      version_and_spec_index, collection_and_date_index]
                 )
 
-    def _clear_db(self):
+    def clear_db(self):
         if "discovery_database" in self.client.list_database_names():
             log.info("Clearing database")
-            discovery_db = self.client["discovery_database"]
-            api_root_info = discovery_db["api_root_info"]
-            for api_info in api_root_info.find({}):
-                self.client.drop_database(api_info["_name"])
             self.client.drop_database("discovery_database")
+        discovery_db = self.client["discovery_database"]
+        api_root_info = discovery_db["api_root_info"]
+        for api_info in api_root_info.find({}):
+            self.client.drop_database(api_info["_name"])
+        self.client.drop_database("discovery_database")
         # db with empty tables
         log.info("Creating empty database")
         discovery_db = self.client.get_database("discovery_database")
