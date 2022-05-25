@@ -599,6 +599,7 @@ def test_get_manifest_added_after(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
+    # only 2 because one is v2.0
     assert len(objs['objects']) == 2
 
 
@@ -1457,10 +1458,9 @@ def test_save_to_file(backend):
 
 def test_status_cleanup(backend_without_threads):
     backend_app = backend_without_threads.app.medallion_backend
-    if isinstance(backend_without_threads, MemoryTestServer):
-        # add a status with the current time, which should not be deleted.  mongodb already has such as status
-        new_status = common.generate_status(common.datetime_to_string(datetime.datetime.now()), "pending", 0, 0, 0)
-        backend_app._get_api_root_statuses('trustgroup1').append(new_status)
+    # add a status with the current time, which should not be deleted.
+    new_status = common.generate_status(common.datetime_to_string(datetime.datetime.now()), "pending", 0, 0, 0)
+    backend_app._add_status('trustgroup1', new_status)
     statuses = backend_app._get_api_root_statuses('trustgroup1')
     assert backend_without_threads.count(statuses) == 3
     backend_app.status_retention = SECONDS_IN_24_HOURS

@@ -5,7 +5,6 @@ from medallion import connect_to_backend, register_blueprints, set_config
 from medallion.common import (
     APPLICATION_INSTANCE, get_application_instance_config_values
 )
-from medallion.test.data.initialize_mongodb import reset_db
 
 
 class TaxiiTest():
@@ -74,6 +73,8 @@ class TaxiiTest():
         "backend": {
             "module_class": "MongoBackend",
             "uri": "mongodb://127.0.0.1:27017/",
+            "filename": DATA_FILE,
+            "clear_db": True
         },
         "users": {
             "root": "example",
@@ -89,10 +90,9 @@ class TaxiiTest():
         self.app_context = APPLICATION_INSTANCE.app_context()
         self.app_context.push()
         self.app.testing = True
-        if(not self.app.blueprints):
+        if not self.app.blueprints:
             register_blueprints(self.app)
         if self.type == "mongo":
-            reset_db(self.mongodb_config["backend"]["uri"])
             self.configuration = self.mongodb_config
         elif self.type == "memory":
             self.configuration = self.memory_config
@@ -111,7 +111,9 @@ class TaxiiTest():
         set_config(self.app, "taxii", self.configuration)
         if not start_threads:
             self.app.backend_config["run_cleanup_threads"] = False
-        APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE, "backend"))
+        APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE,
+                                                                                                           "backend"),
+                                                                    clear_db=True)
         self.client = APPLICATION_INSTANCE.test_client()
         if self.type == "memory_no_config" or self.type == "no_auth":
             encoded_auth = "Basic " + \

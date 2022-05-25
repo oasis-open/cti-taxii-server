@@ -47,7 +47,7 @@ def set_config(flask_application_instance, prop_name, config):
             raise InitializationError("You did not give backend information in your config.", 408)
 
 
-def connect_to_backend(config_info):
+def connect_to_backend(config_info, clear_db=False):
     log.debug("Initializing backend configuration using: {}".format(config_info))
 
     try:
@@ -90,6 +90,7 @@ def connect_to_backend(config_info):
 
     # Finally, instantiate the backend class with the configuration passed in
     try:
+        config_info["clear_db"] = clear_db
         return backend_cls(**config_info)
     except BaseException as exc:
         log.error("Failed to instantiate %r: %s", backend_cls_name, exc)

@@ -320,6 +320,9 @@ class MemoryBackend(Backend):
             remove_hidden_field(objs)
             return create_resource("objects", objs, more, n), headers
 
+    def _add_status(self, api_root_name, status):
+        self._get_api_root_statuses(api_root_name).append(status)
+
     def add_objects(self, api_root, collection_id, objs, request_time):
         if api_root in self.data:
             api_info = self._get(api_root)
