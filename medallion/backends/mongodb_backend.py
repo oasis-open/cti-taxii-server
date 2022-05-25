@@ -243,7 +243,6 @@ class MongoBackend(Backend):
         discovery_db = self.client["discovery_database"]
         discovery_info = discovery_db["discovery_information"]
         info = discovery_info.find_one()
-        # this could also be done via the mongo db finds_one query
         if info:
             info.pop("_id")
         return info
