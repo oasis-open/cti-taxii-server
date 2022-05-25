@@ -61,18 +61,29 @@ class MongoBackend(Backend):
 
     def __init__(self, **kwargs):
         try:
-            super(MongoBackend, self).__init__(**kwargs)
+
             self.pages = {}
             self.client = MongoClient(kwargs.get("uri"))
 
-            if kwargs.get("filename"):
-                log.info("Initializing Mongo DB backend using " + kwargs.get("filename"))
-                self.initialize_mongodb(kwargs.get("filename"))
+            # unless clearing the db has been explicitly specified, don't initialize if the discovery_database exits
+            # the discovery_databases is a minimally viable database,
+            if not self.database_established() or kwargs.get("clear_db"):
+                self.clear_db()
+                if kwargs.get("filename"):
+                    log.info("Initializing Mongo DB backend using " + kwargs.get("filename"))
+                    self.initialize_mongodb_with_data(kwargs.get("filename"))
+                    self.object_manifest_check()
 
-            self.object_manifest_check()
+            super(MongoBackend, self).__init__(**kwargs)
 
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
+
+    def database_established(self):
+        """
+        Checks to see if a medallion database exists
+        """
+        return "discovery_database" in self.client.list_database_names()
 
     def _process_params(self, filter_args, limit):
         next_id = filter_args.get("next")
@@ -122,38 +133,40 @@ class MongoBackend(Backend):
             self.pages.pop(item)
 
     def _pop_old_statuses(self):
-        api_roots = self._get_all_api_roots()
-        status_retention_in_milliseconds = self.status_retention * 1000
-        for ar in api_roots:
-            statuses_of_api_root = self._get_api_root_statuses(ar)
-            result = statuses_of_api_root.aggregate([
-                    {
-                        "$project": {
-                            "id": 1,
-                            "date_difference": {
-                                "$subtract": [
-                                    "$$NOW",
-                                    {
-                                        "$dateFromString": {
-                                            "dateString": "$request_timestamp"
-                                        }
-                                    }
-                                ]
+        if "discovery_database" in self.client.list_database_names():
+            api_roots = self._get_all_api_roots()
+            if api_roots:
+                status_retention_in_milliseconds = self.status_retention * 1000
+                for ar in api_roots:
+                    statuses_of_api_root = self._get_api_root_statuses(ar)
+                    result = statuses_of_api_root.aggregate([
+                            {
+                                "$project": {
+                                    "id": 1,
+                                    "date_difference": {
+                                        "$subtract": [
+                                            "$$NOW",
+                                            {
+                                                "$dateFromString": {
+                                                    "dateString": "$request_timestamp"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                }
                             },
-                        }
-                    },
-                    {
-                        "$match": {
-                            "date_difference": {
-                                "$gt": status_retention_in_milliseconds
+                            {
+                                "$match": {
+                                    "date_difference": {
+                                        "$gt": status_retention_in_milliseconds
+                                    }
+                                }
                             }
-                        }
-                    }
-                ]
-            )
-            for doc in result:
-                log.info("Status {} was deleted from {} because it was older than the status retention time".format(doc["id"], ar))
-                statuses_of_api_root.delete_one({"_id": doc["_id"]})
+                        ]
+                    )
+                    for doc in result:
+                        log.info("Status {} was deleted from {} because it was older than the status retention time".format(doc["id"], ar))
+                        statuses_of_api_root.delete_one({"_id": doc["_id"]})
 
     def _get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit, internal=False):
         api_root_db = self.client[api_root]
@@ -229,31 +242,9 @@ class MongoBackend(Backend):
     def server_discovery(self):
         discovery_db = self.client["discovery_database"]
         discovery_info = discovery_db["discovery_information"]
-        # pipeline = [
-        #     {
-        #         "$lookup": {
-        #             "from": "api_root_info",
-        #             "localField": "api_roots",
-        #             "foreignField": "_name",
-        #             "as": "_roots",
-        #         },
-        #     },
-        #     {
-        #         "$addFields": {
-        #             "api_roots": "$_roots._url",
-        #         },
-        #     },
-        #     {
-        #         "$project": {
-        #             "_roots": 0,
-        #             "_id": 0,
-        #         }
-        #     }
-        # ]
-        # info = discovery_info.aggregate(pipeline).next()
-        # return info
         info = discovery_info.find_one()
-        info.pop("_id")
+        if info:
+            info.pop("_id")
         return info
 
     @catch_mongodb_error
@@ -497,25 +488,26 @@ class MongoBackend(Backend):
         return create_resource("versions", manifests_found, more, next_id), headers
 
     def load_data_from_file(self, filename):
-        if isinstance(filename, string_types):
-            with io.open(filename, "r", encoding="utf-8") as infile:
-                self.json_data = json.load(infile)
-        else:
-            self.json_data = json.load(filename)
+        try:
+            if isinstance(filename, string_types):
+                with io.open(filename, "r", encoding="utf-8") as infile:
+                    self.json_data = json.load(infile)
+            else:
+                self.json_data = json.load(filename)
+        except Exception as e:
+            raise InitializationError("Problem loading initialization data from {0}".format(filename), 408, e)
 
-    def initialize_mongodb(self, filename):
+    def initialize_mongodb_with_data(self, filename):
         self.load_data_from_file(filename)
-        self.client.drop_database("discovery_database")
         if "/discovery" in self.json_data:
             db = self.client["discovery_database"]
             db["discovery_information"].insert_one(self.json_data["/discovery"])
         else:
             raise InitializationError("No discovery information provided when initializing the Mongo DB")
+        api_root_info_db = db["api_root_info"]
         for api_root_name, api_root_data in self.json_data.items():
             if api_root_name == "/discovery":
                 continue
-            else:
-                api_root_info_db = db["api_root_info"]
             url = list(filter(lambda a: api_root_name in a, self.json_data["/discovery"]["api_roots"]))[0]
             api_root_data["information"]["_url"] = url
             api_root_data["information"]["_name"] = api_root_name
@@ -558,3 +550,19 @@ class MongoBackend(Backend):
                     [id_index, type_index, date_index, version_index, collection_index, date_and_spec_index,
                      version_and_spec_index, collection_and_date_index]
                 )
+
+    def clear_db(self):
+        if "discovery_database" in self.client.list_database_names():
+            log.info("Clearing database")
+            self.client.drop_database("discovery_database")
+        discovery_db = self.client["discovery_database"]
+        api_root_info = discovery_db["api_root_info"]
+        for api_info in api_root_info.find({}):
+            self.client.drop_database(api_info["_name"])
+        self.client.drop_database("discovery_database")
+        # db with empty tables
+        log.info("Creating empty database")
+        discovery_db = self.client.get_database("discovery_database")
+        discovery_db.create_collection("discovery_information")
+        discovery_db.create_collection("api_root_info")
+        return discovery_db
