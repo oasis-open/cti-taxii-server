@@ -167,7 +167,7 @@ Configs may also contain a "taxii" section as well, as shown below:
     {
         "taxii": {
            "max_page_size": 100
-           "interop_requirements": Ture/False  # the TAXII interop document has some additional requirements
+           "interop_requirements": True/False  # the TAXII interop document has some additional requirements
         }
     }
 
