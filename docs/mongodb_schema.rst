@@ -143,8 +143,5 @@ A document from the **status** collection:
         ]
     }
 
-A document from the **manifest** collection:
-
-.. code-block:: json
 
 
