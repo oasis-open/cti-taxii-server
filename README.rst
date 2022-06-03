@@ -159,6 +159,13 @@ The authorization is enabled using the python package
 Authorization could be enhanced by changing the method "decorated" using
 @auth.get_password in medallion/__init__.py
 
+Scripts are also provided to run medallion through gunicorn with certificate-
+based authentication:
+
+```
+MEDALLION_CONFFILE="<config_file>" gunicorn -w 4 -b 0.0.0.0:5000 --log-level 'debug' --worker-class 'medallion.scripts.cert_auth_worker.CertAuthWorker' --ca-certs '<ca_cert_file>' --certfile '<certificate_file>' --keyfile '<key_file>' --cert-reqs 2 --do-handshake-on-connect "medallion.scripts.cert_auth_app:getApp()"
+```
+
 Configs may also contain a "taxii" section as well, as shown below:
 
 .. code-block:: json
