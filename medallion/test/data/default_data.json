@@ -125,6 +125,25 @@
                 ],
                 "objects": [
                     {
+                        "type": "malware-analysis",
+                        "spec_version": "2.1",
+                        "id": "malware-analysis--084a658c-a7ef-4581-a21d-1f600908741b",
+                        "created_by_ref": "identity--eae683c1-d472-4708-bd63-f9b1a1f016b1",
+                        "created": "2021-04-16T09:49:24.378932Z",
+                        "modified": "2021-12-11T07:17:44.542582Z",
+                        "product": "option",
+                        "version": "moment",
+                        "submitted": "2022-03-26T15:06:01.434493Z",
+                        "analysis_started": "2022-10-04T07:07:55.365672Z",
+                        "analysis_ended": "2023-06-14T07:12:00.962419Z",
+                        "result": "unknown",
+                        "lang": "en",
+                        "confidence": 16,
+                        "object_marking_refs": [
+                            "marking-definition--3e914a0d-957f-40b2-8c35-b119040574fe"
+                        ]
+                    },
+                    {
                         "created": "2014-05-08T09:00:00.000Z",
                         "modified": "2014-05-08T09:00:00.000Z",
                         "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
@@ -278,6 +297,12 @@
                         "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
                         "media_type": "application/stix+json;version=2.1",
                         "version": "2017-01-27T13:49:53.935Z"
+                    },
+                    {
+                        "date_added": "2022-06-16T13:49:53.935000Z",
+                        "id": "malware-analysis--084a658c-a7ef-4581-a21d-1f600908741b",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2021-12-11T07:17:44.542582Z"
                     }
                 ]
             },
