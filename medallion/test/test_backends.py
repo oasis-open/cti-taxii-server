@@ -316,8 +316,7 @@ def test_get_objects_limit(backend):
 
     correct_order = ['relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463',
                      'indicator--cd981c25-8042-4166-8945-51178443bdac',
-                     'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da',
-    ]
+                     'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da']
 
     for x in range(0, len(correct_order)):
         assert objs["objects"][x]["id"] == correct_order[x]
