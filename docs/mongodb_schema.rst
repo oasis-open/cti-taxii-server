@@ -99,7 +99,7 @@ A document from the **objects** collection:
             "created": "2017-01-27T13:49:53.997Z",
             "description": "Poison Ivy",
             "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
-            "is_family": True,
+            "is_family": true,
             "malware_types": [
                 "remote-access-trojan",
             ],
