@@ -274,18 +274,19 @@ class TaskChecker(object):
 
 
 def get_application_instance_config_values(flask_application_instance, config_group, config_key=None):
-    if config_group == "taxii":
+    if config_group == "taxii" and hasattr(flask_application_instance, "taxii_config"):
         if flask_application_instance.taxii_config and config_key in flask_application_instance.taxii_config:
             return flask_application_instance.taxii_config[config_key]
         else:
             return flask_application_instance.taxii_config
-    if config_group == "users":
+    if config_group == "users" and hasattr(flask_application_instance, "users_config"):
         if flask_application_instance.users_config and config_key in flask_application_instance.users_config:
             return flask_application_instance.users_config[config_key]
         else:
             return flask_application_instance.users_config
-    if config_group == "backend":
+    if config_group == "backend" and hasattr(flask_application_instance, "backend_config"):
         if flask_application_instance.backend_config and config_key in flask_application_instance.backend_config:
             return flask_application_instance.backend_config[config_key]
         else:
             return flask_application_instance.backend_config
+    return None
