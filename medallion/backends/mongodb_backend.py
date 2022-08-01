@@ -554,12 +554,11 @@ class MongoBackend(Backend):
     def clear_db(self):
         if "discovery_database" in self.client.list_database_names():
             log.info("Clearing database")
+            discovery_db = self.client["discovery_database"]
+            api_root_info = discovery_db["api_root_info"]
+            for api_info in api_root_info.find({}):
+                self.client.drop_database(api_info["_name"])
             self.client.drop_database("discovery_database")
-        discovery_db = self.client["discovery_database"]
-        api_root_info = discovery_db["api_root_info"]
-        for api_info in api_root_info.find({}):
-            self.client.drop_database(api_info["_name"])
-        self.client.drop_database("discovery_database")
         # db with empty tables
         log.info("Creating empty database")
         discovery_db = self.client.get_database("discovery_database")
