@@ -16,7 +16,7 @@ def create_resource(resource_name, items, more=False, next_id=None):
     if items:
         resource[resource_name] = items
     if resource_name == "objects" or resource_name == "versions":
-        if next_id and resource:
+        if more and next_id and resource:
             resource["next"] = next_id
         if resource:
             resource["more"] = more
@@ -26,7 +26,13 @@ def create_resource(resource_name, items, more=False, next_id=None):
 def determine_version(new_obj, request_time):
     """Grab the modified time if present, if not grab created time,
     if not grab request time provided by server."""
-    return new_obj.get("modified", new_obj.get("created", datetime_to_string(request_time)))
+    obj_version = new_obj.get("modified") or new_obj.get("created")
+    if obj_version:
+        obj_version = string_to_datetime(obj_version)
+    else:
+        obj_version = request_time
+
+    return obj_version
 
 
 def determine_spec_version(obj):
@@ -38,62 +44,6 @@ def determine_spec_version(obj):
         # are both missing.
         return "2.1"
     return obj.get("spec_version", "2.0")
-
-
-def get(data, key):
-    """Given a dict, loop recursively over the object. Returns the value based on the key match"""
-    for ancestors, item in iterpath(data):
-        if key in ancestors:
-            return item
-
-
-def iterpath(obj, path=None):
-    """
-    Generator which walks the input ``obj`` model. Each iteration yields a
-    tuple containing a list of ancestors and the property value.
-
-    Args:
-        obj: A SDO or SRO object.
-        path: None, used recursively to store ancestors.
-
-    Example:
-        >>> for item in iterpath(obj):
-        >>>     print(item)
-        (['type'], 'campaign')
-        ...
-        (['cybox', 'objects', '[0]', 'hashes', 'sha1'], 'cac35ec206d868b7d7cb0b55f31d9425b075082b')
-
-    Returns:
-        tuple: Containing two items: a list of ancestors and the property value.
-
-    """
-    if path is None:
-        path = []
-
-    for varname, varobj in iter(sorted(iteritems(obj))):
-        path.append(varname)
-        yield (path, varobj)
-
-        if isinstance(varobj, dict):
-
-            for item in iterpath(varobj, path):
-                yield item
-
-        elif isinstance(varobj, list):
-
-            for item in varobj:
-                index = "[{0}]".format(varobj.index(item))
-                path.append(index)
-
-                yield (path, item)
-
-                if isinstance(item, dict):
-                    for descendant in iterpath(item, path):
-                        yield descendant
-
-                path.pop()
-
-        path.pop()
 
 
 def get_timestamp():
@@ -150,22 +100,31 @@ def datetime_to_float(dttm):
 
 def float_to_datetime(timestamp_float):
     """Given a floating-point number, produce a datetime instance"""
-    return dt.datetime.utcfromtimestamp(timestamp_float)
+    result = dt.datetime.utcfromtimestamp(timestamp_float)
+    result = result.replace(tzinfo=dt.timezone.utc)
+    return result
 
 
 def string_to_datetime(timestamp_string):
     """Convert string timestamp to datetime instance."""
     try:
-        return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%S.%fZ")
+        result = dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     except ValueError:
-        return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
+        result = dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
+
+    result = result.replace(tzinfo=dt.timezone.utc)
+
+    return result
 
 
 def generate_status(
-    request_time, status, succeeded, failed, pending,
-    successes=None, failures=None, pendings=None,
+    request_time, status, successes=(), failures=(), pendings=()
 ):
     """Generate Status Resource as defined in TAXII 2.1 section (4.3.1) <link here>`__."""
+    succeeded = len(successes)
+    failed = len(failures)
+    pending = len(pendings)
+
     status = {
         "id": str(uuid.uuid4()),
         "status": status,
@@ -218,40 +177,6 @@ def parse_request_parameters(filter_args):
         if key != "limit" and key != "next":
             session_args[key] = set(value.replace(" ", "").split(","))
     return session_args
-
-
-def find_att(obj):
-    """
-    Used for finding the version attribute of an ambiguous object. Manifests
-    use the "version" field, but objects will use "modified", or if that's not
-    available, the "created" field.
-
-    Args:
-        obj (dict): manifest or stix object
-
-    Returns:
-        string value of the field from the object to use for versioning
-
-    """
-    if "version" in obj:
-        return string_to_datetime(obj["version"])
-    elif "modified" in obj:
-        return string_to_datetime(obj["modified"])
-    elif "created" in obj:
-        return string_to_datetime(obj["created"])
-    else:
-        return string_to_datetime(obj["_date_added"])
-
-
-def find_version_attribute(obj):
-    """Depending on the object, modified, created or _date_added is used to store the
-    object version"""
-    if "modified" in obj:
-        return "modified"
-    elif "created" in obj:
-        return "created"
-    elif "_date_added" in obj:
-        return "_date_added"
 
 
 class TaskChecker(object):

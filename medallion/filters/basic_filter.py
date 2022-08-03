@@ -1,7 +1,7 @@
 import bisect
 import operator
 
-from ..common import determine_spec_version, find_att, string_to_datetime
+from ..common import determine_spec_version, string_to_datetime, datetime_to_string
 
 
 def check_for_dupes(final_match, final_track, res):
@@ -12,9 +12,9 @@ def check_for_dupes(final_match, final_track, res):
             final_track.insert(pos, obj["id"])
             final_match.insert(pos, obj)
         else:
-            obj_time = find_att(obj)
+            obj_time = obj["__meta"].version
             while pos != len(final_track) and obj["id"] == final_track[pos]:
-                if find_att(final_match[pos]) == obj_time:
+                if final_match[pos]["__meta"].version == obj_time:
                     found = 1
                     break
                 else:
@@ -35,7 +35,9 @@ def check_version(data, relate):
             id_track.insert(pos, obj["id"])
             res.insert(pos, obj)
         else:
-            if relate(find_att(obj), find_att(res[pos])):
+            incoming_ver = obj["__meta"].version
+            existing_ver = res[pos]["__meta"].version
+            if relate(incoming_ver, existing_ver):
                 res[pos] = obj
     return res
 
@@ -55,58 +57,32 @@ class BasicFilter(object):
         if self.match_spec_version:
             self.match_spec_version = self.match_spec_version.split(",")
 
-    def sort_and_paginate(self, data, limit, manifest):
-        temp = None
-        next_save = {}
-        headers = {}
-        new = []
-        if len(data) == 0:
-            return new, next_save, headers
-        if manifest:
-            manifest.sort(key=lambda x: x['date_added'])
-            for man in manifest:
-                man_time = find_att(man)
-                for check in data:
-                    check_time = find_att(check)
-                    if check['id'] == man['id'] and check_time == man_time:
-                        if len(headers) == 0:
-                            headers["X-TAXII-Date-Added-First"] = man["date_added"]
-                        new.append(check)
-                        temp = man
-                        if len(new) == limit:
-                            headers["X-TAXII-Date-Added-Last"] = man["date_added"]
-                        break
-            if limit and limit < len(data):
-                next_save = new[limit:]
-                new = new[:limit]
-            else:
-                headers["X-TAXII-Date-Added-Last"] = temp["date_added"]
-        else:
-            data.sort(key=lambda x: x['date_added'])
-            if limit and limit < len(data):
-                next_save = data[limit:]
-                data = data[:limit]
-            headers["X-TAXII-Date-Added-First"] = data[0]["date_added"]
-            headers["X-TAXII-Date-Added-Last"] = data[-1]["date_added"]
+    def sort_and_paginate(self, data, limit):
+        data.sort(key=lambda x: x["__meta"].date_added)
+
+        if limit is None:
             new = data
+            next_save = []
+        else:
+            new = data[:limit]
+            next_save = data[limit:]
+
+        headers = {}
+        if new:
+            headers["X-TAXII-Date-Added-First"] = datetime_to_string(
+                new[0]["__meta"].date_added
+            )
+            headers["X-TAXII-Date-Added-Last"] = datetime_to_string(
+                new[-1]["__meta"].date_added
+            )
+
         return new, next_save, headers
 
     @staticmethod
-    def check_added_after(obj, manifest_info, added_after_date):
+    def check_added_after(obj, added_after_date):
         added_after_timestamp = string_to_datetime(added_after_date)
-        # for manifest objects and versions
-        if manifest_info is None:
-            if string_to_datetime(obj["date_added"]) > added_after_timestamp:
-                return True
-            return False
-        # for other objects with manifests
-        else:
-            obj_time = find_att(obj)
-            for item in manifest_info:
-                item_time = find_att(item)
-                if item["id"] == obj["id"] and item_time == obj_time and string_to_datetime(item["date_added"]) > added_after_timestamp:
-                    return True
-            return False
+        obj_added = obj["__meta"].date_added
+        return obj_added > added_after_timestamp
 
     @staticmethod
     def filter_by_version(data, version):
@@ -130,7 +106,7 @@ class BasicFilter(object):
             id_track = []
             res = []
             for obj in data:
-                obj_time = find_att(obj)
+                obj_time = obj["__meta"].version
                 if obj_time in actual_dates:
                     pos = bisect.bisect_left(id_track, obj["id"])
                     id_track.insert(pos, obj["id"])
@@ -173,7 +149,7 @@ class BasicFilter(object):
                 return True
         return False
 
-    def process_filter(self, data, allowed=(), manifest_info=(), limit=None):
+    def process_filter(self, data, allowed=(), limit=None):
         filtered_by_version = []
         final_match = []
         save_next = []
@@ -190,7 +166,7 @@ class BasicFilter(object):
                         continue
 
                 if self.added_after_date:
-                    if not self.check_added_after(obj, manifest_info, self.added_after_date):
+                    if not self.check_added_after(obj, self.added_after_date):
                         continue
 
                 if "spec_version" in allowed:
@@ -205,6 +181,6 @@ class BasicFilter(object):
         else:
             filtered_by_version = match_objects
 
-        # sort objects by date_added of manifest and paginate as necessary
-        final_match, save_next, headers = self.sort_and_paginate(filtered_by_version, limit, manifest_info)
+        # sort objects by date_added and paginate as necessary
+        final_match, save_next, headers = self.sort_and_paginate(filtered_by_version, limit)
         return final_match, save_next, headers

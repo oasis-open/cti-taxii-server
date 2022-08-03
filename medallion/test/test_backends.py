@@ -57,6 +57,20 @@ def backend_without_threads(request):
         yield pytest.skip("skipped")
 
 
+def _timestamps_equal(ts1, ts2):
+    """
+    Compare timestamps for equality in a more robust way: convert strings
+    to datetime objects first.
+    """
+    if not isinstance(ts1, datetime.datetime):
+        ts1 = common.string_to_datetime(ts1)
+    if not isinstance(ts2, datetime.datetime):
+        ts2 = common.string_to_datetime(ts2)
+
+    return ts1 == ts2
+
+
+
 # start with basic get requests for each endpoint
 def test_server_discovery(backend):
     r = backend.client.get(test.DISCOVERY_EP, headers=backend.headers)
@@ -697,7 +711,7 @@ def test_get_manifest_version_specific(backend):
     objs = get_manifest_version(backend, "?match[version]=2016-12-25T12:30:59.444Z")
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == object_id
-    assert objs["objects"][0]["version"] == "2016-12-25T12:30:59.444Z"
+    assert _timestamps_equal(objs["objects"][0]["version"], "2016-12-25T12:30:59.444Z")
 
 
 def test_get_manifest_version_first(backend):
@@ -706,7 +720,7 @@ def test_get_manifest_version_first(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == object_id:
-            assert obj['version'] == "2016-11-03T12:30:59.000Z"
+            assert _timestamps_equal(obj['version'], "2016-11-03T12:30:59.000Z")
 
 
 def test_get_manifest_version_last(backend):
@@ -715,7 +729,7 @@ def test_get_manifest_version_last(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == object_id:
-            assert obj['version'] == "2017-01-27T13:49:53.935Z"
+            assert _timestamps_equal(obj['version'], "2017-01-27T13:49:53.935Z")
 
 
 def test_get_manifest_version_all(backend):
@@ -754,7 +768,7 @@ def test_manifest_spec_version_2021(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj['version'] == "2018-02-23T18:30:00.000Z"
+            assert _timestamps_equal(obj['version'], "2018-02-23T18:30:00.000Z")
 
 
 def test_manifest_spec_version_default(backend):
@@ -802,9 +816,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is True
     assert len(objs["versions"]) == 1
-    assert objs["versions"][0] == '2016-11-03T12:30:59.000Z'
-    assert r.headers['X-TAXII-Date-Added-First'] == '2016-11-03T12:30:59.001000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2016-11-03T12:30:59.001000Z'
+    assert _timestamps_equal(objs["versions"][0], '2016-11-03T12:30:59.000Z')
+    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-First'], '2016-11-03T12:30:59.001000Z')
+    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-Last'], '2016-11-03T12:30:59.001000Z')
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
@@ -817,9 +831,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is True
     assert len(objs["versions"]) == 1
-    assert objs["versions"][0] == '2016-12-25T12:30:59.444Z'
-    assert r.headers['X-TAXII-Date-Added-First'] == '2016-12-27T13:49:59.000000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2016-12-27T13:49:59.000000Z'
+    assert _timestamps_equal(objs["versions"][0], '2016-12-25T12:30:59.444Z')
+    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-First'], '2016-12-27T13:49:59.000000Z')
+    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-Last'], '2016-12-27T13:49:59.000000Z')
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
@@ -832,9 +846,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is False
     assert len(objs["versions"]) == 1
-    assert objs["versions"][0] == '2017-01-27T13:49:53.935Z'
-    assert r.headers['X-TAXII-Date-Added-First'] == '2017-12-31T13:49:53.935000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
+    assert _timestamps_equal(objs["versions"][0], '2017-01-27T13:49:53.935Z')
+    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-First'], '2017-12-31T13:49:53.935000Z')
+    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-Last'], '2017-12-31T13:49:53.935000Z')
 
 
 def get_version_spec_version(backend, filter):
@@ -853,13 +867,13 @@ def get_version_spec_version(backend, filter):
 def test_get_version_spec_version_20(backend):
     objs = get_version_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions?match[spec_version]=2.0")
     assert len(objs["versions"]) == 1
-    assert objs["versions"][0] == "2018-02-23T18:30:00.000Z"
+    assert _timestamps_equal(objs["versions"][0], "2018-02-23T18:30:00.000Z")
 
 
 def test_get_version_spec_version_21(backend):
     objs = get_version_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions?match[spec_version]=2.1")
     assert len(objs["versions"]) == 1
-    assert objs["versions"][0] == "2017-01-27T13:49:53.997Z"
+    assert _timestamps_equal(objs["versions"][0], "2017-01-27T13:49:53.997Z")
 
 
 def test_get_version_spec_version_2021(backend):
@@ -871,7 +885,7 @@ def test_get_version_spec_version_default(backend):
     objs = get_version_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions")
     # testing default value for spec_version
     assert len(objs["versions"]) == 1
-    assert objs["versions"][0] == "2017-01-27T13:49:53.997Z"
+    assert _timestamps_equal(objs["versions"][0], "2017-01-27T13:49:53.997Z")
 
 
 def test_delete_objects_version(backend):
@@ -1295,7 +1309,6 @@ def test_get_or_add_objects_422(backend):
     error_data = r_post.json
     assert error_data["title"] == "ProcessingError"
     assert error_data["http_status"] == '422'
-    assert "While processing supplied content, an error occurred" in error_data["description"]
 
 
 def test_object_pagination_bad_limit_value_400(backend):
@@ -1445,21 +1458,21 @@ def test_object_already_present(backend):
 def test_save_to_file(backend):
     if backend.type != "memory":
         pytest.skip()
-    with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-        backend.app.medallion_backend.save_data_to_file(tmpfile.name)
+    with tempfile.NamedTemporaryFile(mode='w+') as tmpfile:
+        backend.app.medallion_backend.save_data_to_file(tmpfile)
         tmpfile.flush()
-        with open(tmpfile.name) as f:
-            data = json.load(f)
-        assert data['trustgroup1']['collections'][0]['id'] == "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4"
-        assert data['trustgroup1']['collections'][1]['id'] == "365fed99-08fa-fdcd-a1b3-fb247eb41d01"
-        assert data['trustgroup1']['collections'][2]['id'] == "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
-        assert data['trustgroup1']['collections'][3]['id'] == "52892447-4d7e-4f70-b94d-d7f22742ff63"
+        tmpfile.seek(0)
+        data = json.load(tmpfile)
+        assert "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4" in data['trustgroup1']['collections']
+        assert "365fed99-08fa-fdcd-a1b3-fb247eb41d01" in data['trustgroup1']['collections']
+        assert "91a7b528-80eb-42ed-a74d-c6fbd5a26116" in data['trustgroup1']['collections']
+        assert "52892447-4d7e-4f70-b94d-d7f22742ff63" in data['trustgroup1']['collections']
 
 
 def test_status_cleanup(backend_without_threads):
     backend_app = backend_without_threads.app.medallion_backend
     # add a status with the current time, which should not be deleted.
-    new_status = common.generate_status(common.datetime_to_string(datetime.datetime.now()), "pending", 0, 0, 0)
+    new_status = common.generate_status(common.datetime_to_string(datetime.datetime.now()), "pending")
     backend_app._add_status('trustgroup1', new_status)
     statuses = backend_app._get_api_root_statuses('trustgroup1')
     assert backend_without_threads.count(statuses) == 3
