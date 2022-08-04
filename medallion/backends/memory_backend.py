@@ -231,7 +231,7 @@ class MemoryBackend(Backend):
                 new_list.sort()
                 filter_args[arg] = new_list
             del filter_args["next"]
-            del filter_args["limit"]
+            filter_args.pop("limit", None)
             if filter_args != paging_record["args"]:
                 raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
 
