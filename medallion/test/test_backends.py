@@ -57,18 +57,22 @@ def backend_without_threads(request):
         yield pytest.skip("skipped")
 
 
-def _timestamps_equal(ts1, ts2):
+def _to_datetime(ts):
     """
-    Compare timestamps for equality in a more robust way: convert strings
-    to datetime objects first.
+    Ensure a timestamp value is a datetime instance.  This allows for more
+    robust timestamp checking, which does not rely on string formatting
+    details.  That's generally never important.  We just want to ensure that
+    timestamps represent the correct points in time, regardless of how they
+    are formatted (e.g. how many trailing 0 digits there are in the fractional
+    second portion).
+
+    :param ts: A string representing a STIX timestamp or a datetime instance
+    :return: A datetime instance representing the given timestamp
     """
-    if not isinstance(ts1, datetime.datetime):
-        ts1 = common.string_to_datetime(ts1)
-    if not isinstance(ts2, datetime.datetime):
-        ts2 = common.string_to_datetime(ts2)
+    if isinstance(ts, str):
+        ts = common.string_to_datetime(ts)
 
-    return ts1 == ts2
-
+    return ts
 
 
 # start with basic get requests for each endpoint
@@ -274,13 +278,13 @@ def test_get_object_manifests(backend):
     assert len(manifests["objects"]) == 5
 
     # testing the date-added headers
-    assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
-    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime("2014-05-08T09:00:00.000000Z")
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime("2017-12-31T13:49:53.935000Z")
 
     # checking ordered by date_added
 
     for x in range(1, len(manifests["objects"])):
-        assert manifests["objects"][x - 1]["date_added"] < manifests["objects"][x]["date_added"]
+        assert _to_datetime(manifests["objects"][x - 1]["date_added"]) < _to_datetime(manifests["objects"][x]["date_added"])
 
 
 def test_get_version(backend):
@@ -295,8 +299,8 @@ def test_get_version(backend):
     assert len(vers["versions"]) == 1
 
     # testing the date-added headers
-    assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
-    assert r.headers['X-TAXII-Date-Added-Last'] == "2014-05-08T09:00:00.000000Z"
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime("2014-05-08T09:00:00.000000Z")
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime("2014-05-08T09:00:00.000000Z")
 
 
 # test each filter type with each applicable endpoint
@@ -324,8 +328,8 @@ def test_get_objects_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 3
-    assert r.headers['X-TAXII-Date-Added-First'] == '2014-05-08T09:00:00.000000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-01-20T00:00:00.000000Z'
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime('2014-05-08T09:00:00.000000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime('2017-01-20T00:00:00.000000Z')
 
     correct_order = ['relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463',
                      'indicator--cd981c25-8042-4166-8945-51178443bdac',
@@ -345,8 +349,8 @@ def test_get_objects_limit(backend):
     assert objs['more'] is False
     assert len(objs['objects']) == 2
 
-    assert r.headers['X-TAXII-Date-Added-First'] == '2017-01-27T13:49:59.997000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime('2017-01-27T13:49:59.997000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime('2017-12-31T13:49:53.935000Z')
 
     correct_order = ['malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
                      'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
@@ -525,8 +529,8 @@ def test_get_object_limit(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert r.headers['X-TAXII-Date-Added-First'] == '2017-12-31T13:49:53.935000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime('2017-12-31T13:49:53.935000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime('2017-12-31T13:49:53.935000Z')
 
 
 @pytest.mark.parametrize("filter, modified", [("?match[version]=2016-12-25T12:30:59.444Z", "2016-12-25T12:30:59.444Z"),
@@ -546,7 +550,7 @@ def test_get_object_version_single(backend, filter, modified):
     assert objs['more'] is False
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == objstr
-    assert objs["objects"][0]["modified"] == modified
+    assert _to_datetime(objs["objects"][0]["modified"]) == _to_datetime(modified)
 
 
 def test_get_object_version_match_all(backend):
@@ -594,7 +598,7 @@ def test_get_object_spec_version_2021(backend):
     objs = get_object_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec", "?match[spec_version]=2.0,2.1")
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert obj['modified'] == "2018-02-23T18:30:00.000Z"
+            assert _to_datetime(obj['modified']) == _to_datetime("2018-02-23T18:30:00.000Z")
 
 
 def test_get_object_spec_version_default(backend):
@@ -629,8 +633,8 @@ def test_get_manifest_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 2
-    assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
-    assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime(objs['objects'][0]['date_added'])
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime(objs['objects'][-1]['date_added'])
 
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?limit=2&next=" + objs['next'],
@@ -643,8 +647,8 @@ def test_get_manifest_limit(backend):
     objs = r.json
     assert objs['more'] is True
     assert len(objs['objects']) == 2
-    assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
-    assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime(objs['objects'][0]['date_added'])
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime(objs['objects'][-1]['date_added'])
 
     r = backend.client.get(
         test.GET_MANIFESTS_EP + "?limit=2&next=" + objs['next'],
@@ -657,8 +661,8 @@ def test_get_manifest_limit(backend):
     objs = r.json
     assert objs['more'] is False
     assert len(objs['objects']) == 1
-    assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
-    assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime(objs['objects'][0]['date_added'])
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime(objs['objects'][-1]['date_added'])
 
 
 def test_get_manifest_id(backend):
@@ -711,7 +715,7 @@ def test_get_manifest_version_specific(backend):
     objs = get_manifest_version(backend, "?match[version]=2016-12-25T12:30:59.444Z")
     assert len(objs['objects']) == 1
     assert objs["objects"][0]["id"] == object_id
-    assert _timestamps_equal(objs["objects"][0]["version"], "2016-12-25T12:30:59.444Z")
+    assert _to_datetime(objs["objects"][0]["version"]) == _to_datetime("2016-12-25T12:30:59.444Z")
 
 
 def test_get_manifest_version_first(backend):
@@ -720,7 +724,7 @@ def test_get_manifest_version_first(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == object_id:
-            assert _timestamps_equal(obj['version'], "2016-11-03T12:30:59.000Z")
+            assert _to_datetime(obj['version']) == _to_datetime("2016-11-03T12:30:59.000Z")
 
 
 def test_get_manifest_version_last(backend):
@@ -729,7 +733,7 @@ def test_get_manifest_version_last(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == object_id:
-            assert _timestamps_equal(obj['version'], "2017-01-27T13:49:53.935Z")
+            assert _to_datetime(obj['version']) == _to_datetime("2017-01-27T13:49:53.935Z")
 
 
 def test_get_manifest_version_all(backend):
@@ -768,7 +772,7 @@ def test_manifest_spec_version_2021(backend):
     assert len(objs['objects']) == 5
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
-            assert _timestamps_equal(obj['version'], "2018-02-23T18:30:00.000Z")
+            assert _to_datetime(obj['version']) == _to_datetime("2018-02-23T18:30:00.000Z")
 
 
 def test_manifest_spec_version_default(backend):
@@ -816,9 +820,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is True
     assert len(objs["versions"]) == 1
-    assert _timestamps_equal(objs["versions"][0], '2016-11-03T12:30:59.000Z')
-    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-First'], '2016-11-03T12:30:59.001000Z')
-    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-Last'], '2016-11-03T12:30:59.001000Z')
+    assert _to_datetime(objs["versions"][0]) == _to_datetime('2016-11-03T12:30:59.000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime('2016-11-03T12:30:59.001000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime('2016-11-03T12:30:59.001000Z')
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
@@ -831,9 +835,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is True
     assert len(objs["versions"]) == 1
-    assert _timestamps_equal(objs["versions"][0], '2016-12-25T12:30:59.444Z')
-    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-First'], '2016-12-27T13:49:59.000000Z')
-    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-Last'], '2016-12-27T13:49:59.000000Z')
+    assert _to_datetime(objs["versions"][0]) == _to_datetime('2016-12-25T12:30:59.444Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime('2016-12-27T13:49:59.000000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime('2016-12-27T13:49:59.000000Z')
 
     r = backend.client.get(
         test.GET_OBJECTS_EP + "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e/versions?limit=1&next=" + objs["next"],
@@ -846,9 +850,9 @@ def test_get_version_limit(backend):
     objs = r.json
     assert objs["more"] is False
     assert len(objs["versions"]) == 1
-    assert _timestamps_equal(objs["versions"][0], '2017-01-27T13:49:53.935Z')
-    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-First'], '2017-12-31T13:49:53.935000Z')
-    assert _timestamps_equal(r.headers['X-TAXII-Date-Added-Last'], '2017-12-31T13:49:53.935000Z')
+    assert _to_datetime(objs["versions"][0]) == _to_datetime('2017-01-27T13:49:53.935Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime('2017-12-31T13:49:53.935000Z')
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime('2017-12-31T13:49:53.935000Z')
 
 
 def get_version_spec_version(backend, filter):
@@ -867,13 +871,13 @@ def get_version_spec_version(backend, filter):
 def test_get_version_spec_version_20(backend):
     objs = get_version_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions?match[spec_version]=2.0")
     assert len(objs["versions"]) == 1
-    assert _timestamps_equal(objs["versions"][0], "2018-02-23T18:30:00.000Z")
+    assert _to_datetime(objs["versions"][0]) == _to_datetime("2018-02-23T18:30:00.000Z")
 
 
 def test_get_version_spec_version_21(backend):
     objs = get_version_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions?match[spec_version]=2.1")
     assert len(objs["versions"]) == 1
-    assert _timestamps_equal(objs["versions"][0], "2017-01-27T13:49:53.997Z")
+    assert _to_datetime(objs["versions"][0]) == _to_datetime("2017-01-27T13:49:53.997Z")
 
 
 def test_get_version_spec_version_2021(backend):
@@ -885,7 +889,7 @@ def test_get_version_spec_version_default(backend):
     objs = get_version_spec_version(backend, "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec/versions")
     # testing default value for spec_version
     assert len(objs["versions"]) == 1
-    assert _timestamps_equal(objs["versions"][0], "2017-01-27T13:49:53.997Z")
+    assert _to_datetime(objs["versions"][0]) == _to_datetime("2017-01-27T13:49:53.997Z")
 
 
 def test_delete_objects_version(backend):
