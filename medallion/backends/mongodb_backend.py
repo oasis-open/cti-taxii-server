@@ -39,18 +39,6 @@ def catch_mongodb_error(func):
     return api_wrapper
 
 
-def find_manifest_entries_for_id(obj, manifest):
-    for m in manifest:
-        if m["id"] == obj["id"]:
-            if "modified" in obj:
-                if m["version"] == obj["modified"]:
-                    return m
-            else:
-                # handle data markings
-                if m["version"] == obj["created"]:
-                    return m
-
-
 class MongoBackend(Backend):
 
     # access control is handled at the views level
@@ -340,11 +328,7 @@ class MongoBackend(Backend):
     def add_objects(self, api_root, collection_id, objs, request_time):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
-        failed = 0
-        succeeded = 0
-        pending = 0
         successes = []
-        failures = []
         media_fmt = "application/stix+json;version={}"
 
         try:
@@ -369,7 +353,7 @@ class MongoBackend(Backend):
                     _manifest = {
                         "id": new_obj["id"],
                         "date_added": datetime_to_float(request_time),
-                        "version": datetime_to_float(string_to_datetime(obj_version)),
+                        "version": datetime_to_float(obj_version),
                         "media_type": media_type,
                     }
                     new_obj.update({"_manifest": _manifest})
@@ -380,17 +364,15 @@ class MongoBackend(Backend):
                 # no-op.
 
                 status_detail = generate_status_details(
-                    new_obj["id"], obj_version, message
+                    new_obj["id"], datetime_to_string(obj_version), message
                 )
                 successes.append(status_detail)
-                succeeded += 1
         except Exception as e:
             # log.exception(e)
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            datetime_to_string(request_time), "complete", succeeded, failed,
-            pending, successes=successes, failures=failures,
+            datetime_to_string(request_time), "complete", successes=successes
         )
         api_root_db["status"].insert_one(status)
         status.pop("_id", None)
@@ -515,24 +497,30 @@ class MongoBackend(Backend):
             self.client.drop_database(api_root_name)
             api_db = self.client[api_root_name]
             if api_root_data["status"]:
-                api_db["status"].insert_many(api_root_data["status"])
+                api_db["status"].insert_many(api_root_data["status"].values())
             else:
                 api_db.create_collection("status")
             api_db.create_collection("collections")
             api_db.create_collection("objects")
-            for collection in api_root_data["collections"]:
-                collection_id = collection["id"]
-                objects = collection["objects"]
-                manifest = collection["manifest"]
+            for collection_id, collection in api_root_data["collections"].items():
                 # these are not in the collections mongodb collection (both TAXII and Mongo DB use the term collection)
-                collection.pop("objects")
-                collection.pop("manifest")
+                objects = collection.pop("objects")
                 api_db["collections"].insert_one(collection)
                 for obj in objects:
+                    obj_meta = obj.pop("__meta")
                     obj["_collection_id"] = collection_id
-                    obj["_manifest"] = find_manifest_entries_for_id(obj, manifest)
-                    obj["_manifest"]["date_added"] = datetime_to_float(string_to_datetime(obj["_manifest"]["date_added"]))
-                    obj["_manifest"]["version"] = datetime_to_float(string_to_datetime(obj["_manifest"]["version"]))
+                    date_added = string_to_datetime(obj_meta["date_added"])
+                    version = string_to_datetime(
+                        obj.get("modified")
+                        or obj.get("created")
+                        or obj_meta["date_added"]
+                    )
+                    obj["_manifest"] = {
+                        "date_added": datetime_to_float(date_added),
+                        "id": obj["id"],
+                        "media_type": obj_meta["media_type"],
+                        "version": datetime_to_float(version)
+                    }
                     obj["created"] = datetime_to_float(string_to_datetime(obj["created"]))
                     if "modified" in obj:
                         # not for data markings
