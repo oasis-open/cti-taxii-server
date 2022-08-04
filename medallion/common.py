@@ -5,7 +5,6 @@ import uuid
 
 from flask import Flask
 import pytz
-from six import iteritems
 
 APPLICATION_INSTANCE = Flask("medallion")
 

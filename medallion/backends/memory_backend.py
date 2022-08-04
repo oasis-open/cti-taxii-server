@@ -1,4 +1,3 @@
-import copy
 import io
 import json
 import logging
@@ -10,14 +9,11 @@ from six import string_types
 
 from ..common import (
     APPLICATION_INSTANCE, create_resource, datetime_to_float,
-    datetime_to_string, determine_spec_version,
-    generate_status, generate_status_details,
-    get_application_instance_config_values, get_timestamp,
-    string_to_datetime
+    datetime_to_string, determine_spec_version, generate_status,
+    generate_status_details, get_application_instance_config_values,
+    get_timestamp, string_to_datetime
 )
-from ..exceptions import (
-    InitializationError, ProcessingError, MemoryBackendError
-)
+from ..exceptions import MemoryBackendError, ProcessingError
 from ..filters.basic_filter import BasicFilter
 from .base import Backend
 
@@ -263,7 +259,6 @@ class MemoryBackend(Backend):
         else:
             raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
 
-
     def load_data_from_file(self, filename):
         if isinstance(filename, string_types):
             with io.open(filename, "r", encoding="utf-8") as infile:
@@ -309,8 +304,6 @@ class MemoryBackend(Backend):
             collection_resources = sorted(collection_resources, key=lambda o: o["id"])
 
         return create_resource("collections", collection_resources)
-
-        return collections_resource
 
     def get_collection(self, api_root, collection_id):
         collection = self.__api_roots.get(api_root, {}) \
@@ -442,7 +435,7 @@ class MemoryBackend(Backend):
 
         api_root = self.__api_roots.get(api_root_name)
         if api_root:
-            collection =  api_root.get("collections", {}).get(collection_id)
+            collection = api_root.get("collections", {}).get(collection_id)
 
         status = None
         if collection:
@@ -526,10 +519,10 @@ class MemoryBackend(Backend):
                     failures.append(
                         generate_status_details(
                             new_obj.get("id", "<unknown id>"),
-                            version \
-                                or new_obj.get("modified") \
-                                or new_obj.get("created") \
-                                or "<unknown version>",
+                            version
+                            or new_obj.get("modified")
+                            or new_obj.get("created")
+                            or "<unknown version>",
                             str(e)
                         )
                     )

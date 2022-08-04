@@ -1,7 +1,9 @@
 import bisect
 import operator
 
-from ..common import determine_spec_version, string_to_datetime, datetime_to_string
+from ..common import (
+    datetime_to_string, determine_spec_version, string_to_datetime
+)
 
 
 def check_for_dupes(final_match, final_track, res):
