@@ -140,8 +140,8 @@ def test_get_objects(backend):
     assert len(objs['objects']) == 5
 
     # testing date-added headers
-    assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
-    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime("2014-05-08T09:00:00.000000Z")
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime("2017-12-31T13:49:53.935000Z")
 
     # testing ordering of returned objects by date_added
     correct_order = ['relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463',
@@ -168,8 +168,8 @@ def test_get_object(backend):
     assert objs["objects"][0]["id"] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec"
 
     # testing date-added headers
-    assert r.headers['X-TAXII-Date-Added-First'] == "2017-01-27T13:49:59.997000Z"
-    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-01-27T13:49:59.997000Z"
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-First']) == _to_datetime("2017-01-27T13:49:59.997000Z")
+    assert _to_datetime(r.headers['X-TAXII-Date-Added-Last']) == _to_datetime("2017-01-27T13:49:59.997000Z")
 
 
 def test_add_and_delete_object(backend):
