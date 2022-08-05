@@ -54,8 +54,7 @@ setup(
         "Flask-HTTPAuth",
         "jsonmerge",
         "packaging",
-        "pytz",
-        "six",
+        "pytz"
     ],
     entry_points={
         "console_scripts": [

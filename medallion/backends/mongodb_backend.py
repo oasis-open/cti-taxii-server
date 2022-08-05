@@ -1,4 +1,3 @@
-import io
 import json
 import logging
 import uuid
@@ -6,7 +5,6 @@ import uuid
 import environ
 from pymongo import ASCENDING, IndexModel, MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
-from six import string_types
 
 # from ..config import get_application_instance_config_values
 from ..common import (
@@ -471,8 +469,8 @@ class MongoBackend(Backend):
 
     def load_data_from_file(self, filename):
         try:
-            if isinstance(filename, string_types):
-                with io.open(filename, "r", encoding="utf-8") as infile:
+            if isinstance(filename, str):
+                with open(filename, "r", encoding="utf-8") as infile:
                     self.json_data = json.load(infile)
             else:
                 self.json_data = json.load(filename)
