@@ -1,11 +1,9 @@
-import io
 import json
 import logging
 import os
 import uuid
 
 import environ
-from six import string_types
 
 from ..common import (
     APPLICATION_INSTANCE, create_resource, datetime_to_float,
@@ -260,8 +258,8 @@ class MemoryBackend(Backend):
             raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
 
     def load_data_from_file(self, filename):
-        if isinstance(filename, string_types):
-            with io.open(filename, "r", encoding="utf-8") as infile:
+        if isinstance(filename, str):
+            with open(filename, "r", encoding="utf-8") as infile:
                 data = json.load(infile, object_hook=meta_decoder)
         else:
             data = json.load(filename, object_hook=meta_decoder)
@@ -277,8 +275,8 @@ class MemoryBackend(Backend):
             "/discovery": self.__discovery,
             **self.__api_roots
         }
-        if isinstance(filename, string_types):
-            with io.open(filename, "w", encoding="utf-8") as outfile:
+        if isinstance(filename, str):
+            with open(filename, "w", encoding="utf-8") as outfile:
                 json.dump(file_contents, outfile, cls=MetaEncoder, **kwargs)
         else:
             json.dump(file_contents, filename, cls=MetaEncoder, **kwargs)
