@@ -7,6 +7,7 @@ import pytest
 
 from medallion import common, exceptions, test
 from medallion.backends.base import SECONDS_IN_24_HOURS
+import medallion.backends.memory_backend
 from medallion.views import MEDIA_TYPE_TAXII_V21
 
 from .base_test import TaxiiTest
@@ -1547,3 +1548,55 @@ def test_get_objects_match_type_spec_version(backend):
     assert obj['objects'][0]['type'] == "indicator"
     assert obj['objects'][0]['id'] == object_id
     assert obj['objects'][0]['spec_version'] == "2.0"
+
+
+def test_memory_backend_malformed_datafile():
+
+    content = {
+        "/discovery": {},
+        "apiroot": {
+            "collections": {
+                "00000000-0000-0000-0000-000000000000": {
+                    "objects": [
+                        {
+                            "id": "foo",
+                            "__meta": {}
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as fp:
+        json.dump(content, fp)
+
+        # Exercise the error about missing date_added in object meta
+        fp.seek(0)
+        with pytest.raises(exceptions.MemoryBackendError):
+            medallion.backends.memory_backend.MemoryBackend(
+                filename=fp
+            )
+
+        # Add date_added; try now to exercise the error about missing
+        # media_type.
+        content["apiroot"]["collections"]["00000000-0000-0000-0000-000000000000"]["objects"][0]["__meta"]["date_added"] = "tomorrow"
+        fp.seek(0)
+        json.dump(content, fp)
+        fp.truncate()
+
+        fp.seek(0)
+        with pytest.raises(exceptions.MemoryBackendError):
+            medallion.backends.memory_backend.MemoryBackend(
+                filename=fp
+            )
+
+
+def test_meta_repr():
+    meta = medallion.backends.memory_backend.Meta(
+        "1952-06-14T11:28:21.123456Z",
+        "some media type",
+        "2006-11-28T07:01:52.654321Z"
+    )
+
+    assert repr(meta) == 'Meta("1952-06-14T11:28:21.123456Z", "some media type", "2006-11-28T07:01:52.654321Z")'

@@ -340,3 +340,30 @@ def test_main_config_arg_handling(subtests):
             mock_app.run.assert_called_once_with(**default_medallion_kwargs)
         mock_app.reset_mock()
         mock_load_config.reset_mock()
+
+
+def test_get_flask_config_values():
+    # We don't need a real Flask instance to test this; we just need
+    # something we can hang some attribute values off of.
+    class fake_app:
+        taxii_config = {"key1": "value1"}
+        users_config = {"key2": "value2"}
+        backend_config = {"key3": "value3"}
+
+    result = medallion.common.get_application_instance_config_values(fake_app, "taxii")
+    assert result == {"key1": "value1"}
+
+    result = medallion.common.get_application_instance_config_values(fake_app, "taxii", "key1")
+    assert result == "value1"
+
+    result = medallion.common.get_application_instance_config_values(fake_app, "users")
+    assert result == {"key2": "value2"}
+
+    result = medallion.common.get_application_instance_config_values(fake_app, "users", "key2")
+    assert result == "value2"
+
+    result = medallion.common.get_application_instance_config_values(fake_app, "backend")
+    assert result == {"key3": "value3"}
+
+    result = medallion.common.get_application_instance_config_values(fake_app, "backend", "key3")
+    assert result == "value3"
