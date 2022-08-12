@@ -1,24 +1,17 @@
-import argparse
-import flask
 from functools import wraps
-import inspect
 import logging
 import os
-import textwrap
+
+import flask
 from werkzeug.security import check_password_hash
 
 import medallion
-from medallion import (
-    __version__, connect_to_backend, register_blueprints, set_config
-)
+from medallion import connect_to_backend, register_blueprints, set_config
 from medallion.common import (
     APPLICATION_INSTANCE, get_application_instance_config_values
 )
-from medallion.scripts.run import (
-    NewlinesHelpFormatter, _get_argparser
-)
-from medallion.scripts.cert_auth_gunicorn import ClientAuthApplication
 import medallion.config
+from medallion.scripts.cert_auth_gunicorn import ClientAuthApplication
 
 log = logging.getLogger("medallion")
 

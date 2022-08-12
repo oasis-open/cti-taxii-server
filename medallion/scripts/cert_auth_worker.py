@@ -6,8 +6,8 @@
    Based on: https://gist.github.com/kgriffs/289206f07e23b9a30d29a2b23e28c41c"""
 
 import ssl
+
 from gunicorn.workers.sync import SyncWorker
-from werkzeug.security import generate_password_hash
 
 
 class CertAuthWorker(SyncWorker):

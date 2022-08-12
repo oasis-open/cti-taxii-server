@@ -1,9 +1,9 @@
 # From https://eugene.kovalev.systems/posts/flask-client-side-tls-authentication/
 
-import gunicorn.app.base
 from multiprocessing import cpu_count
 from pathlib import Path
 
+import gunicorn.app.base
 
 NUMBER_OF_WORKERS = (cpu_count() * 2) + 1
 
