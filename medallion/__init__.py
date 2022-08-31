@@ -2,7 +2,7 @@ import importlib
 import logging
 import warnings
 
-from flask import Response, current_app, json
+from flask import Response, current_app, json, request
 from flask_httpauth import HTTPBasicAuth
 
 from .backends import base as mbe_base
@@ -156,3 +156,10 @@ def handle_backend_error(error):
         status=error.status,
         mimetype=MEDIA_TYPE_TAXII_V21,
     )
+
+
+@APPLICATION_INSTANCE.before_request
+def validate_match_parameters():
+    for key, val in request.values.lists():
+        if len(val) > 1:
+            raise ProcessingError("The server can not process duplicate request or filter parameters", 400)
