@@ -54,21 +54,22 @@ class MongoDBFilter(BasicFilter):
         pipeline = [
             {"$match": {"$and": [self.full_query]}},
         ]
-
+        latest_pipeline = list()
         # when no filter is provided only latest is considered.
         match_spec_version = self.filter_args.get("match[spec_version]")
         if not match_spec_version and "spec_version" in allowed:
-            latest_pipeline = list(pipeline)
-            latest_pipeline.append({"$sort": {"_manifest.media_type": ASCENDING}})
-            latest_pipeline.append({"$group": SON([("_id", "$id"), ("media_type", SON([("$last", "$_manifest.media_type")]))])})
-
-            query = [
-                {"id": x["_id"], "_manifest.media_type": x["media_type"]}
-                for x in list(data.aggregate(latest_pipeline))
+            spec_versions = data.distinct("_manifest.media_type")
+            spec_versions.sort()
+            pipeline = [
+                {
+                    "$match": {
+                        "$and": [
+                            self.full_query,
+                            {"_manifest.media_type": spec_versions[-1]},
+                        ]
+                    }
+                }
             ]
-            if query:
-                pipeline.append({"$match": {"$or": query}})
-
         # create version filter
         if "version" in allowed:
             match_version = self.filter_args.get("match[version]")
@@ -77,28 +78,46 @@ class MongoDBFilter(BasicFilter):
             if "all" not in match_version:
                 actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
 
-                latest_pipeline = list(pipeline)
+                latest_pipeline = []
                 latest_pipeline.append({"$sort": {"_manifest.version": ASCENDING}})
-                latest_pipeline.append({"$group": SON([("_id", "$id"), ("versions", SON([("$push", "$_manifest.version")]))])})
 
                 # The documents are sorted in ASCENDING order.
-                version_selector = []
                 if "last" in match_version:
-                    version_selector.append({"$arrayElemAt": ["$versions", -1]})
+                    latest_pipeline.append(
+                        {"$group": {"_id": "$id", "doc": {"$last": "$$ROOT"}}}
+                    )
+                    latest_pipeline.append({"$replaceRoot": {"newRoot": "$doc"}})
                 if "first" in match_version:
-                    version_selector.append({"$arrayElemAt": ["$versions", 0]})
+                    latest_pipeline.append(
+                        {"$group": {"_id": "$id", "doc": {"$first": "$$ROOT"}}}
+                    )
+                    latest_pipeline.append({"$replaceRoot": {"newRoot": "$doc"}})
                 for d in actual_dates:
-                    version_selector.append({"$arrayElemAt": ["$versions", {"$indexOfArray": ["$versions", d]}]})
-                latest_pipeline.append({"$addFields": {"versions": version_selector}})
+                    latest_pipeline.append(
+                        {"$group": {"_id": "$id", "doc": {"$push": "$$ROOT"}}}
+                    )
+                    latest_pipeline.append(
+                        {
+                            "$replaceRoot": {
+                                "newRoot": {
+                                    "$arrayElemAt": [
+                                        "$doc",
+                                        {
+                                            "$indexOfArray": [
+                                                "$doc._manifest.version",
+                                                d,
+                                            ]
+                                        },
+                                    ]
+                                }
+                            }
+                        }
+                    )
                 if actual_dates:
-                    latest_pipeline.append({"$match": {"versions": {"$in": actual_dates}}})
+                    latest_pipeline.append({"$match": {"_manifest.version": {"$in": actual_dates}}})
 
-                query = [
-                    {"id": x["_id"], "_manifest.version": {"$in": x["versions"]}}
-                    for x in list(data.aggregate(latest_pipeline))
-                ]
-                if query:
-                    pipeline.append({"$match": {"$or": query}})
+            for obj in latest_pipeline:
+                pipeline.append(obj)
 
         pipeline.append({"$sort": SON([("_manifest.date_added", ASCENDING), ("created", ASCENDING), ("modified", ASCENDING)])})
 
@@ -109,19 +128,21 @@ class MongoDBFilter(BasicFilter):
 
             count = self.get_result_count(pipeline, data)
             self.add_pagination_operations(pipeline)
-            results = list(data.aggregate(pipeline))
+            results = list(data.aggregate(pipeline, allowDiskUse=True))
         elif manifest_info == "objects":
             # Project the final results
-            pipeline.append({"$project": {"_id": 0, "_collection_id": 0, "_manifest": 0}})
+            pipeline.append(
+                {"$project": {"_id": 0, "_collection_id": 0, "_manifest": 0}}
+            )
 
             count = self.get_result_count(pipeline, data)
             self.add_pagination_operations(pipeline)
-            results = list(data.aggregate(pipeline))
+            results = list(data.aggregate(pipeline, allowDiskUse=True))
         else:
             # Return raw data from Mongodb
             count = self.get_result_count(pipeline, data)
             self.add_pagination_operations(pipeline)
-            results = list(data.aggregate(pipeline))
+            results = list(data.aggregate(pipeline, allowDiskUse=True))
 
         return count, results
 
@@ -133,11 +154,9 @@ class MongoDBFilter(BasicFilter):
     def get_result_count(self, pipeline, data):
         count_pipeline = list(pipeline)
         count_pipeline.append({"$count": "total"})
-        count_result = list(data.aggregate(count_pipeline))
+        count_result = list(data.aggregate(count_pipeline, allowDiskUse=True))
 
         if len(count_result) == 0:
             # No results
             return 0
-
-        count = count_result[0]["total"]
-        return count
+        return count_result[0]["total"]
