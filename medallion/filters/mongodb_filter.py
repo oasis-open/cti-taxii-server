@@ -79,40 +79,40 @@ class MongoDBFilter(BasicFilter):
                 actual_dates = [datetime_to_float(string_to_datetime(x)) for x in match_version.split(",") if (x != "first" and x != "last")]
 
                 latest_pipeline = []
-                latest_pipeline.append({"$sort": {"_manifest.version": ASCENDING}})
-
+                accumulatorOperator = None
                 # The documents are sorted in ASCENDING order.
                 if "last" in match_version:
-                    latest_pipeline.append(
-                        {"$group": {"_id": "$id", "doc": {"$last": "$$ROOT"}}}
-                    )
-                    latest_pipeline.append({"$replaceRoot": {"newRoot": "$doc"}})
+                    accumulatorOperator = "max"
                 if "first" in match_version:
-                    latest_pipeline.append(
-                        {"$group": {"_id": "$id", "doc": {"$first": "$$ROOT"}}}
-                    )
-                    latest_pipeline.append({"$replaceRoot": {"newRoot": "$doc"}})
-                for d in actual_dates:
-                    latest_pipeline.append(
-                        {"$group": {"_id": "$id", "doc": {"$push": "$$ROOT"}}}
-                    )
+                    accumulatorOperator = "min"
+                if accumulatorOperator:
                     latest_pipeline.append(
                         {
-                            "$replaceRoot": {
-                                "newRoot": {
-                                    "$arrayElemAt": [
-                                        "$doc",
-                                        {
-                                            "$indexOfArray": [
-                                                "$doc._manifest.version",
-                                                d,
-                                            ]
-                                        },
+                            "$setWindowFields": {
+                                "partitionBy": "$id",
+                                "output": {
+                                    "_picked_version": {
+                                        f"${accumulatorOperator}": "$_manifest.version"
+                                    }
+                                }
+                            }
+                        })
+                    latest_pipeline.append({
+                            "$match": {
+                                "$expr": {
+                                    "$eq": [
+                                        "$_manifest.version",
+                                        "$_picked_version"
                                     ]
                                 }
                             }
-                        }
-                    )
+                        })
+                    latest_pipeline.append(
+                        {
+                            "$unset": [
+                                "_picked_version"
+                            ]
+                        })
                 if actual_dates:
                     latest_pipeline.append({"$match": {"_manifest.version": {"$in": actual_dates}}})
 
