@@ -1,9 +1,7 @@
 import logging
 from urllib.parse import urlparse
 
-from ..common import (
-    APPLICATION_INSTANCE, TaskChecker, get_application_instance_config_values
-)
+from ..common import TaskChecker
 from ..exceptions import InitializationError
 
 # Module-level logger
@@ -48,23 +46,24 @@ class Backend(object, metaclass=BackendRegistry):
     def __init__(self, **kwargs):
         self.next = {}
 
-        interop_requirements_enforced = get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements")
+        self.interop_requirements_enforced = kwargs.get(
+            "interop_requirements", False
+        )
+
+        self.checker = self.status_checker = None
+
         if kwargs.get("run_cleanup_threads", True):
             self.timeout = kwargs.get("session_timeout", 30)
-            checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
-            checker.start()
+            self.checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_expired_sessions)
+            self.checker.start()
 
             self.status_retention = kwargs.get("status_retention", SECONDS_IN_24_HOURS)
             if self.status_retention != -1:
-                if self.status_retention < SECONDS_IN_24_HOURS and interop_requirements_enforced:
+                if self.status_retention < SECONDS_IN_24_HOURS and self.interop_requirements_enforced:
                     # interop MUST requirement
                     raise InitializationError("Status retention interval must be more than 24 hours", 408)
-                status_checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_old_statuses)
-                status_checker.start()
-        else:
-            if interop_requirements_enforced:
-                # interop MUST requirement
-                raise InitializationError("Status retention interval must be more than 24 hours", 408)
+                self.status_checker = TaskChecker(kwargs.get("check_interval", 10), self._pop_old_statuses)
+                self.status_checker.start()
 
     def _get_all_api_roots(self):
         discovery_info = self.server_discovery()
@@ -133,7 +132,7 @@ class Backend(object, metaclass=BackendRegistry):
         """
         raise NotImplementedError()
 
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
+    def get_object_manifest(self, api_root, collection_id, filter_args, limit):
         """
         Fill:
             Implement the get_object_manifest TAXII endpoint by obtaining the metadata
@@ -144,7 +143,6 @@ class Backend(object, metaclass=BackendRegistry):
             collection_id (str): the id of the collection
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
-            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
             limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
@@ -185,7 +183,7 @@ class Backend(object, metaclass=BackendRegistry):
         """
         raise NotImplementedError()
 
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
+    def get_objects(self, api_root, collection_id, filter_args, limit):
         """
         Fill:
             Implement the get_objects TAXII endpoint by obtaining the data from a collection
@@ -195,7 +193,6 @@ class Backend(object, metaclass=BackendRegistry):
             collection_id (str): the id of the collection
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
-            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
             limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
@@ -228,7 +225,7 @@ class Backend(object, metaclass=BackendRegistry):
         """
         raise NotImplementedError()
 
-    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
+    def get_object(self, api_root, collection_id, object_id, filter_args, limit):
         """
         Fill:
             Implement the get_object TAXII endpoint by obtaining the data from a collection related
@@ -240,7 +237,6 @@ class Backend(object, metaclass=BackendRegistry):
             object_id (str): the id of the requested object
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
-            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
             limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
@@ -249,7 +245,7 @@ class Backend(object, metaclass=BackendRegistry):
         """
         raise NotImplementedError()
 
-    def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
+    def delete_object(self, api_root, collection_id, object_id, filter_args):
         """
         Fill:
             Implement the delete_object TAXII endpoint by obtaining the metadata for a selected
@@ -261,7 +257,6 @@ class Backend(object, metaclass=BackendRegistry):
             object_id (str): the id of the requested object
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
-            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
 
         Returns:
             Nothing.
@@ -269,7 +264,7 @@ class Backend(object, metaclass=BackendRegistry):
         """
         raise NotImplementedError()
 
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, limit):
         """
         Fill:
             Implement the get_object_versions TAXII endpoint by obtaining the metadata for a selected
@@ -281,7 +276,6 @@ class Backend(object, metaclass=BackendRegistry):
             object_id (str): the id of the requested object
             filter_args (werkzeug.datastructures.ImmutableMultiDict): query string from URL
                 containing filter args
-            allowed_filters (tuple): STIX properties which are allowed in the filter for this endpoint
             limit (int): Used for pagination requests. limits objects to the amount specified
 
         Returns:
@@ -317,3 +311,16 @@ class Backend(object, metaclass=BackendRegistry):
 
         """
         raise NotImplementedError()
+
+    def close(self):
+        # Shut down task checkers for this backend, if they are active.
+
+        # If subclasses never call their super().__init__() to set up these
+        # attributes, they may not exist...
+        checker = getattr(self, "checker", None)
+        status_checker = getattr(self, "status_checker", None)
+
+        if checker:
+            self.checker.stop()
+        if status_checker:
+            self.status_checker.stop()

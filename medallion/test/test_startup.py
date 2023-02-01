@@ -1,5 +1,6 @@
 import logging
 from unittest import mock
+import unittest.mock
 
 import pytest
 import pytest_subtests  # noqa: F401
@@ -147,11 +148,12 @@ def test_config_args_mutex(subtests):
         assert "not allowed with argument" in msg
 
 
-@mock.patch("medallion.APPLICATION_INSTANCE.run")
-def test_confcheck(mock_app, subtests):
+def test_confcheck(subtests):
 
     class ExpectedException(BaseException):
         pass
+
+    mock_app = unittest.mock.MagicMock()
 
     """
     Confirm that the --conf-check option works as expected.
@@ -161,11 +163,13 @@ def test_confcheck(mock_app, subtests):
             "medallion.scripts.run.log"
         ) as mock_logger, mock.patch(
             "sys.argv", ["ARGV0", "-c", "medallion/test/data/config.json"]
+        ), mock.patch(
+            "medallion.scripts.run.create_app", return_value=mock_app
         ):
             medallion.scripts.run.main()
         # default `--log-level` value
         mock_logger.setLevel.assert_called_once_with("WARN")
-        assert mock_app.call_count == 1
+        assert mock_app.run.call_count == 1
     mock_app.reset_mock()
 
     with subtests.test(msg="--conf-check provided without a value"):
@@ -173,10 +177,12 @@ def test_confcheck(mock_app, subtests):
             "medallion.scripts.run.log"
         ) as mock_logger, mock.patch(
             "sys.argv", ["ARGV0", "--conf-check", "-c", "medallion/test/data/config.json"]
+        ), mock.patch(
+            "medallion.scripts.run.create_app", return_value=mock_app
         ):
             medallion.scripts.run.main()
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
-        mock_app.assert_not_called()
+        mock_app.run.assert_not_called()
     mock_app.reset_mock()
 
     with subtests.test(msg="--conf-check with equals"):
@@ -197,10 +203,12 @@ def test_confcheck(mock_app, subtests):
             "medallion.scripts.run.log"
         ) as mock_logger, mock.patch(
             "sys.argv", ["ARGV0", "--conf-check", "--log-level=CRITICAL", "-c", "medallion/test/data/config.json"]
+        ), mock.patch(
+            "medallion.scripts.run.create_app", return_value=mock_app
         ):
             medallion.scripts.run.main()
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
-        mock_app.assert_not_called()
+        mock_app.run.assert_not_called()
 
 
 def test_main_config_arg_handling(subtests):
@@ -217,13 +225,15 @@ def test_main_config_arg_handling(subtests):
         "debug": False,
     }
 
+    mock_app = unittest.mock.MagicMock()
+
     with mock.patch(
-        "medallion.scripts.run.APPLICATION_INSTANCE",
-    ) as mock_app, mock.patch(
+        "medallion.scripts.run.create_app", return_value=mock_app
+    ), mock.patch(
         "medallion.current_app", new=mock_app,
     ), mock.patch(
         "medallion.config.load_config", return_value=safe_config,
-    ) as mock_load_config, mock.patch("medallion.scripts.run.APPLICATION_INSTANCE.backend_config", None):
+    ) as mock_load_config:
         with subtests.test(msg="No config args provided"):
             with mock.patch(
                 "sys.argv", ["ARGV0"]
