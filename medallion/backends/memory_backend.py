@@ -8,8 +8,7 @@ import environ
 from ..common import (
     create_resource, determine_spec_version, generate_status,
     generate_status_details, get_timestamp, timestamp_to_datetime,
-    timestamp_to_epoch_seconds, timestamp_to_stix_json,
-    timestamp_to_taxii_json
+    timestamp_to_epoch_seconds, timestamp_to_stix_json, timestamp_to_taxii_json
 )
 from ..exceptions import MemoryBackendError, ProcessingError
 from ..filters.memory_filter import MemoryFilter
