@@ -113,7 +113,7 @@ def get_or_add_objects(api_root, collection_id):
         permission_to_read(api_root, collection_id)
         limit = validate_limit_parameter()
         objects, headers = current_app.medallion_backend.get_objects(
-            api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
+            api_root, collection_id, request.args.to_dict(), limit
         )
 
         return Response(
@@ -165,7 +165,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
         permission_to_read(api_root, collection_id)
         limit = validate_limit_parameter()
         objects, headers = current_app.medallion_backend.get_object(
-            api_root, collection_id, object_id, request.args.to_dict(), ("version", "spec_version"), limit
+            api_root, collection_id, object_id, request.args.to_dict(), limit
         )
         if objects or request.args:
             return Response(
@@ -178,7 +178,7 @@ def get_or_delete_object(api_root, collection_id, object_id):
     elif request.method == "DELETE":
         permission_to_read_and_write(api_root, collection_id)
         current_app.medallion_backend.delete_object(
-            api_root, collection_id, object_id, request.args.to_dict(), ("version", "spec_version"),
+            api_root, collection_id, object_id, request.args.to_dict(),
         )
         return Response(
             status=200,
@@ -212,7 +212,7 @@ def get_object_versions(api_root, collection_id, object_id):
 
     limit = validate_limit_parameter()
     versions, headers = current_app.medallion_backend.get_object_versions(
-        api_root, collection_id, object_id, request.args.to_dict(), ("spec_version",), limit
+        api_root, collection_id, object_id, request.args.to_dict(), limit
     )
     return Response(
         response=json.dumps(versions),

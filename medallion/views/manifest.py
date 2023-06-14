@@ -33,7 +33,7 @@ def get_object_manifest(api_root, collection_id):
 
     limit = validate_limit_parameter()
     manifests, headers = current_app.medallion_backend.get_object_manifest(
-        api_root, collection_id, request.args.to_dict(), ("id", "type", "version", "spec_version"), limit
+        api_root, collection_id, request.args.to_dict(), limit
     )
 
     return Response(
