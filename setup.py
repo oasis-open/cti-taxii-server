@@ -77,6 +77,9 @@ setup(
         "mongo": [
             "pymongo",
         ],
+        "certauth": [
+            "gunicorn",
+        ],
     },
     project_urls={
         'Documentation': 'https://medallion.readthedocs.io/',
