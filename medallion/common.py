@@ -154,11 +154,11 @@ def float_to_datetime(timestamp_float):
 
 
 def string_to_datetime(timestamp_string):
-    """Convert string timestamp to datetime instance."""
-    try:
-        return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%S.%fZ")
-    except ValueError:
-        return dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
+    """Convert string timestamp to datetime instance. Handles Zero time and float seconds."""
+    timestamp_string = timestamp_string.strip('Z')
+    if '.' in timestamp_string:
+        return dt.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S.%f')
+    return dt.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
 
 
 def generate_status(
