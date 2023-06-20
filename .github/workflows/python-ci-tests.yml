@@ -43,7 +43,7 @@ jobs:
         ps aux
     - name: Create test user
       run: |
-        /usr/local/mongodb/bin/mongo admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
+        mongosh admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
     - name: Test with Tox
       run: |
         tox
