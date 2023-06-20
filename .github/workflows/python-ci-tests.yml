@@ -20,7 +20,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install MongoDB
       run: |
-        apt-get install -y mongodb
+        sudo apt-get install -y mongodb
     - name: Start MongoDB
       run: |
         sudo systemctl start mongod
