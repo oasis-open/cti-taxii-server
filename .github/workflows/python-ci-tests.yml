@@ -27,6 +27,9 @@ jobs:
         pip install -U pip setuptools
         pip install tox-gh-actions
         pip install codecov
+    - name: Check where Mongo is installed
+      run: |
+        find / -name mongo 2> /dev/null
     - name: Create test user
       run: |
         /usr/local/mongodb/bin/mongo admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
