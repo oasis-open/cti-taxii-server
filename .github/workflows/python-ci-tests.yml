@@ -41,9 +41,6 @@ jobs:
         ls /usr/local
         echo "------------"
         ps aux
-    - name: Check where Mongo is installed
-      run: |
-        find / -name mongo 2> /dev/null
     - name: Create test user
       run: |
         /usr/local/mongodb/bin/mongo admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
