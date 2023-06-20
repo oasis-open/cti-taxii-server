@@ -29,9 +29,9 @@ jobs:
         pip install codecov
     - name: Check inside mongo bin folder
       run: |
-        ls /usr/local
+        ls /usr/bin
         echo "------------"
-        ls /usr/local/mongodb/bin
+        ps aux
     - name: Check where Mongo is installed
       run: |
         find / -name mongo 2> /dev/null
