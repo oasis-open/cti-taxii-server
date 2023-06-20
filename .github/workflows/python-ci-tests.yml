@@ -29,7 +29,7 @@ jobs:
         pip install codecov
     - name: Create test user
       run: |
-        mongo admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
+        mongosh admin --eval 'db.createUser({user:"travis",pwd:"test",roles:[{role:"root",db:"admin"}]});'
     - name: Test with Tox
       run: |
         tox
