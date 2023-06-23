@@ -1,568 +1,327 @@
-import io
-import json
-import logging
+import datetime as dt
+import threading
 import uuid
 
-import environ
-from pymongo import ASCENDING, IndexModel, MongoClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
-from six import string_types
-
-# from ..config import get_application_instance_config_values
-from ..common import (
-    APPLICATION_INSTANCE, create_resource, datetime_to_float,
-    datetime_to_string, datetime_to_string_stix, determine_spec_version,
-    determine_version, float_to_datetime, generate_status,
-    generate_status_details, get_application_instance_config_values,
-    get_custom_headers, get_timestamp, parse_request_parameters,
-    string_to_datetime
-)
-from ..exceptions import (
-    InitializationError, MongoBackendError, ProcessingError
-)
-from ..filters.mongodb_filter import MongoDBFilter
-from .base import Backend
-
-# Module-level logger
-log = logging.getLogger(__name__)
+import pytz
 
 
-def catch_mongodb_error(func):
-    """Catch mongodb availability error"""
-
-    def api_wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
-            raise MongoBackendError("Unable to connect to MongoDB", 500, e)
-
-    return api_wrapper
-
-
-def find_manifest_entries_for_id(obj, manifest):
-    for m in manifest:
-        if m["id"] == obj["id"]:
-            if "modified" in obj:
-                if m["version"] == obj["modified"]:
-                    return m
-            else:
-                # handle data markings
-                if m["version"] == obj["created"]:
-                    return m
+def create_resource(resource_name, items, more=False, next_id=None):
+    """Generates a Resource Object given a resource name."""
+    resource = {}
+    if items:
+        resource[resource_name] = items
+    if resource_name == "objects" or resource_name == "versions":
+        if more and next_id and resource:
+            resource["next"] = next_id
+        if resource:
+            resource["more"] = more
+    return resource
 
 
-class MongoBackend(Backend):
+def determine_version(new_obj, request_time):
+    """Grab the modified time if present, if not grab created time,
+    if not grab request time provided by server."""
+    obj_version = new_obj.get("modified") or new_obj.get("created")
+    if obj_version:
+        obj_version = timestamp_to_datetime(obj_version)
+    else:
+        obj_version = request_time
 
-    # access control is handled at the views level
+    return obj_version
 
-    @environ.config(prefix="MONGO")
-    class Config(object):
-        uri = environ.var()
 
-    def __init__(self, **kwargs):
-        try:
+def determine_spec_version(obj):
+    """Given a STIX 2.x object, determine its spec version."""
+    missing = ("created", "modified")
+    if all(x not in obj for x in missing):
+        # Special case: only SCOs are 2.1 objects and they don't have a spec_version
+        # For now the only way to identify one is checking the created and modified
+        # are both missing.
+        return "2.1"
+    return obj.get("spec_version", "2.0")
 
-            self.pages = {}
-            self.client = MongoClient(kwargs.get("uri"))
 
-            # unless clearing the db has been explicitly specified, don't initialize if the discovery_database exits
-            # the discovery_databases is a minimally viable database,
-            if not self.database_established() or kwargs.get("clear_db"):
-                self.clear_db()
-                if kwargs.get("filename"):
-                    log.info("Initializing Mongo DB backend using " + kwargs.get("filename"))
-                    self.initialize_mongodb_with_data(kwargs.get("filename"))
-                    self.object_manifest_check()
+def get_timestamp():
+    """Get current time with UTC offset"""
+    return dt.datetime.now(tz=pytz.UTC)
 
-            super(MongoBackend, self).__init__(**kwargs)
 
-        except ConnectionFailure:
-            log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
+def datetime_to_string(dttm):
+    """Given a datetime instance, produce the string representation
+    with microsecond precision"""
+    # 1. Convert to timezone-aware
+    # 2. Convert to UTC
+    # 3. Format in ISO format with microsecond precision
 
-    def database_established(self):
-        """
-        Checks to see if a medallion database exists
-        """
-        return "discovery_database" in self.client.list_database_names()
+    if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
+        # dttm is timezone-naive; assume UTC
+        zoned = pytz.UTC.localize(dttm)
+    else:
+        zoned = dttm.astimezone(pytz.UTC)
+    return zoned.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-    def _process_params(self, filter_args, limit):
-        next_id = filter_args.get("next")
-        if limit and next_id is None:
-            client_params = parse_request_parameters(filter_args)
-            record = {"skip": 0, "limit": limit, "args": client_params, "request_time": datetime_to_float(get_timestamp())}
-            next_id = str(uuid.uuid4())
-            self.pages[next_id] = record
-        elif limit and next_id:
-            if next_id not in self.pages:
-                raise ProcessingError("The server did not understand the request or filter parameters: 'next' not valid", 400)
-            client_params = parse_request_parameters(filter_args)
-            if self.pages[next_id]["args"] != client_params:
-                raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
-            self.pages[next_id]["limit"] = limit
-            self.pages[next_id]["request_time"] = datetime_to_float(get_timestamp())
-            record = self.pages[next_id]
-        else:
-            record = {}
-        return next_id, record
 
-    def _update_record(self, next_id, count, internal=False):
-        more = False
-        if next_id:
-            if internal is False:
-                self.pages[next_id]["skip"] += self.pages[next_id]["limit"]
-            if self.pages[next_id]["skip"] >= count:
-                self.pages.pop(next_id, None)
-                next_id = None
-            else:
-                more = True
-        return next_id, more
+def datetime_to_string_stix(dttm):
+    """Given a datetime instance, produce the string representation
+    with millisecond precision"""
+    # 1. Convert to timezone-aware
+    # 2. Convert to UTC
+    # 3. Format in ISO format with millisecond precision,
+    #       except for objects defined with higher precision
+    # 4. Add "Z"
 
-    def _validate_object_id(self, manifest_info, collection_id, object_id):
-        result = list(manifest_info.find({"_collection_id": collection_id, "id": object_id}).limit(1))
-        if len(result) == 0:
-            raise ProcessingError("Object '{}' not found".format(object_id), 404)
+    if dttm.tzinfo is None or dttm.tzinfo.utcoffset(dttm) is None:
+        # dttm is timezone-naive; assume UTC
+        zoned = pytz.UTC.localize(dttm)
+    else:
+        zoned = dttm.astimezone(pytz.UTC)
+    ts = zoned.strftime("%Y-%m-%dT%H:%M:%S")
+    ms = zoned.strftime("%f")
+    if len(ms[3:].rstrip("0")) >= 1:
+        ts = ts + "." + ms + "Z"
+    else:
+        ts = ts + "." + ms[:3] + "Z"
+    return ts
 
-    def _pop_expired_sessions(self):
-        expired_ids = []
-        boundary = datetime_to_float(get_timestamp())
-        for next_id, record in self.pages.items():
-            if boundary - record["request_time"] > self.timeout:
-                expired_ids.append(next_id)
 
-        for item in expired_ids:
-            self.pages.pop(item)
+def datetime_to_float(dttm):
+    """Given a datetime instance, return its representation as a float"""
+    return dttm.timestamp()
 
-    def _pop_old_statuses(self):
-        if "discovery_database" in self.client.list_database_names():
-            api_roots = self._get_all_api_roots()
-            if api_roots:
-                status_retention_in_milliseconds = self.status_retention * 1000
-                for ar in api_roots:
-                    statuses_of_api_root = self._get_api_root_statuses(ar)
-                    result = statuses_of_api_root.aggregate([
-                            {
-                                "$project": {
-                                    "id": 1,
-                                    "date_difference": {
-                                        "$subtract": [
-                                            "$$NOW",
-                                            {
-                                                "$dateFromString": {
-                                                    "dateString": "$request_timestamp"
-                                                }
-                                            }
-                                        ]
-                                    },
-                                }
-                            },
-                            {
-                                "$match": {
-                                    "date_difference": {
-                                        "$gt": status_retention_in_milliseconds
-                                    }
-                                }
-                            }
-                        ]
-                    )
-                    for doc in result:
-                        log.info("Status {} was deleted from {} because it was older than the status retention time".format(doc["id"], ar))
-                        statuses_of_api_root.delete_one({"_id": doc["_id"]})
 
-    def _get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit, internal=False):
-        api_root_db = self.client[api_root]
-        objects_info = api_root_db["objects"]
-        next_id, record = self._process_params(filter_args, limit)
+def float_to_datetime(timestamp_float):
+    """Given a floating-point number, produce a datetime instance"""
+    result = dt.datetime.utcfromtimestamp(timestamp_float)
+    result = result.replace(tzinfo=dt.timezone.utc)
+    return result
 
-        full_filter = MongoDBFilter(
-            filter_args,
-            {"_collection_id": {"$eq": collection_id}},
-            allowed_filters,
-            record
-        )
-        count, objects_found = full_filter.process_filter(
-            objects_info,
-            allowed_filters,
-            "manifests",
-        )
 
-        for obj in objects_found:
-            obj["date_added"] = datetime_to_string(float_to_datetime(obj["date_added"]))
-            obj["version"] = datetime_to_string_stix(float_to_datetime(obj["version"]))
+def string_to_datetime(timestamp_string):
+    """Convert string timestamp to datetime instance."""
+    try:
+        result = dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%S.%fZ")
+    except ValueError:
+        result = dt.datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
 
-        next_id, more = self._update_record(next_id, count, internal)
-        manifest_resource = create_resource("objects", objects_found, more, next_id)
-        if internal:
-            return manifest_resource
-        else:
-            headers = get_custom_headers(manifest_resource)
-            return manifest_resource, headers
+    result = result.replace(tzinfo=dt.timezone.utc)
 
-    def object_manifest_check(self):
-        """
-        Checks for manifests in each object, throws an error if not present.
-        """
-        db = self.client
-        objects_exists = False
-        for api_root in db.list_database_names():
-            cols = db[api_root].list_collection_names()
-            if "objects" not in cols:
-                continue
-            objects_exists = True
-            api_root_db = db[api_root]
-            objects = api_root_db["objects"]
-            for result in objects.find({}):
-                if "_manifest" not in result:
-                    field_to_use = 'created'
-                    if "modified" in result:
-                        field_to_use = 'modified'
-                    raise InitializationError("Object {} from {} is missing a manifest".format(result['id'], result[field_to_use]), 408)
-                if not result['_manifest']:
-                    field_to_use = 'created'
-                    if "modified" in result:
-                        field_to_use = 'modified'
-                    raise InitializationError("Object {} from {} has a null manifest".format(result['id'], result[field_to_use]), 408)
-        if not objects_exists:
-            raise InitializationError("Could not find any objects in database", 408)
+    return result
 
-    @catch_mongodb_error
-    def _update_manifest(self, api_root, collection_id, media_type):
-        api_root_db = self.client[api_root]
-        collection_info = api_root_db["collections"]
 
-        # update media_types in collection if a new one is present.
-        info = collection_info.find_one({"id": collection_id})
-        if media_type not in info["media_types"]:
-            info["media_types"].append(media_type)
-            collection_info.update_one(
-                {"id": collection_id},
-                {"$set": {"media_types": info["media_types"]}}
+def timestamp_to_epoch_seconds(timestamp):
+    """
+    Convert a timestamp to epoch seconds.  This is a more general purpose
+    conversion function supporting a few different input types: strings,
+    numbers (i.e. value is already in epoch seconds), and datetime objects.
+
+    :param timestamp: A timestamp as a string, number, or datetime object
+    :return: Number of epoch seconds (can be a float with fractional seconds)
+    """
+    if isinstance(timestamp, (int, float)):
+        result = timestamp
+    elif isinstance(timestamp, str):
+        result = datetime_to_float(string_to_datetime(timestamp))
+    elif isinstance(timestamp, dt.datetime):
+        result = timestamp.timestamp()
+    else:
+        raise TypeError(
+            "Can't convert {} to an epoch seconds timestamp".format(
+                type(timestamp)
             )
-
-    @catch_mongodb_error
-    def server_discovery(self):
-        discovery_db = self.client["discovery_database"]
-        discovery_info = discovery_db["discovery_information"]
-        info = discovery_info.find_one()
-        if info:
-            info.pop("_id")
-        return info
-
-    @catch_mongodb_error
-    def get_collections(self, api_root):
-        if api_root not in self.client.list_database_names():
-            return None  # must return None, so 404 is raised
-
-        api_root_db = self.client[api_root]
-        collection_info = api_root_db["collections"]
-        collections = list(collection_info.find({}, {"_id": 0}))
-        # interop wants results sorted by id - no need to check for interop option
-        if get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements"):
-            collections = sorted(collections, key=lambda o: o["id"])
-        return create_resource("collections", collections)
-
-    @catch_mongodb_error
-    def get_collection(self, api_root, collection_id):
-        if api_root not in self.client.list_database_names():
-            return None  # must return None, so 404 is raised
-
-        api_root_db = self.client[api_root]
-        collection_info = api_root_db["collections"]
-        info = collection_info.find_one({"id": collection_id}, {"_id": 0})
-        return info
-
-    @catch_mongodb_error
-    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
-        return self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, False)
-
-    @catch_mongodb_error
-    def get_api_root_information(self, api_root_name):
-        db = self.client["discovery_database"]
-        api_root_info = db["api_root_info"]
-        info = api_root_info.find_one(
-            {"_name": api_root_name},
-            {"_id": 0, "_url": 0, "_name": 0}
-        )
-        return info
-
-    @catch_mongodb_error
-    def _get_api_root_statuses(self, api_root):
-        api_root_db = self.client[api_root]
-        return api_root_db["status"]
-
-    @catch_mongodb_error
-    def get_status(self, api_root, status_id):
-        api_root_db = self.client[api_root]
-        status_info = api_root_db["status"]
-        result = status_info.find_one(
-            {"id": status_id},
-            {"_id": 0}
-        )
-        return result
-
-    @catch_mongodb_error
-    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
-        api_root_db = self.client[api_root]
-        objects_info = api_root_db["objects"]
-        next_id, record = self._process_params(filter_args, limit)
-
-        full_filter = MongoDBFilter(
-            filter_args,
-            {"_collection_id": {"$eq": collection_id}},
-            allowed_filters,
-            record
-        )
-        # Note: error handling was not added to following call as mongo will
-        # handle (user supplied) filters gracefully if they don't exist
-        count, objects_found = full_filter.process_filter(
-            objects_info,
-            allowed_filters,
-            "objects"
         )
 
-        for obj in objects_found:
-            if "modified" in obj:
-                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
-            if "created" in obj:
-                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
+    return result
 
-        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
-        headers = get_custom_headers(manifest_resource)
 
-        next_id, more = self._update_record(next_id, count)
-        return create_resource("objects", objects_found, more, next_id), headers
+def timestamp_to_stix_json(timestamp):
+    """
+    Convert a timestamp to STIX JSON.  This is a more general purpose
+    conversion function supporting a few different input types: strings
+    (i.e. value is already a STIX JSON timestamp), numbers (epoch seconds), and
+    datetime objects.
 
-    @catch_mongodb_error
-    def _add_status(self, api_root_name, status):
-        api_root_db = self.client[api_root_name]
-        api_root_db["status"].insert_one(status)
+    :param timestamp: A timestamp as a string, number, or datetime object
+    :return: A STIX JSON timestamp string
+    """
+    if isinstance(timestamp, (int, float)):
+        result = datetime_to_string_stix(float_to_datetime(timestamp))
+    elif isinstance(timestamp, str):
+        result = timestamp  # any format verification?
+    elif isinstance(timestamp, dt.datetime):
+        result = datetime_to_string_stix(timestamp)
+    else:
+        raise TypeError(
+            "Can't convert {} to a STIX JSON timestamp string".format(
+                type(timestamp)
+            )
+        )
 
-    @catch_mongodb_error
-    def add_objects(self, api_root, collection_id, objs, request_time):
-        api_root_db = self.client[api_root]
-        objects_info = api_root_db["objects"]
-        failed = 0
-        succeeded = 0
-        pending = 0
-        successes = []
-        failures = []
-        media_fmt = "application/stix+json;version={}"
+    return result
 
-        try:
-            for new_obj in objs["objects"]:
-                media_type = media_fmt.format(determine_spec_version(new_obj))
-                mongo_query = {"_collection_id": collection_id, "id": new_obj["id"], "_manifest.media_type": media_type}
-                if "modified" in new_obj:
-                    mongo_query["_manifest.version"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
-                existing_entry = objects_info.find_one(mongo_query)
-                obj_version = determine_version(new_obj, request_time)
 
-                if existing_entry:
-                    message = "Object already added"
+def timestamp_to_taxii_json(timestamp):
+    """
+    Convert a timestamp to TAXII JSON.  This is a more general purpose
+    conversion function supporting a few different input types: strings
+    (i.e. value is already a TAXII JSON timestamp), numbers (epoch seconds),
+    and datetime objects.  From the TAXII spec: "Unlike the STIX timestamp
+    type, the TAXII timestamp MUST have microsecond precision."
 
-                else:
-                    message = None
-                    new_obj.update({"_collection_id": collection_id})
-                    if "modified" in new_obj:
-                        new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
-                    if "created" in new_obj:
-                        new_obj["created"] = datetime_to_float(string_to_datetime(new_obj["created"]))
-                    _manifest = {
-                        "id": new_obj["id"],
-                        "date_added": datetime_to_float(request_time),
-                        "version": datetime_to_float(string_to_datetime(obj_version)),
-                        "media_type": media_type,
-                    }
-                    new_obj.update({"_manifest": _manifest})
-                    objects_info.insert_one(new_obj)
-                    self._update_manifest(api_root, collection_id, media_type)
+    :param timestamp: A timestamp as a string, number, or datetime object
+    :return: A TAXII JSON timestamp string
+    """
+    if isinstance(timestamp, (int, float)):
+        result = datetime_to_string(float_to_datetime(timestamp))
+    elif isinstance(timestamp, str):
+        result = timestamp  # any format verification?
+    elif isinstance(timestamp, dt.datetime):
+        result = datetime_to_string(timestamp)
+    else:
+        raise TypeError(
+            "Can't convert {} to a TAXII JSON timestamp string".format(
+                type(timestamp)
+            )
+        )
 
-                # else: we already have the object, so this is a
-                # no-op.
+    return result
 
-                status_detail = generate_status_details(
-                    new_obj["id"], obj_version, message
+
+def timestamp_to_datetime(timestamp):
+    """
+    Convert a timestamp to a datetime object.  This is a more general purpose
+    conversion function supporting a few different input types: strings,
+    numbers (epoch seconds), and datetime objects.
+
+    :param timestamp: A timestamp as a string, number, or datetime object
+    :return: A timezone-aware datetime object in the UTC timezone
+    """
+    if isinstance(timestamp, (int, float)):
+        result = float_to_datetime(timestamp)
+    elif isinstance(timestamp, str):
+        result = string_to_datetime(timestamp)
+    elif isinstance(timestamp, dt.datetime):
+
+        # If no timezone, treat as UTC directly
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=dt.timezone.utc)
+
+        # If timezone is not equivalent to UTC, convert to UTC (try to write
+        # this in a way which is agnostic to the actual tzinfo implementation).
+        elif timestamp.utcoffset() != dt.timezone.utc.utcoffset(None):
+            timestamp = timestamp.astimezone(dt.timezone.utc)
+
+        result = timestamp
+
+    else:
+        raise TypeError(
+            "Can't convert {} to a datetime instance".format(
+                type(timestamp)
+            )
+        )
+
+    return result
+
+
+def generate_status(
+    request_time, status, successes=(), failures=(), pendings=()
+):
+    """Generate Status Resource as defined in TAXII 2.1 section (4.3.1) <link here>`__."""
+    succeeded = len(successes)
+    failed = len(failures)
+    pending = len(pendings)
+
+    status = {
+        "id": str(uuid.uuid4()),
+        "status": status,
+        "request_timestamp": request_time,
+        "total_count": succeeded + failed + pending,
+        "success_count": succeeded,
+        "failure_count": failed,
+        "pending_count": pending,
+    }
+
+    if successes:
+        status["successes"] = successes
+    if failures:
+        status["failures"] = failures
+    if pendings:
+        status["pendings"] = pendings
+
+    return status
+
+
+def generate_status_details(id, version, message=None):
+    """Generate Status Details as defined in TAXII 2.1 section (4.3.1) <link here>`__."""
+    status_details = {
+        "id": id,
+        "version": version
+    }
+
+    if message:
+        status_details["message"] = message
+
+    return status_details
+
+
+def get_custom_headers(manifest_resource):
+    """Generates the X-TAXII-Date-Added headers based on a manifest resource"""
+    headers = {}
+
+    times = sorted(map(lambda x: x["date_added"], manifest_resource.get("objects", [])))
+    if len(times) > 0:
+        headers["X-TAXII-Date-Added-First"] = times[0]
+        headers["X-TAXII-Date-Added-Last"] = times[-1]
+
+    return headers
+
+
+def parse_request_parameters(filter_args):
+    """Generates a dict with params received from client"""
+    session_args = {}
+    for key, value in filter_args.items():
+        if key != "limit" and key != "next":
+            session_args[key] = set(value.replace(" ", "").split(","))
+    return session_args
+
+
+class TaskChecker(object):
+    """Calls a target method every X seconds to perform a task."""
+
+    def __init__(self, interval, target_function):
+        self.interval = interval
+        self.target_function = target_function
+        self.lock = threading.Lock()
+        # One can "cancel" a timer, but that does nothing if the time has
+        # already expired.  In that case, we need this flag to tell it to not
+        # schedule a new timer.
+        self.stop_flag = False
+
+        # Create a task checker in an un-started state.
+        self.__reset_timer(start=False)
+
+    def handle_function(self):
+        self.target_function()
+        self.__reset_timer()
+
+    def __reset_timer(self, start=True):
+        with self.lock:
+            if not self.stop_flag:
+                self.thread = threading.Timer(
+                    interval=self.interval, function=self.handle_function
                 )
-                successes.append(status_detail)
-                succeeded += 1
-        except Exception as e:
-            # log.exception(e)
-            raise ProcessingError("While processing supplied content, an error occurred", 422, e)
+                self.thread.daemon = True
+                if start:
+                    self.start()
 
-        status = generate_status(
-            datetime_to_string(request_time), "complete", succeeded, failed,
-            pending, successes=successes, failures=failures,
-        )
-        api_root_db["status"].insert_one(status)
-        status.pop("_id", None)
-        return status
+    def start(self):
+        self.thread.start()
 
-    @catch_mongodb_error
-    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
-        api_root_db = self.client[api_root]
-        objects_info = api_root_db["objects"]
-        # set manually to properly retrieve manifests, and early to not break the pagination checks
-        filter_args["match[id]"] = object_id
-        next_id, record = self._process_params(filter_args, limit)
-
-        self._validate_object_id(objects_info, collection_id, object_id)
-
-        full_filter = MongoDBFilter(
-            filter_args,
-            {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
-            allowed_filters,
-            record
-        )
-        count, objects_found = full_filter.process_filter(
-            objects_info,
-            allowed_filters,
-            "objects"
-        )
-
-        for obj in objects_found:
-            if "modified" in obj:
-                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
-            if "created" in obj:
-                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
-
-        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, ("id", "type", "version", "spec_version"), limit, True)
-        headers = get_custom_headers(manifest_resource)
-
-        next_id, more = self._update_record(next_id, count)
-        return create_resource("objects", objects_found, more, next_id), headers
-
-    @catch_mongodb_error
-    def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
-        api_root_db = self.client[api_root]
-        objects_info = api_root_db["objects"]
-
-        self._validate_object_id(objects_info, collection_id, object_id)
-
-        # Currently it will delete the object and the matching manifest from the backend
-        full_filter = MongoDBFilter(
-            filter_args,
-            {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
-            allowed_filters,
-        )
-        count, objects_found = full_filter.process_filter(
-            objects_info,
-            allowed_filters,
-            "raw"
-        )
-        if objects_found:
-            for obj in objects_found:
-                obj_version = obj["_manifest"]["version"]
-                objects_info.delete_one(
-                    {"_collection_id": collection_id, "id": object_id, "_manifest.version": obj_version}
-                )
-        else:
-            raise ProcessingError("Object '{}' not found".format(object_id), 404)
-
-    @catch_mongodb_error
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
-        api_root_db = self.client[api_root]
-        objects_info = api_root_db["objects"]
-        # set manually to properly retrieve manifests, and early to not break the pagination checks
-        filter_args["match[id]"] = object_id
-        filter_args["match[version]"] = "all"
-        next_id, record = self._process_params(filter_args, limit)
-
-        self._validate_object_id(objects_info, collection_id, object_id)
-
-        full_filter = MongoDBFilter(
-            filter_args,
-            {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
-            allowed_filters,
-            record
-        )
-        count, manifests_found = full_filter.process_filter(
-            objects_info,
-            allowed_filters,
-            "manifests",
-        )
-
-        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, ("id", "type", "version", "spec_version"), limit, True)
-        headers = get_custom_headers(manifest_resource)
-
-        manifests_found = list(map(lambda x: datetime_to_string_stix(float_to_datetime(x["version"])), manifests_found))
-        next_id, more = self._update_record(next_id, count)
-        return create_resource("versions", manifests_found, more, next_id), headers
-
-    def load_data_from_file(self, filename):
-        try:
-            if isinstance(filename, string_types):
-                with io.open(filename, "r", encoding="utf-8") as infile:
-                    self.json_data = json.load(infile)
-            else:
-                self.json_data = json.load(filename)
-        except Exception as e:
-            raise InitializationError("Problem loading initialization data from {0}".format(filename), 408, e)
-
-    def initialize_mongodb_with_data(self, filename):
-        self.load_data_from_file(filename)
-        if "/discovery" in self.json_data:
-            db = self.client["discovery_database"]
-            db["discovery_information"].insert_one(self.json_data["/discovery"])
-        else:
-            raise InitializationError("No discovery information provided when initializing the Mongo DB")
-        api_root_info_db = db["api_root_info"]
-        for api_root_name, api_root_data in self.json_data.items():
-            if api_root_name == "/discovery":
-                continue
-            url = list(filter(lambda a: api_root_name in a, self.json_data["/discovery"]["api_roots"]))[0]
-            api_root_data["information"]["_url"] = url
-            api_root_data["information"]["_name"] = api_root_name
-            api_root_info_db.insert_one(api_root_data["information"])
-            self.client.drop_database(api_root_name)
-            api_db = self.client[api_root_name]
-            if api_root_data["status"]:
-                api_db["status"].insert_many(api_root_data["status"])
-            else:
-                api_db.create_collection("status")
-            api_db.create_collection("collections")
-            api_db.create_collection("objects")
-            for collection in api_root_data["collections"]:
-                collection_id = collection["id"]
-                objects = collection["objects"]
-                manifest = collection["manifest"]
-                # these are not in the collections mongodb collection (both TAXII and Mongo DB use the term collection)
-                collection.pop("objects")
-                collection.pop("manifest")
-                api_db["collections"].insert_one(collection)
-                for obj in objects:
-                    obj["_collection_id"] = collection_id
-                    obj["_manifest"] = find_manifest_entries_for_id(obj, manifest)
-                    obj["_manifest"]["date_added"] = datetime_to_float(string_to_datetime(obj["_manifest"]["date_added"]))
-                    obj["_manifest"]["version"] = datetime_to_float(string_to_datetime(obj["_manifest"]["version"]))
-                    obj["created"] = datetime_to_float(string_to_datetime(obj["created"]))
-                    if "modified" in obj:
-                        # not for data markings
-                        obj["modified"] = datetime_to_float(string_to_datetime(obj["modified"]))
-                    api_db["objects"].insert_one(obj)
-                id_index = IndexModel([("id", ASCENDING)])
-                type_index = IndexModel([("type", ASCENDING)])
-                collection_index = IndexModel([("_collection_id", ASCENDING)])
-                date_index = IndexModel([("_manifest.date_added", ASCENDING)])
-                version_index = IndexModel([("_manifest.version", ASCENDING)])
-                date_and_spec_index = IndexModel([("_manifest.media_type", ASCENDING), ("_manifest.date_added", ASCENDING)])
-                version_and_spec_index = IndexModel([("_manifest.media_type", ASCENDING), ("_manifest.version", ASCENDING)])
-                collection_and_date_index = IndexModel([("_collection_id", ASCENDING), ("_manifest.date_added", ASCENDING)])
-                api_db["objects"].create_indexes(
-                    [id_index, type_index, date_index, version_index, collection_index, date_and_spec_index,
-                     version_and_spec_index, collection_and_date_index]
-                )
-
-    def clear_db(self):
-        if "discovery_database" in self.client.list_database_names():
-            log.info("Clearing database")
-            self.client.drop_database("discovery_database")
-        discovery_db = self.client["discovery_database"]
-        api_root_info = discovery_db["api_root_info"]
-        for api_info in api_root_info.find({}):
-            self.client.drop_database(api_info["_name"])
-        self.client.drop_database("discovery_database")
-        # db with empty tables
-        log.info("Creating empty database")
-        discovery_db = self.client.get_database("discovery_database")
-        discovery_db.create_collection("discovery_information")
-        discovery_db.create_collection("api_root_info")
-        return discovery_db
+    def stop(self, timeout=None):
+        with self.lock:
+            self.thread.cancel()
+            self.stop_flag = True
+        # Implies a timer thread must not call this method!
+        # It can be important to wait for thread termination: a backend has to
+        # be careful not to release resources a task checker thread might use,
+        # before the thread has terminated.
+        self.thread.join(timeout)

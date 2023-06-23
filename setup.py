@@ -31,8 +31,6 @@ setup(
     url="https://oasis-open.github.io/cti-documentation/",
     author="OASIS Cyber Threat Intelligence Technical Committee",
     author_email="cti-users@lists.oasis-open.org",
-    maintainer="Emmanuelle Vargas-Gonzalez",
-    maintainer_email="emmanuelle@mitre.org",
     license="BSD",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -40,10 +38,10 @@ setup(
         "Topic :: Security",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     keywords="taxii taxii2 server json cti cyber threat intelligence",
     packages=find_packages(exclude=["*.test", "*.test.data"]),
@@ -54,8 +52,7 @@ setup(
         "Flask-HTTPAuth",
         "jsonmerge",
         "packaging",
-        "pytz",
-        "six",
+        "pytz"
     ],
     entry_points={
         "console_scripts": [

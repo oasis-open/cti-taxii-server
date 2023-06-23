@@ -13,9 +13,9 @@ jobs:
 
     name: Python ${{ matrix.python-version }} Build
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2 # TODO: change to v3.3.0?
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v2 # TODO: change to v4.5.0?
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install MongoDB

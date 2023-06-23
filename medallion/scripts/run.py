@@ -4,12 +4,7 @@ import logging
 import os
 import textwrap
 
-from medallion import (
-    __version__, connect_to_backend, register_blueprints, set_config
-)
-from medallion.common import (
-    APPLICATION_INSTANCE, get_application_instance_config_values
-)
+from medallion import __version__, create_app
 import medallion.config
 
 log = logging.getLogger("medallion")
@@ -127,16 +122,10 @@ def main():
         medallion_args.conf_dir if not medallion_args.no_conf_dir else None,
     )
 
-    set_config(APPLICATION_INSTANCE, "users", configuration)
-    set_config(APPLICATION_INSTANCE, "taxii", configuration)
-    set_config(APPLICATION_INSTANCE, "backend", configuration)
-
-    APPLICATION_INSTANCE.medallion_backend = connect_to_backend(get_application_instance_config_values(APPLICATION_INSTANCE, "backend"))
-    if (not APPLICATION_INSTANCE.blueprints):
-        register_blueprints(APPLICATION_INSTANCE)
+    app = create_app(configuration)
 
     if not medallion_args.conf_check:
-        APPLICATION_INSTANCE.run(
+        app.run(
             host=medallion_args.host,
             port=medallion_args.port,
             debug=medallion_args.debug_mode,
