@@ -1,7 +1,7 @@
 {
   "backend": {
     "module_class": "MemoryBackend",
-    "filename": "medallion/test/data/default_data.json"
+    "filename": "../test/data/default_data.json"
   },
   "users": {
     "admin": "Password0",

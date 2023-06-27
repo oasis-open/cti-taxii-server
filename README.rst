@@ -113,23 +113,26 @@ The <config_file> contains:
 
 To use the Memory back-end plug, include the following in the <config-file>:
 
-.. code-block:: json
+.. code-block:: text
 
     {
         "backend": {
             "module_class": "MemoryBackend",
-            "filename": "<path to json file with initial data>"
+            "filename": <path to json file with initial data>,
+            "interop_requirements": true/false  # the TAXII interop document has some additional requirements
         }
     }
 
 To use the Mongo DB back-end plug, include the following in the <config-file>:
 
-.. code-block:: json
+.. code-block:: text
 
     {
          "backend": {
             "module_class": "MongoBackend",
-            "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
+            "uri": <Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'
+            "filename": <path to json file with initial data>,
+            "interop_requirements": true/false  # the TAXII interop document has some additional requirements
          }
     }
 
@@ -138,13 +141,16 @@ To use the Mongo DB back-end plug, include the following in the <config-file>:
 A description of the Mongo DB structure expected by the mongo db backend code is
 described in `the documentation <https://medallion.readthedocs.io/en/latest/mongodb_schema.html>`_.
 
+The ``interop_requirements`` option will enforce additional requirements from
+the TAXII 2.1 Interoperability specification. It defaults to ``false``.
+
 As required by the TAXII specification, *medallion* supports HTTP Basic
 authorization.  However, the user names and passwords are currently stored in
 the <config_file> in plain text.
 
 Here is an example:
 
-.. code-block:: json
+.. code-block:: text
 
     {
         "users": {
@@ -161,43 +167,38 @@ Authorization could be enhanced by changing the method "decorated" using
 
 Configs may also contain a "taxii" section as well, as shown below:
 
-.. code-block:: json
+.. code-block:: text
 
     {
         "taxii": {
            "max_page_size": 100
-           "interop_requirements": true
         }
     }
 
 All TAXII servers require a config, though if any of the sections specified above
 are missing, they will be filled with default values.
 
-The ``interop_requirements`` option will enforce additional requireemnts from
-the TAXII 2.1 Interoperability specification. It defaults to ``false``.
-
 We welcome contributions for other back-end plugins.
 
 Docker
 ------
 
-We also provide a Docker image to make it easier to run *medallion*
+We also provide a Docker image to make it easier to run *medallion* with the MongoDB backend.  Use the --build argument
+if the code has changed.
 
 .. code-block:: bash
 
-    $ docker build . -t medallion -f docker_utils/Dockerfile
+    $ docker-compose up [--build]
 
-If operating behind a proxy, add the following option (replacing `<proxy>` with
-your proxy location and port): ``--build-arg https_proxy=<proxy>``.
+This uses the information in docker-compose.yml to create a Docker container with medallion, mongo db and mongo-express
 
-Then run the image
+If operating behind a proxy, add the following to the medallion:build section of docker-compose.yml:
 
-.. code-block:: bash
+.. code-block:: text
 
-    $ docker run --rm -p 5000:5000 -v <directory>:/var/taxii medallion
+    HTTPS_PROXY: <proxy>
 
-Replace ``<directory>`` with the full path to the directory containing your
-medallion configuration.
+replacing <proxy> with your proxy location and port.
 
 Governance
 ----------
@@ -249,10 +250,8 @@ additional or substitute Maintainers, per `consensus agreements <https://www.oas
 Current Maintainers of this TC Open Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  `Chris Lenk <mailto:clenk@mitre.org>`__; GitHub ID: https://github.com/clenk/; WWW: `MITRE Corporation <https://www.mitre.org/>`__
--  `Rich Piazza <mailto:rpiazza@mitre.org>`__; GitHub ID: https://github.com/rpiazza/; WWW: `MITRE Corporation <https://www.mitre.org/>`__
--  `Zach Rush <mailto:zrush@mitre.org>`__; GitHub ID: https://github.com/zrush-mitre/; WWW: `MITRE Corporation <https://www.mitre.org/>`__
 -  `Jason Keirstead <mailto:Jason.Keirstead@ca.ibm.com>`__; GitHub ID: https://github.com/JasonKeirstead; WWW: `IBM <http://www.ibm.com/>`__
+-  `Duncan Sparrell <mailto:duncan@sfractal.com>`__; GitHub ID: https://github.com/sparrell; WWW: `sFractal <http://sfractal.com/>`__
 
 About OASIS TC Open Repositories
 --------------------------------
