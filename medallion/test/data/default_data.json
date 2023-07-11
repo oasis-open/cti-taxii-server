@@ -19,8 +19,8 @@
             ],
             "max_content_length": 9765625
         },
-        "status": {},
-        "collections": {}
+        "status": [],
+        "collections": []
     },
     "api2": {
         "information": {
@@ -31,8 +31,8 @@
             ],
             "max_content_length": 9765625
         },
-        "status": {},
-        "collections": {}
+        "status": [],
+        "collections": []
     },
     "trustgroup1": {
         "information": {
@@ -43,8 +43,8 @@
             ],
             "max_content_length": 9765625
         },
-        "status": {
-            "2d086da7-4bdc-4f91-900e-d77486753710": {
+        "status": [
+            {
                 "id": "2d086da7-4bdc-4f91-900e-d77486753710",
                 "status": "pending",
                 "request_timestamp": "2016-11-02T12:34:34.123456Z",
@@ -77,21 +77,21 @@
                     }
                 ]
             },
-            "2d086da7-4bdc-4f91-900e-f4566be4b780": {
+            {
                 "id": "2d086da7-4bdc-4f91-900e-f4566be4b780",
-                "status": "pending",
-                "request_timestamp": "2016-11-02T12:34:34.123456Z",
+				"status": "pending",
+				"request_timestamp": "2016-11-02T12:34:34.123456Z",
                 "total_objects": 0,
-                "success_count": 0,
-                "successes": [],
-                "failure_count": 0,
-                "failures": [],
-                "pending_count": 0,
-                "pendings": []
+				"success_count": 0,
+				"successes": [],
+				"failure_count": 0,
+				"failures": [],
+				"pending_count": 0,
+				"pendings": []
             }
-        },
-        "collections": {
-            "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4": {
+        ],
+        "collections": [
+            {
                 "id": "472c94ae-3113-4e3e-a4dd-a9f4ac7471d4",
                 "title": "This data collection is for testing querying across collections",
                 "can_read": false,
@@ -99,9 +99,10 @@
                 "media_types": [
                     "application/stix+json;version=2.1"
                 ],
-                "objects": []
+                "objects": [],
+                "manifest": []
             },
-            "365fed99-08fa-fdcd-a1b3-fb247eb41d01": {
+	        {
                 "id": "365fed99-08fa-fdcd-a1b3-fb247eb41d01",
                 "title": "This data collection is for testing adding objects",
                 "can_read": true,
@@ -109,9 +110,10 @@
                 "media_types": [
                     "application/stix+json;version=2.1"
                 ],
-                "objects": []
+                "objects": [],
+                "manifest": []
             },
-            "91a7b528-80eb-42ed-a74d-c6fbd5a26116": {
+            {
                 "id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
                 "title": "High Value Indicator Collection",
                 "description": "This data collection is for collecting high value IOCs",
@@ -123,29 +125,6 @@
                 ],
                 "objects": [
                     {
-                        "type": "malware-analysis",
-                        "spec_version": "2.1",
-                        "id": "malware-analysis--084a658c-a7ef-4581-a21d-1f600908741b",
-                        "created_by_ref": "identity--eae683c1-d472-4708-bd63-f9b1a1f016b1",
-                        "created": "2021-04-16T09:49:24.378932Z",
-                        "modified": "2021-12-11T07:17:44.542582Z",
-                        "product": "option",
-                        "version": "moment",
-                        "submitted": "2022-03-26T15:06:01.434493Z",
-                        "analysis_started": "2022-10-04T07:07:55.365672Z",
-                        "analysis_ended": "2023-06-14T07:12:00.962419Z",
-                        "result": "unknown",
-                        "lang": "en",
-                        "confidence": 16,
-                        "object_marking_refs": [
-                            "marking-definition--3e914a0d-957f-40b2-8c35-b119040574fe"
-                        ],
-                        "__meta": {
-                            "date_added": "2022-06-16T13:49:53.935000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
-                    },
-                    {
                         "created": "2014-05-08T09:00:00.000Z",
                         "modified": "2014-05-08T09:00:00.000Z",
                         "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
@@ -153,11 +132,7 @@
                         "source_ref": "indicator--cd981c25-8042-4166-8945-51178443bdac",
                         "spec_version": "2.1",
                         "target_ref": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
-                        "type": "relationship",
-                        "__meta": {
-                            "date_added": "2014-05-08T09:00:00.000000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "type": "relationship"
                     },
                     {
                         "created": "2014-05-08T09:00:00.000Z",
@@ -171,14 +146,7 @@
                         "pattern_type": "stix",
                         "spec_version": "2.1",
                         "type": "indicator",
-                        "valid_from": "2014-05-08T09:00:00.000000Z",
-                        "object_marking_refs": [
-                            "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da"
-                        ],
-                        "__meta": {
-                            "date_added": "2016-11-01T03:04:05.000000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "valid_from": "2014-05-08T09:00:00.000000Z"
                     },
                     {
                         "created": "2016-11-03T12:30:59.000Z",
@@ -193,11 +161,7 @@
                         "pattern_type": "stix",
                         "spec_version": "2.1",
                         "type": "indicator",
-                        "valid_from": "2017-01-27T13:49:53.935382Z",
-                        "__meta": {
-                            "date_added": "2016-11-03T12:30:59.001000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "valid_from": "2017-01-27T13:49:53.935382Z"
                     },
                     {
                         "created": "2016-11-03T12:30:59.000Z",
@@ -212,11 +176,7 @@
                         "pattern_type": "stix",
                         "spec_version": "2.1",
                         "type": "indicator",
-                        "valid_from": "2017-01-27T13:49:53.935382Z",
-                        "__meta": {
-                            "date_added": "2016-12-27T13:49:59.000000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "valid_from": "2017-01-27T13:49:53.935382Z"
                     },
                     {
                         "created": "2016-11-03T12:30:59.000Z",
@@ -231,11 +191,7 @@
                         "pattern_type": "stix",
                         "spec_version": "2.1",
                         "type": "indicator",
-                        "valid_from": "2016-11-03T12:30:59.000Z",
-                        "__meta": {
-                            "date_added": "2017-12-31T13:49:53.935000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "valid_from": "2016-11-03T12:30:59.000Z"
                     },
                     {
                         "created": "2017-01-20T00:00:00.000Z",
@@ -246,11 +202,7 @@
                         "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
                         "name": "TLP:GREEN",
                         "spec_version": "2.1",
-                        "type": "marking-definition",
-                        "__meta": {
-                            "date_added": "2017-01-20T00:00:00.000000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "type": "marking-definition"
                     },
                     {
                         "created": "2017-01-27T13:49:53.997Z",
@@ -262,11 +214,7 @@
                         ],
                         "modified": "2018-02-23T18:30:00.000Z",
                         "name": "Poison Ivy",
-                        "type": "malware",
-                        "__meta": {
-                            "date_added": "2017-01-27T13:49:59.997000Z",
-                            "media_type": "application/stix+json;version=2.0"
-                        }
+                        "type": "malware"
                     },
                     {
                         "created": "2017-01-27T13:49:53.997Z",
@@ -279,15 +227,61 @@
                         "modified": "2017-01-27T13:49:53.997Z",
                         "name": "Poison Ivy",
                         "spec_version": "2.1",
-                        "type": "malware",
-                        "__meta": {
-                            "date_added": "2017-01-27T13:49:59.997000Z",
-                            "media_type": "application/stix+json;version=2.1"
-                        }
+                        "type": "malware"
+                    }
+                ],
+                "manifest": [
+                    {
+                        "date_added": "2014-05-08T09:00:00.000000Z",
+                        "id": "relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2014-05-08T09:00:00.000Z"
+                    },
+                    {
+                        "date_added": "2016-11-01T03:04:05.000000Z",
+                        "id": "indicator--cd981c25-8042-4166-8945-51178443bdac",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2014-05-08T09:00:00.000Z"
+                    },
+                    {
+                        "date_added": "2016-11-03T12:30:59.001000Z",
+                        "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2016-11-03T12:30:59.000Z"
+                    },
+                    {
+                        "date_added": "2016-12-27T13:49:59.000000Z",
+                        "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2016-12-25T12:30:59.444Z"
+                    },
+                    {
+                        "date_added": "2017-01-20T00:00:00.000000Z",
+                        "id": "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2017-01-20T00:00:00.000Z"
+                    },
+                    {
+                        "date_added": "2017-01-27T13:49:59.997000Z",
+                        "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2017-01-27T13:49:53.997Z"
+                    },
+                    {
+                        "date_added": "2017-01-27T13:49:59.997000Z",
+                        "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                        "media_type": "application/stix+json;version=2.0",
+                        "version": "2018-02-23T18:30:00.000Z"
+                    },
+                    {
+                        "date_added": "2017-12-31T13:49:53.935000Z",
+                        "id": "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e",
+                        "media_type": "application/stix+json;version=2.1",
+                        "version": "2017-01-27T13:49:53.935Z"
                     }
                 ]
             },
-            "52892447-4d7e-4f70-b94d-d7f22742ff63": {
+            {
                 "id": "52892447-4d7e-4f70-b94d-d7f22742ff63",
                 "title": "Indicators from the past 24-hours",
                 "description": "This data collection is for collecting current IOCs",
@@ -296,9 +290,10 @@
                 "media_types": [
                     "application/stix+json;version=2.1"
                 ],
-                "objects": []
+                "objects": [],
+                "manifest": []
             },
-            "64993447-4d7e-4f70-b94d-d7f33742ee63": {
+            {
                 "id": "64993447-4d7e-4f70-b94d-d7f33742ee63",
                 "title": "Secret Indicators",
                 "description": "Non accessible",
@@ -307,8 +302,9 @@
                 "media_types": [
                     "application/stix+json;version=2.1"
                 ],
-                "objects": []
+                "objects": [],
+                "manifest": []
             }
-        }
+        ]
     }
 }

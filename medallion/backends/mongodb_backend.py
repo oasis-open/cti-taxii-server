@@ -1,4 +1,4 @@
-import collections
+import io
 import json
 import logging
 import uuid
@@ -6,14 +6,16 @@ import uuid
 import environ
 from pymongo import ASCENDING, IndexModel, MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from six import string_types
 
-import medallion.filters.common
-
+# from ..config import get_application_instance_config_values
 from ..common import (
-    create_resource, determine_spec_version, determine_version,
-    generate_status, generate_status_details, get_custom_headers,
-    get_timestamp, parse_request_parameters, timestamp_to_epoch_seconds,
-    timestamp_to_stix_json, timestamp_to_taxii_json
+    APPLICATION_INSTANCE, create_resource, datetime_to_float,
+    datetime_to_string, datetime_to_string_stix, determine_spec_version,
+    determine_version, float_to_datetime, generate_status,
+    generate_status_details, get_application_instance_config_values,
+    get_custom_headers, get_timestamp, parse_request_parameters,
+    string_to_datetime
 )
 from ..exceptions import (
     InitializationError, MongoBackendError, ProcessingError
@@ -23,104 +25,6 @@ from .base import Backend
 
 # Module-level logger
 log = logging.getLogger(__name__)
-
-
-# Our special case property transformations need to occur in both directions,
-# so we need pairs of transformation functions.  This defines a type used to
-# store related pairs of functions.
-_PropertyTransformer = collections.namedtuple("PropertyTransformer", [
-    "json_to_mongo",
-    "mongo_to_json"
-])
-
-
-# Define any transformer function pairings we need.
-_TIMESTAMP_TRANSFORMER = _PropertyTransformer(
-    timestamp_to_epoch_seconds,
-    timestamp_to_stix_json
-)
-
-
-# Define our property transformation policy.  Maps STIX types to a mapping from
-# top-level property name to a transformer object.  The top-level None key
-# is a special case which records property transformations to attempt on all
-# STIX types.
-#
-# Only support transforming top-level properties, for now.  Can expand on this
-# later if necessary.
-_PROPERTY_TRANSFORM_SPECIAL_CASES = {
-    "indicator": {
-        "valid_from": _TIMESTAMP_TRANSFORMER,
-        "valid_until": _TIMESTAMP_TRANSFORMER
-    },
-    None: {
-        "modified": _TIMESTAMP_TRANSFORMER,
-        "created": _TIMESTAMP_TRANSFORMER
-    }
-}
-
-
-_MONGO_TIMESTAMP_FILTER = medallion.filters.common.TaxiiFilterInfo(
-    medallion.filters.common.StixType.TIMESTAMP,
-    timestamp_to_epoch_seconds
-)
-
-
-def _transform_special_case_properties(objs, transform_direction):
-    """
-    Transform any property values which need to be stored in Mongo in a
-    different form than we receive as STIX JSON.  The STIX JSON form may not be
-    suitable for some types of queries.  This function can transform in both
-    the STIX JSON -> Mongo direction, and the reverse direction.
-
-    The object(s) are modified in-place; there is no return value.
-
-    :param objs: A single or list of objects (dicts) whose properties should be
-        examined and transformed.
-    :param transform_direction: Direction of transformation as a string:
-        "json_to_mongo" or "mongo_to_json".  (They are used to look up a
-        function on a transformer object.)
-    """
-
-    if not isinstance(objs, list):
-        objs = [objs]
-
-    type_neutral_cases = _PROPERTY_TRANSFORM_SPECIAL_CASES.get(
-        None
-    ) or {}  # avoid unnecessarily creating an empty dict.
-
-    for obj in objs:
-        type_specific_cases = _PROPERTY_TRANSFORM_SPECIAL_CASES.get(
-            obj["type"]
-        ) or {}
-
-        # This prioritizes type-specific transformations over neutral ones, in
-        # case of conflict.  Seems unlikely to happen though.
-        all_cases = collections.ChainMap(
-            type_specific_cases, type_neutral_cases
-        )
-
-        for prop_name, transformer in all_cases.items():
-            if prop_name in obj:
-                prop_value = obj[prop_name]
-                trans_func = getattr(transformer, transform_direction)
-                obj[prop_name] = trans_func(prop_value)
-
-
-def _customize_filters():
-    """
-    Override some defaults for filtering, with values suitable for this
-    backend.
-    """
-    # Override some timestamp-typed filters to coerce to epoch seconds, due to
-    # how we store timestamps in mongo.  Okay to overwrite the module globals
-    # since only one backend should be in use at a time.
-    medallion.filters.common.CALCULATION_PROPERTIES.update({
-        "modified-gte": _MONGO_TIMESTAMP_FILTER,
-        "modified-lte": _MONGO_TIMESTAMP_FILTER,
-        "valid_until-gte": _MONGO_TIMESTAMP_FILTER,
-        "valid_from-lte": _MONGO_TIMESTAMP_FILTER
-    })
 
 
 def catch_mongodb_error(func):
@@ -135,6 +39,18 @@ def catch_mongodb_error(func):
     return api_wrapper
 
 
+def find_manifest_entries_for_id(obj, manifest):
+    for m in manifest:
+        if m["id"] == obj["id"]:
+            if "modified" in obj:
+                if m["version"] == obj["modified"]:
+                    return m
+            else:
+                # handle data markings
+                if m["version"] == obj["created"]:
+                    return m
+
+
 class MongoBackend(Backend):
 
     # access control is handled at the views level
@@ -146,19 +62,10 @@ class MongoBackend(Backend):
     def __init__(self, **kwargs):
         try:
 
-            mongo_client = kwargs.get("mongo_client")
-            if mongo_client:
-                # If we are passed a connection, assume someone else is
-                # managing it; we will not close it ourselves.
-                self.client = mongo_client
-                self.owns_connection = False
-            else:
-                self.client = MongoClient(kwargs.get("uri"))
-                self.owns_connection = True
-
             self.pages = {}
+            self.client = MongoClient(kwargs.get("uri"))
 
-            # unless clearing the db has been explicitly specified, don't initialize if the discovery_database exists
+            # unless clearing the db has been explicitly specified, don't initialize if the discovery_database exits
             # the discovery_databases is a minimally viable database,
             if not self.database_established() or kwargs.get("clear_db"):
                 self.clear_db()
@@ -172,9 +79,6 @@ class MongoBackend(Backend):
         except ConnectionFailure:
             log.error("Unable to establish a connection to MongoDB server {}".format(kwargs.get("uri")))
 
-        # Mongo backend specific filter overrides
-        _customize_filters()
-
     def database_established(self):
         """
         Checks to see if a medallion database exists
@@ -185,7 +89,7 @@ class MongoBackend(Backend):
         next_id = filter_args.get("next")
         if limit and next_id is None:
             client_params = parse_request_parameters(filter_args)
-            record = {"skip": 0, "limit": limit, "args": client_params, "request_time": timestamp_to_epoch_seconds(get_timestamp())}
+            record = {"skip": 0, "limit": limit, "args": client_params, "request_time": datetime_to_float(get_timestamp())}
             next_id = str(uuid.uuid4())
             self.pages[next_id] = record
         elif limit and next_id:
@@ -195,7 +99,7 @@ class MongoBackend(Backend):
             if self.pages[next_id]["args"] != client_params:
                 raise ProcessingError("The server did not understand the request or filter parameters: params changed over subsequent transaction", 400)
             self.pages[next_id]["limit"] = limit
-            self.pages[next_id]["request_time"] = timestamp_to_epoch_seconds(get_timestamp())
+            self.pages[next_id]["request_time"] = datetime_to_float(get_timestamp())
             record = self.pages[next_id]
         else:
             record = {}
@@ -220,7 +124,7 @@ class MongoBackend(Backend):
 
     def _pop_expired_sessions(self):
         expired_ids = []
-        boundary = timestamp_to_epoch_seconds(get_timestamp())
+        boundary = datetime_to_float(get_timestamp())
         for next_id, record in self.pages.items():
             if boundary - record["request_time"] > self.timeout:
                 expired_ids.append(next_id)
@@ -264,7 +168,7 @@ class MongoBackend(Backend):
                         log.info("Status {} was deleted from {} because it was older than the status retention time".format(doc["id"], ar))
                         statuses_of_api_root.delete_one({"_id": doc["_id"]})
 
-    def _get_object_manifest(self, api_root, collection_id, filter_args, limit, internal=False):
+    def _get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit, internal=False):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
         next_id, record = self._process_params(filter_args, limit)
@@ -272,17 +176,18 @@ class MongoBackend(Backend):
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}},
-            record,
-            interop=self.interop_requirements_enforced
+            allowed_filters,
+            record
         )
         count, objects_found = full_filter.process_filter(
             objects_info,
+            allowed_filters,
             "manifests",
         )
 
         for obj in objects_found:
-            obj["date_added"] = timestamp_to_taxii_json(obj["date_added"])
-            obj["version"] = timestamp_to_stix_json(obj["version"])
+            obj["date_added"] = datetime_to_string(float_to_datetime(obj["date_added"]))
+            obj["version"] = datetime_to_string_stix(float_to_datetime(obj["version"]))
 
         next_id, more = self._update_record(next_id, count, internal)
         manifest_resource = create_resource("objects", objects_found, more, next_id)
@@ -351,7 +256,7 @@ class MongoBackend(Backend):
         collection_info = api_root_db["collections"]
         collections = list(collection_info.find({}, {"_id": 0}))
         # interop wants results sorted by id - no need to check for interop option
-        if self.interop_requirements_enforced:
+        if get_application_instance_config_values(APPLICATION_INSTANCE, "taxii", "interop_requirements"):
             collections = sorted(collections, key=lambda o: o["id"])
         return create_resource("collections", collections)
 
@@ -366,8 +271,8 @@ class MongoBackend(Backend):
         return info
 
     @catch_mongodb_error
-    def get_object_manifest(self, api_root, collection_id, filter_args, limit):
-        return self._get_object_manifest(api_root, collection_id, filter_args, limit, False)
+    def get_object_manifest(self, api_root, collection_id, filter_args, allowed_filters, limit):
+        return self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, False)
 
     @catch_mongodb_error
     def get_api_root_information(self, api_root_name):
@@ -395,7 +300,7 @@ class MongoBackend(Backend):
         return result
 
     @catch_mongodb_error
-    def get_objects(self, api_root, collection_id, filter_args, limit):
+    def get_objects(self, api_root, collection_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
         next_id, record = self._process_params(filter_args, limit)
@@ -403,19 +308,24 @@ class MongoBackend(Backend):
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}},
-            record,
-            interop=self.interop_requirements_enforced
+            allowed_filters,
+            record
         )
         # Note: error handling was not added to following call as mongo will
         # handle (user supplied) filters gracefully if they don't exist
         count, objects_found = full_filter.process_filter(
             objects_info,
+            allowed_filters,
             "objects"
         )
 
-        _transform_special_case_properties(objects_found, "mongo_to_json")
+        for obj in objects_found:
+            if "modified" in obj:
+                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
+            if "created" in obj:
+                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
 
-        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, limit, True)
+        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, allowed_filters, limit, True)
         headers = get_custom_headers(manifest_resource)
 
         next_id, more = self._update_record(next_id, count)
@@ -430,7 +340,11 @@ class MongoBackend(Backend):
     def add_objects(self, api_root, collection_id, objs, request_time):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
+        failed = 0
+        succeeded = 0
+        pending = 0
         successes = []
+        failures = []
         media_fmt = "application/stix+json;version={}"
 
         try:
@@ -438,7 +352,7 @@ class MongoBackend(Backend):
                 media_type = media_fmt.format(determine_spec_version(new_obj))
                 mongo_query = {"_collection_id": collection_id, "id": new_obj["id"], "_manifest.media_type": media_type}
                 if "modified" in new_obj:
-                    mongo_query["_manifest.version"] = timestamp_to_epoch_seconds(new_obj["modified"])
+                    mongo_query["_manifest.version"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
                 existing_entry = objects_info.find_one(mongo_query)
                 obj_version = determine_version(new_obj, request_time)
 
@@ -448,36 +362,42 @@ class MongoBackend(Backend):
                 else:
                     message = None
                     new_obj.update({"_collection_id": collection_id})
-                    _transform_special_case_properties(new_obj, "json_to_mongo")
+                    if "modified" in new_obj:
+                        new_obj["modified"] = datetime_to_float(string_to_datetime(new_obj["modified"]))
+                    if "created" in new_obj:
+                        new_obj["created"] = datetime_to_float(string_to_datetime(new_obj["created"]))
                     _manifest = {
                         "id": new_obj["id"],
-                        "date_added": timestamp_to_epoch_seconds(request_time),
-                        "version": timestamp_to_epoch_seconds(obj_version),
+                        "date_added": datetime_to_float(request_time),
+                        "version": datetime_to_float(string_to_datetime(obj_version)),
                         "media_type": media_type,
                     }
                     new_obj.update({"_manifest": _manifest})
                     objects_info.insert_one(new_obj)
                     self._update_manifest(api_root, collection_id, media_type)
 
+                # else: we already have the object, so this is a
+                # no-op.
+
                 status_detail = generate_status_details(
-                    new_obj["id"], timestamp_to_stix_json(obj_version),
-                    message
+                    new_obj["id"], obj_version, message
                 )
                 successes.append(status_detail)
+                succeeded += 1
         except Exception as e:
             # log.exception(e)
             raise ProcessingError("While processing supplied content, an error occurred", 422, e)
 
         status = generate_status(
-            timestamp_to_taxii_json(request_time), "complete",
-            successes=successes
+            datetime_to_string(request_time), "complete", succeeded, failed,
+            pending, successes=successes, failures=failures,
         )
         api_root_db["status"].insert_one(status)
         status.pop("_id", None)
         return status
 
     @catch_mongodb_error
-    def get_object(self, api_root, collection_id, object_id, filter_args, limit):
+    def get_object(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
         # set manually to properly retrieve manifests, and early to not break the pagination checks
@@ -489,24 +409,29 @@ class MongoBackend(Backend):
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
-            record,
-            interop=self.interop_requirements_enforced
+            allowed_filters,
+            record
         )
         count, objects_found = full_filter.process_filter(
             objects_info,
+            allowed_filters,
             "objects"
         )
 
-        _transform_special_case_properties(objects_found, "mongo_to_json")
+        for obj in objects_found:
+            if "modified" in obj:
+                obj["modified"] = datetime_to_string_stix(float_to_datetime(obj["modified"]))
+            if "created" in obj:
+                obj["created"] = datetime_to_string_stix(float_to_datetime(obj["created"]))
 
-        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, limit, True)
+        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, ("id", "type", "version", "spec_version"), limit, True)
         headers = get_custom_headers(manifest_resource)
 
         next_id, more = self._update_record(next_id, count)
         return create_resource("objects", objects_found, more, next_id), headers
 
     @catch_mongodb_error
-    def delete_object(self, api_root, collection_id, object_id, filter_args):
+    def delete_object(self, api_root, collection_id, object_id, filter_args, allowed_filters):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
 
@@ -516,10 +441,11 @@ class MongoBackend(Backend):
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
-            interop=self.interop_requirements_enforced
+            allowed_filters,
         )
         count, objects_found = full_filter.process_filter(
             objects_info,
+            allowed_filters,
             "raw"
         )
         if objects_found:
@@ -532,7 +458,7 @@ class MongoBackend(Backend):
             raise ProcessingError("Object '{}' not found".format(object_id), 404)
 
     @catch_mongodb_error
-    def get_object_versions(self, api_root, collection_id, object_id, filter_args, limit):
+    def get_object_versions(self, api_root, collection_id, object_id, filter_args, allowed_filters, limit):
         api_root_db = self.client[api_root]
         objects_info = api_root_db["objects"]
         # set manually to properly retrieve manifests, and early to not break the pagination checks
@@ -545,25 +471,26 @@ class MongoBackend(Backend):
         full_filter = MongoDBFilter(
             filter_args,
             {"_collection_id": {"$eq": collection_id}, "id": {"$eq": object_id}},
-            record,
-            interop=self.interop_requirements_enforced
+            allowed_filters,
+            record
         )
         count, manifests_found = full_filter.process_filter(
             objects_info,
+            allowed_filters,
             "manifests",
         )
 
-        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, limit, True)
+        manifest_resource = self._get_object_manifest(api_root, collection_id, filter_args, ("id", "type", "version", "spec_version"), limit, True)
         headers = get_custom_headers(manifest_resource)
 
-        manifests_found = list(map(lambda x: timestamp_to_stix_json(x["version"]), manifests_found))
+        manifests_found = list(map(lambda x: datetime_to_string_stix(float_to_datetime(x["version"])), manifests_found))
         next_id, more = self._update_record(next_id, count)
         return create_resource("versions", manifests_found, more, next_id), headers
 
     def load_data_from_file(self, filename):
         try:
-            if isinstance(filename, str):
-                with open(filename, "r", encoding="utf-8") as infile:
+            if isinstance(filename, string_types):
+                with io.open(filename, "r", encoding="utf-8") as infile:
                     self.json_data = json.load(infile)
             else:
                 self.json_data = json.load(filename)
@@ -588,34 +515,28 @@ class MongoBackend(Backend):
             self.client.drop_database(api_root_name)
             api_db = self.client[api_root_name]
             if api_root_data["status"]:
-                api_db["status"].insert_many(api_root_data["status"].values())
+                api_db["status"].insert_many(api_root_data["status"])
             else:
                 api_db.create_collection("status")
             api_db.create_collection("collections")
             api_db.create_collection("objects")
-            for collection_id, collection in api_root_data["collections"].items():
+            for collection in api_root_data["collections"]:
+                collection_id = collection["id"]
+                objects = collection["objects"]
+                manifest = collection["manifest"]
                 # these are not in the collections mongodb collection (both TAXII and Mongo DB use the term collection)
-                objects = collection.pop("objects")
+                collection.pop("objects")
+                collection.pop("manifest")
                 api_db["collections"].insert_one(collection)
                 for obj in objects:
-
-                    _transform_special_case_properties(obj, "json_to_mongo")
-
-                    obj_meta = obj.pop("__meta")
                     obj["_collection_id"] = collection_id
-                    date_added = timestamp_to_epoch_seconds(obj_meta["date_added"])
-                    version = timestamp_to_epoch_seconds(
-                        obj.get("modified")
-                        or obj.get("created")
-                        or date_added
-                    )
-                    obj["_manifest"] = {
-                        "date_added": date_added,
-                        "id": obj["id"],
-                        "media_type": obj_meta["media_type"],
-                        "version": version
-                    }
-
+                    obj["_manifest"] = find_manifest_entries_for_id(obj, manifest)
+                    obj["_manifest"]["date_added"] = datetime_to_float(string_to_datetime(obj["_manifest"]["date_added"]))
+                    obj["_manifest"]["version"] = datetime_to_float(string_to_datetime(obj["_manifest"]["version"]))
+                    obj["created"] = datetime_to_float(string_to_datetime(obj["created"]))
+                    if "modified" in obj:
+                        # not for data markings
+                        obj["modified"] = datetime_to_float(string_to_datetime(obj["modified"]))
                     api_db["objects"].insert_one(obj)
                 id_index = IndexModel([("id", ASCENDING)])
                 type_index = IndexModel([("type", ASCENDING)])
@@ -633,21 +554,15 @@ class MongoBackend(Backend):
     def clear_db(self):
         if "discovery_database" in self.client.list_database_names():
             log.info("Clearing database")
-            discovery_db = self.client["discovery_database"]
-            api_root_info = discovery_db["api_root_info"]
-            for api_info in api_root_info.find({}):
-                self.client.drop_database(api_info["_name"])
             self.client.drop_database("discovery_database")
+        discovery_db = self.client["discovery_database"]
+        api_root_info = discovery_db["api_root_info"]
+        for api_info in api_root_info.find({}):
+            self.client.drop_database(api_info["_name"])
+        self.client.drop_database("discovery_database")
         # db with empty tables
         log.info("Creating empty database")
         discovery_db = self.client.get_database("discovery_database")
         discovery_db.create_collection("discovery_information")
         discovery_db.create_collection("api_root_info")
         return discovery_db
-
-    def close(self):
-        # Important to call super.close() first, since it stops threads
-        # which might try to access a closed mongo connection.
-        super().close()
-        if self.owns_connection:
-            self.client.close()
