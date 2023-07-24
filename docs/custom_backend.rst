@@ -90,7 +90,7 @@ Another way to provide a custom backend using flask proxy could be:
 
     import MyCustomBackend
     from flask import current_app
-    from medallion import application_instance, set_config
+    from medallion import application_instance, set_config, register_blueprints
 
     MyCustomBackend.init()  # Do some setup before attaching to application... (Imagine other steps happening here)
 
@@ -98,7 +98,13 @@ Another way to provide a custom backend using flask proxy could be:
         current_app.medallion_backend = MyCustomBackend
 
     #  Do some other stuff...
-    set_config(application_instance, {...})
+    set_config(application_instance, "backend", {
+        "backend": {
+            "module": "mypackage.with_backends",
+            "module_class": "MyCustomBackend",
+        }
+    })
+    register_blueprints(application_instance)
     application_instance.run()
 
 How to use a different authentication library
@@ -109,7 +115,7 @@ If you need or prefer a library different from ``Flask-HTTPAuth``, you can overr
 .. code-block:: python
 
     from flask import current_app
-    from medallion import application_instance, auth, set_config, init_backend
+    from medallion import application_instance, auth, set_config, init_backend, register_blueprints
 
     # This is a dummy implementation of Flask Auth that always returns false
     dummy_auth = class DummyAuth(object):
@@ -128,6 +134,7 @@ If you need or prefer a library different from ``Flask-HTTPAuth``, you can overr
 
     set_config(application_instance, {...})
     init_backend(application_instance, {...})
+    register_blueprints(application_instance)
     application_instance.run()
 
 How to use a different backend to control users
@@ -139,7 +146,7 @@ Our implementation of a users authentication system is not suitable for a produc
 
     import MyCustomDBforUsers
     from flask import current_app
-    from medallion import application_instance, set_config
+    from medallion import application_instance, set_config, register_blueprints
 
     # This is a dummy implementation of Flask Auth that always returns false
     dummy_auth = class DummyAuth(object):
@@ -163,4 +170,5 @@ Our implementation of a users authentication system is not suitable for a produc
         current_app.users_config = db  # This will make it available inside the Flask instance in case you decide to perform changes to the internal blueprints.
 
     init_backend(application_instance, {...})
+    register_blueprints(application_instance)
     application_instance.run()
