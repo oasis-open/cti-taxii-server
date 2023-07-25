@@ -31,8 +31,6 @@ setup(
     url="https://oasis-open.github.io/cti-documentation/",
     author="OASIS Cyber Threat Intelligence Technical Committee",
     author_email="cti-users@lists.oasis-open.org",
-    maintainer="Emmanuelle Vargas-Gonzalez",
-    maintainer_email="emmanuelle@mitre.org",
     license="BSD",
     classifiers=[
         "Development Status :: 3 - Alpha",
