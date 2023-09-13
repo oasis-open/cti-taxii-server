@@ -8,9 +8,22 @@ Each Mongo database contains one or more collections.  The term "collection" in 
 
 It is unfortunate that the term "collection" is also used to signify something unrelated in the TAXII specification.  We will use the phrase "taxii collection" to distinguish them.
 
-An instance of this schema can be populated via the file test/data/initialize_mongodb.py.  This instance will be used for examples below.
+You can initialize the database with content, by specifying a json file in the backend section of the medallion configuration.
 
-Utilities to initialize your own Mongo DB can be found in test/generic_initialize_mongodb.py.
+To initialize the database for testing use mediallion/test/data/default_data.json.  Use the format of that file to determine how
+to initialize with your own data.
+
+For example:
+
+.. code-block:: text
+
+    {
+         "backend": {
+            "module_class": "MongoBackend",
+            "uri": <Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'
+            "filename": <path to json file with initial data>
+         }
+    }
 
 The discovery database
 ----------------------
@@ -55,7 +68,11 @@ Here is a document from the example database:
 The api root databases
 ----------------------
 
-Each api root is contained in a separate Mongo DB database.  It has four collections:  **status**, **objects**, **manifests**, and **collections**.  To support multiple taxii collections, any document in the **objects** and **manifests** contains an extra property, "collection_id", to link it to the taxii collection that it is contained in.  Because "_collection_id" property is not part of the TAXII specification, it will be stripped by *medallion* before any document is returned to the client.
+Each api root is contained in a separate Mongo DB database.  It has four collections:  **status**, **objects**,
+and **collections**.  To support multiple TAXII collections, any document in the **objects** contains an extra
+property, "collection_id", to link it to the taxii collection that it is contained in.
+Because "_collection_id" property is not part of the TAXII specification, it will be stripped by *medallion*
+before any document is returned to the client.
 
 A document from the **collections** collection:
 
@@ -72,23 +89,32 @@ A document from the **collections** collection:
         ]
     }
 
+Because the STIX objects and the manifest entries share so much information, the manifest is stored with the object.
+
 A document from the **objects** collection:
 
 .. code-block:: json
 
     {
-        "created": "2014-05-08T09:00:00.000Z",
-        "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-        "labels": [
-            "file-hash-watchlist"
-        ],
-        "modified": "2014-05-08T09:00:00.000Z",
-        "name": "File hash for Poison Ivy variant",
-        "pattern": "[file:hashes.'SHA-256' = 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c']",
-        "type": "indicator",
-        "valid_from": "2014-05-08T09:00:00.000000Z",
-        "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
-    }
+            "created": "2017-01-27T13:49:53.997Z",
+            "description": "Poison Ivy",
+            "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+            "is_family": true,
+            "malware_types": [
+                "remote-access-trojan",
+            ],
+            "modified": "2017-01-27T13:49:53.997Z",
+            "name": "Poison Ivy",
+            "spec_version": "2.1",
+            "type": "malware",
+            "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116",
+            "_manifest": {
+                "date_added": "2017-01-27T13:49:59.997000Z",
+                "id": "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec",
+                "media_type": "application/stix+json;version=2.1",
+                "version": "2017-01-27T13:49:53.997Z"
+            }
+        }
 
 A document from the **status** collection:
 
@@ -117,18 +143,5 @@ A document from the **status** collection:
         ]
     }
 
-A document from the **manifest** collection:
 
-.. code-block:: json
 
-    {
-        "id": "indicator--a932fcc6-e032-176c-126f-cb970a5a1ade",
-        "date_added": "2016-11-01T10:29:05Z",
-        "versions": [
-            "2014-05-08T09:00:00.000Z"
-        ],
-        "media_types": [
-            "application/vnd.oasis.stix+json; version=2.0"
-        ],
-        "_collection_id": "91a7b528-80eb-42ed-a74d-c6fbd5a26116"
-    }

@@ -113,23 +113,24 @@ The <config_file> contains:
 
 To use the Memory back-end plug, include the following in the <config-file>:
 
-.. code-block:: json
+.. code-block:: text
 
     {
         "backend": {
             "module_class": "MemoryBackend",
-            "filename": "<path to json file with initial data>"
+            "filename": <path to json file with initial data>
         }
     }
 
 To use the Mongo DB back-end plug, include the following in the <config-file>:
 
-.. code-block:: json
+.. code-block:: text
 
     {
          "backend": {
             "module_class": "MongoBackend",
-            "uri": "<Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'"
+            "uri": <Mongo DB server url>  # e.g., 'mongodb://localhost:27017/'
+            "filename": <path to json file with initial data>
          }
     }
 
@@ -144,7 +145,7 @@ the <config_file> in plain text.
 
 Here is an example:
 
-.. code-block:: json
+.. code-block:: text
 
     {
         "users": {
@@ -161,12 +162,12 @@ Authorization could be enhanced by changing the method "decorated" using
 
 Configs may also contain a "taxii" section as well, as shown below:
 
-.. code-block:: json
+.. code-block:: text
 
     {
         "taxii": {
            "max_page_size": 100
-           "interop_requirements": true
+           "interop_requirements": true/false  # the TAXII interop document has some additional requirements
         }
     }
 
@@ -181,23 +182,22 @@ We welcome contributions for other back-end plugins.
 Docker
 ------
 
-We also provide a Docker image to make it easier to run *medallion*
+We also provide a Docker image to make it easier to run *medallion* with the MongoDB backend.  Use the --build argument
+if the code has changed.
 
 .. code-block:: bash
 
-    $ docker build . -t medallion -f docker_utils/Dockerfile
+    $ docker-compose up [--build]
 
-If operating behind a proxy, add the following option (replacing `<proxy>` with
-your proxy location and port): ``--build-arg https_proxy=<proxy>``.
+This uses the information in docker-compose.yml to create a Docker container with medallion, mongo db and mongo-express
 
-Then run the image
+If operating behind a proxy, add the following to the medallion:build section of docker-compose.yml:
 
-.. code-block:: bash
+.. code-block:: text
 
-    $ docker run --rm -p 5000:5000 -v <directory>:/var/taxii medallion
+    HTTPS_PROXY: <proxy>
 
-Replace ``<directory>`` with the full path to the directory containing your
-medallion configuration.
+replacing <proxy> with your proxy location and port.
 
 Governance
 ----------
