@@ -1335,6 +1335,14 @@ def test_object_pagination_changing_params_400(backend):
     assert objs["title"] == "ProcessingError"
 
 
+def test_object_duplicate_match_filter_400(backend):
+    r = backend.client.get(
+            test.GET_OBJECTS_EP + "?match[type]=campaign&match[type]=malware",
+            headers=backend.headers
+    )
+    assert r.status_code == 400
+
+
 # test other config values
 # this may warrant some cleanup and organization later
 class TestTAXIIWithNoConfig(TaxiiTest):
