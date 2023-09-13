@@ -233,14 +233,17 @@ def find_att(obj):
         string value of the field from the object to use for versioning
 
     """
-    if "version" in obj:
-        return string_to_datetime(obj["version"])
-    elif "modified" in obj:
+    # check for STIX object properties first, then for version in the manifest
+    if "modified" in obj:
         return string_to_datetime(obj["modified"])
     elif "created" in obj:
         return string_to_datetime(obj["created"])
-    else:
+    elif "_date_added" in obj:
         return string_to_datetime(obj["_date_added"])
+    elif "version" in obj:
+        return string_to_datetime(obj["version"])
+    else:
+        raise ValueError("Unable to determine the version attribute of {}".format(obj))
 
 
 def find_version_attribute(obj):

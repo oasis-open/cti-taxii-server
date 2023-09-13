@@ -119,18 +119,19 @@ def test_get_objects(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 5
+    assert len(objs['objects']) == 6
 
     # testing date-added headers
     assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
-    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
+    assert r.headers['X-TAXII-Date-Added-Last'] == "2022-06-16T13:49:53.935000Z"
 
     # testing ordering of returned objects by date_added
     correct_order = ['relationship--2f9a9aa9-108a-4333-83e2-4fb25add0463',
                      'indicator--cd981c25-8042-4166-8945-51178443bdac',
                      'marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da',
                      'malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
-                     'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
+                     'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e',
+                     "malware-analysis--084a658c-a7ef-4581-a21d-1f600908741b"]
 
     for x in range(0, len(correct_order)):
         assert objs['objects'][x]['id'] == correct_order[x]
@@ -257,11 +258,11 @@ def test_get_object_manifests(backend):
     assert r.status_code == 200
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     manifests = r.json
-    assert len(manifests["objects"]) == 5
+    assert len(manifests["objects"]) == 6
 
     # testing the date-added headers
     assert r.headers['X-TAXII-Date-Added-First'] == "2014-05-08T09:00:00.000000Z"
-    assert r.headers['X-TAXII-Date-Added-Last'] == "2017-12-31T13:49:53.935000Z"
+    assert r.headers['X-TAXII-Date-Added-Last'] == "2022-06-16T13:49:53.935000Z"
 
     # checking ordered by date_added
 
@@ -296,7 +297,7 @@ def test_get_objects_added_after(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 3
+    assert len(objs['objects']) == 4
 
 
 def test_get_objects_limit(backend):
@@ -329,10 +330,10 @@ def test_get_objects_limit(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 2
+    assert len(objs['objects']) == 3
 
     assert r.headers['X-TAXII-Date-Added-First'] == '2017-01-27T13:49:59.997000Z'
-    assert r.headers['X-TAXII-Date-Added-Last'] == '2017-12-31T13:49:53.935000Z'
+    assert r.headers['X-TAXII-Date-Added-Last'] == '2022-06-16T13:49:53.935000Z'
 
     correct_order = ['malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec',
                      'indicator--6770298f-0fd8-471a-ab8c-1c658a46574e']
@@ -408,7 +409,7 @@ def test_objects_version_match_last(backend):
 
 def test_objects_version_match_all(backend):
     objs = get_objects_by_version(backend, "?match[version]=all")
-    assert len(objs['objects']) == 7
+    assert len(objs['objects']) == 8
 
 
 def get_objects_spec_version(backend, filter, num_objects):
@@ -431,16 +432,16 @@ def test_get_objects_spec_version_20(backend):
 
 
 def test_get_objects_spec_version_21_20(backend):
-    get_objects_spec_version(backend, "?match[spec_version]=2.0,2.1", 5)
+    get_objects_spec_version(backend, "?match[spec_version]=2.0,2.1", 6)
 
 
 def test_get_objects_spec_version_21(backend):
-    objs = get_objects_spec_version(backend, "?match[spec_version]=2.1", 5)
+    objs = get_objects_spec_version(backend, "?match[spec_version]=2.1", 6)
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
 
 def test_get_objects_spec_version_default(backend):
-    objs = get_objects_spec_version(backend, "", 5)
+    objs = get_objects_spec_version(backend, "", 6)
     assert all(obj['spec_version'] == "2.1" for obj in objs['objects'])
 
 
@@ -600,7 +601,7 @@ def test_get_manifest_added_after(backend):
     objs = r.json
     assert objs['more'] is False
     # only 2 because one is v2.0
-    assert len(objs['objects']) == 2
+    assert len(objs['objects']) == 3
 
 
 def test_get_manifest_limit(backend):
@@ -642,7 +643,7 @@ def test_get_manifest_limit(backend):
     assert r.content_type == MEDIA_TYPE_TAXII_V21
     objs = r.json
     assert objs['more'] is False
-    assert len(objs['objects']) == 1
+    assert len(objs['objects']) == 2
     assert r.headers['X-TAXII-Date-Added-First'] == objs['objects'][0]['date_added']
     assert r.headers['X-TAXII-Date-Added-Last'] == objs['objects'][-1]['date_added']
 
@@ -703,7 +704,7 @@ def test_get_manifest_version_specific(backend):
 def test_get_manifest_version_first(backend):
     object_id = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     objs = get_manifest_version(backend, "?match[version]=first")
-    assert len(objs['objects']) == 5
+    assert len(objs['objects']) == 6
     for obj in objs['objects']:
         if obj['id'] == object_id:
             assert obj['version'] == "2016-11-03T12:30:59.000Z"
@@ -712,7 +713,7 @@ def test_get_manifest_version_first(backend):
 def test_get_manifest_version_last(backend):
     object_id = "indicator--6770298f-0fd8-471a-ab8c-1c658a46574e"
     objs = get_manifest_version(backend, "?match[version]=last")
-    assert len(objs['objects']) == 5
+    assert len(objs['objects']) == 6
     for obj in objs['objects']:
         if obj['id'] == object_id:
             assert obj['version'] == "2017-01-27T13:49:53.935Z"
@@ -720,7 +721,7 @@ def test_get_manifest_version_last(backend):
 
 def test_get_manifest_version_all(backend):
     objs = get_manifest_version(backend, "?match[version]=all")
-    assert len(objs['objects']) == 7
+    assert len(objs['objects']) == 8
 
 
 def get_manifest_spec_version(backend, filter):
@@ -744,14 +745,14 @@ def test_manifest_spec_version_20(backend):
 
 def test_manifest_spec_version_21(backend):
     objs = get_manifest_spec_version(backend, "?match[spec_version]=2.1")
-    assert len(objs['objects']) == 5
+    assert len(objs['objects']) == 6
     assert all(obj['media_type'] == "application/stix+json;version=2.1" for obj in objs['objects'])
 
 
 def test_manifest_spec_version_2021(backend):
     objs = get_manifest_spec_version(backend, "?match[spec_version]=2.0,2.1")
     # though the spec_version filter is getting all objects, the automatic filtering by version only gets the latest objects
-    assert len(objs['objects']) == 5
+    assert len(objs['objects']) == 6
     for obj in objs['objects']:
         if obj['id'] == "malware--c0931cc6-c75e-47e5-9036-78fabc95d4ec":
             assert obj['version'] == "2018-02-23T18:30:00.000Z"
@@ -760,7 +761,7 @@ def test_manifest_spec_version_2021(backend):
 def test_manifest_spec_version_default(backend):
     objs = get_manifest_spec_version(backend, "")
     # testing default value
-    assert len(objs['objects']) == 5
+    assert len(objs['objects']) == 6
     assert all(obj['media_type'] == "application/stix+json;version=2.1" for obj in objs['objects'])
 
 
